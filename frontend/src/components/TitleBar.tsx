@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Minus, Square, X,
-  Search, Settings, Brain, ExternalLink
+  Search, Settings, Brain
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAppStore } from '../store/useAppStore';
@@ -11,78 +11,16 @@ export const TitleBar = () => {
   const {
     setSettingsOpen, deviceInfo, isProcessing,
     isCommandCenterOpen, toggleCommandCenter,
-    commandCenterPiPOpen, setCommandCenterPiPOpen,
     setCurrentMode
   } = useAppStore();
   const [isElectron, setIsElectron] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
-  const pipWindowRef = useRef<Window | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.electron) {
       setIsElectron(true);
     }
   }, []);
-
-  // Cleanup poll on unmount
-  useEffect(() => {
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, []);
-
-  const openCommandCenterPiP = useCallback(() => {
-    // Already have one open — try to focus it
-    if (pipWindowRef.current && !pipWindowRef.current.closed) {
-      pipWindowRef.current.focus();
-      return;
-    }
-
-    const url = window.location.origin + '?pip=notepad';
-    const pipWin = window.open(url, 'solvent-command-center', 'width=420,height=650');
-
-    if (pipWin) {
-      pipWindowRef.current = pipWin;
-      setCommandCenterPiPOpen(true);
-
-      // Poll to detect when user closes the popup
-      if (pollRef.current) clearInterval(pollRef.current);
-      pollRef.current = setInterval(() => {
-        if (!pipWin || pipWin.closed) {
-          setCommandCenterPiPOpen(false);
-          pipWindowRef.current = null;
-          if (pollRef.current) clearInterval(pollRef.current);
-          pollRef.current = null;
-        }
-      }, 1000);
-    } else {
-      // Popup blocked — fall back to inline
-      toggleCommandCenter();
-    }
-  }, [setCommandCenterPiPOpen, toggleCommandCenter]);
-
-  const handleCommandCenterClick = (e: React.MouseEvent) => {
-    // Shift+Click: open inline panel (FloatingNotepad)
-    if (e.shiftKey || e.altKey) {
-      toggleCommandCenter();
-      return;
-    }
-    // Default: open as detached PiP window
-    openCommandCenterPiP();
-  };
-
-  // Keyboard shortcut: Ctrl/Cmd+Shift+C
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'c') {
-        e.preventDefault();
-        openCommandCenterPiP();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [openCommandCenterPiP]);
 
   return (
     <div className={cn(
@@ -133,20 +71,17 @@ export const TitleBar = () => {
         <div className="h-6 w-[1px] bg-white/10" />
 
         <button
-          onClick={handleCommandCenterClick}
+          onClick={toggleCommandCenter}
           className={cn(
             "flex items-center gap-3 px-4 py-2 rounded-xl transition-all border group relative overflow-hidden app-no-drag",
-            commandCenterPiPOpen
-              ? "bg-jb-orange/20 border-jb-orange/40 text-jb-orange shadow-[0_0_20px_rgba(251,146,60,0.2)]"
-              : isCommandCenterOpen
-                ? "bg-jb-purple/20 border-jb-purple/40 text-jb-purple shadow-[0_0_20px_rgba(157,91,210,0.2)]"
-                : "bg-white/5 border-white/5 text-slate-400 hover:text-white hover:border-white/10"
+            isCommandCenterOpen
+              ? "bg-jb-purple/20 border-jb-purple/40 text-jb-purple shadow-[0_0_20px_rgba(157,91,210,0.2)]"
+              : "bg-white/5 border-white/5 text-slate-400 hover:text-white hover:border-white/10"
           )}
-          title={commandCenterPiPOpen ? "Command Center (Detached — click to focus)" : "Command Center (Shift+Click for inline)"}
+          title="Command Center"
         >
            <Brain size={14} className={cn(isProcessing && "animate-pulse")} />
            <span className="text-[9px] font-black uppercase tracking-[0.2em]">Command Center</span>
-           {commandCenterPiPOpen && <ExternalLink size={10} className="text-jb-orange/60" />}
            {isProcessing && <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-jb-orange rounded-full animate-pulse" />}
         </button>
       </div>

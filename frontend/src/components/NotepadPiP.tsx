@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import {
-  PenLine, X, Shield, Send, Terminal,
-  Activity, Database, LayoutGrid,
-  Code2, Settings, Bell,
-  Layers, Trash2, FileText, ChevronDown, Sparkles,
-  MessageSquare as ChatIcon, Brain,
+  PenLine, X, Shield,
+  Database, LayoutGrid, ExternalLink,
+  Code2, Settings,
+  Layers, Trash2, ChevronDown, Sparkles,
+  Brain,
   Play, Loader2, CheckCircle2, XCircle,
-  Maximize, Minimize, Zap, Network, Users
+  Users
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -37,8 +37,20 @@ interface LocalActiveMission {
 }
 
 const MISSION_TEMPLATES = [
-  { id: 'consultation', label: 'Consultation', desc: 'PM + Engineer + Security' },
-  { id: 'refinement', label: 'Refinement', desc: 'Adversarial critic + optimizer' },
+  {
+    id: 'consultation', label: 'Consultation', desc: 'PM + Engineer + Security',
+    cardCls:   'bg-jb-purple/5 border-jb-purple/15',
+    activeCls: 'bg-jb-purple/20 border-jb-purple/40 text-jb-purple',
+    headerCls: 'text-jb-purple',
+    iconCls:   'text-jb-purple',
+  },
+  {
+    id: 'refinement', label: 'Refinement', desc: 'Adversarial critic + optimizer',
+    cardCls:   'bg-jb-accent/5 border-jb-accent/15',
+    activeCls: 'bg-jb-accent/20 border-jb-accent/40 text-jb-accent',
+    headerCls: 'text-jb-accent',
+    iconCls:   'text-jb-accent',
+  },
 ];
 
 function formatTime(ts: number) {
@@ -60,7 +72,7 @@ const interventionColor = {
   action: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
 };
 
-export const NotepadPiP = () => {
+export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDetach?: () => void } = {}) => {
   const {
     notepadContent, setNotepadContent, supervisorInsight, setSupervisorInsight,
     thinkingModeEnabled, setThinkingModeEnabled, auraMode, setAuraMode,
@@ -68,9 +80,8 @@ export const NotepadPiP = () => {
     messages
   } = useAppStore();
 
-  const [view, setView] = useState<'dash' | 'notes' | 'overseer' | 'chat' | 'coding' | 'missions' | 'waterfall'>('overseer');
+  const [view, setView] = useState<'dash' | 'notes' | 'overseer' | 'missions' | 'waterfall'>('dash');
   const [isCompact, setIsCompact] = useState(false);
-  const [command, setCommand] = useState('');
   const [showSettings, setShowSettings] = useState(false);
 
   // Overseer state — local since PiP is a separate Electron window
@@ -181,61 +192,19 @@ export const NotepadPiP = () => {
     finally { setLaunchingMission(false); }
   }, [missionGoal, missionTemplate]);
 
-  const sendCommand = useCallback(async () => {
-    const cmd = command.trim();
-    if (!cmd) return;
-    setCommand('');
 
-    if (cmd.startsWith('/think')) {
-      const focus = cmd.slice(6).trim() || 'manual_check';
-      triggerOverseer(focus);
-      setView('overseer');
-    } else if (cmd.startsWith('/run ')) {
-      const parts = cmd.slice(5).split(' ');
-      const tmpl = MISSION_TEMPLATES.find(t => t.id === parts[0]);
-      if (tmpl) {
-        setMissionTemplate(tmpl.id);
-        setMissionGoal(parts.slice(1).join(' '));
-      } else {
-        setMissionGoal(cmd.slice(5));
-      }
-      setView('missions');
-    } else if (cmd === '/scan') {
-      triggerOverseer('full_scan');
-      setView('overseer');
-    } else if (cmd === '/missions') {
-      setView('missions');
-    } else if (cmd === '/clear') {
-      setOverseerDecisions([]);
-      setUnreadCount(0);
-    } else {
-      setCurrentMode('chat');
-      setView('chat');
-    }
-  }, [command, triggerOverseer, setCurrentMode]);
+  // Navigate PiP-locally (no effect on main app)
+  const openLocalView = (v: typeof view) => setView(v);
 
-  const handleModeChange = (mode: string) => {
-    setCurrentMode(mode as any);
-    setView(mode as any);
-    if (window.electron?.setMode) window.electron.setMode(mode);
-    window.electron?.logAction?.({ type: 'pip_mode_change', mode });
-  };
+  // Launch a tool in the main app without changing PiP view
+  const launchInMainApp = (mode: string) => setCurrentMode(mode as any);
 
-  useEffect(() => {
-    if (window.electron?.onModeChanged) {
-      return window.electron.onModeChanged((mode: string) => {
-        setCurrentMode(mode as any);
-      });
-    }
-  }, [setCurrentMode]);
-
-  const isToolView = ['chat', 'coding', 'missions', 'waterfall', 'notes', 'dash'].includes(view);
   const isSocketConnected = socket.connected;
   const activeMissionCount = activeMissions.filter(m => m.status === 'queued' || m.status === 'active').length;
 
-  const ActionButton = ({ icon: Icon, label, mode, color, desc }: any) => (
+  const ActionButton = ({ icon: Icon, label, onClick, color, desc }: any) => (
     <button
-      onClick={() => { setView(mode as any); if (mode !== 'missions') handleModeChange(mode); }}
+      onClick={onClick}
       className="group relative p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all text-left overflow-hidden h-full flex flex-col justify-between"
     >
       <div className="absolute top-0 right-0 w-12 h-[1px] bg-white/[0.05] group-hover:bg-white/20 transition-colors" />
@@ -257,13 +226,13 @@ export const NotepadPiP = () => {
 
   return (
     <div className={cn(
-      "h-screen w-screen flex flex-col bg-[#050508] text-slate-300 border border-white/10 overflow-hidden font-sans transition-all duration-300",
+      "h-full w-full flex flex-col bg-[#050508] text-slate-300 border border-white/10 overflow-hidden font-sans transition-all duration-300",
       isCompact ? "p-1" : "p-0"
     )}>
       {/* Header */}
       <div
         style={{ WebkitAppRegion: 'drag' } as any}
-        className="flex items-center justify-between px-3 py-2 bg-[#0a0a0f] border-b border-white/5 cursor-move"
+        className="drag-handle flex items-center justify-between px-3 py-2 bg-[#0a0a0f] border-b border-white/5 cursor-move"
       >
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-jb-purple animate-pulse shadow-[0_0_10px_rgba(139,92,246,0.5)]" />
@@ -275,52 +244,36 @@ export const NotepadPiP = () => {
           )}
         </div>
 
-        <div className="flex items-center gap-0.5" style={{ WebkitAppRegion: 'no-drag' } as any}>
-          {isToolView && (
-            <>
-              <button
-                onClick={() => setView('overseer')}
-                className="relative p-1.5 rounded-md text-slate-600 hover:text-slate-400 transition-all"
-                title="Overseer"
-              >
-                <Shield size={12} />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full text-[6px] font-black flex items-center justify-center text-black">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </button>
-              {view !== 'dash' && (
-                <button onClick={() => setView('dash')} className="p-1.5 rounded-md text-slate-600 hover:text-slate-400 transition-all" title="Dashboard">
-                  <LayoutGrid size={12} />
-                </button>
-              )}
-              <div className="w-[1px] h-3 bg-white/10 mx-1" />
-              <button onClick={() => handleModeChange('chat')} className={cn("p-1.5 rounded-md transition-all", view === 'chat' ? "text-blue-400 bg-blue-500/10" : "text-slate-600 hover:text-slate-400")} title="Chat">
-                <ChatIcon size={12} />
-              </button>
-              <button onClick={() => handleModeChange('coding')} className={cn("p-1.5 rounded-md transition-all", view === 'coding' ? "text-jb-accent bg-jb-accent/10" : "text-slate-600 hover:text-slate-400")} title="Code">
-                <Code2 size={12} />
-              </button>
-              <div className="w-[1px] h-3 bg-white/10 mx-1" />
-            </>
-          )}
-          {view === 'overseer' && (
-            <button onClick={() => setView('dash')} className="p-1.5 rounded-md text-slate-600 hover:text-slate-400 transition-all" title="Dashboard">
+        <div className="flex items-center gap-1" style={{ WebkitAppRegion: 'no-drag' } as any}>
+          {view !== 'dash' && (
+            <button
+              onClick={() => openLocalView('dash')}
+              className="p-1.5 rounded-md text-slate-600 hover:text-white transition-all"
+              title="Dashboard"
+            >
               <LayoutGrid size={12} />
             </button>
           )}
-          <button onClick={() => setView('notes')} className={cn("p-1.5 rounded-md transition-all", view === 'notes' ? "text-amber-400 bg-amber-500/10" : "text-slate-600 hover:text-slate-400")} title="Notes">
-            <PenLine size={12} />
-          </button>
-          <div className="w-[1px] h-3 bg-white/10 mx-1" />
-          <button onClick={() => setShowSettings(!showSettings)} className={cn("p-1.5 rounded-md transition-all", showSettings ? "text-white bg-white/10" : "text-slate-600 hover:text-white")} title="Settings">
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className={cn("p-1.5 rounded-md transition-all", showSettings ? "text-white bg-white/10" : "text-slate-600 hover:text-white")}
+            title="Settings"
+          >
             <Settings size={12} />
           </button>
-          <button onClick={() => setIsCompact(!isCompact)} className="p-1.5 text-slate-600 hover:text-white transition-all">
-            {isCompact ? <Maximize size={12} /> : <Minimize size={12} />}
-          </button>
-          <button onClick={() => window.close()} className="p-1.5 text-slate-600 hover:text-red-400 transition-all">
+          {onDetach && (
+            <button
+              onClick={onDetach}
+              className="p-1.5 rounded-md text-slate-600 hover:text-jb-orange transition-all"
+              title="Detach to floating window"
+            >
+              <ExternalLink size={12} />
+            </button>
+          )}
+          <button
+            onClick={() => onClose ? onClose() : window.close()}
+            className="p-1.5 text-slate-600 hover:text-red-400 transition-all"
+          >
             <X size={12} />
           </button>
         </div>
@@ -393,54 +346,68 @@ export const NotepadPiP = () => {
               initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
               className="flex-1 flex flex-col gap-3 p-3 overflow-y-auto no-scrollbar"
             >
-              {/* System Health */}
-              <div className="bg-black/40 border border-white/5 rounded-xl p-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1.5">
-                    <div className={cn("w-1.5 h-1.5 rounded-full", isSocketConnected ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]" : "bg-rose-500")} />
-                    <span className="text-[8px] font-black uppercase text-slate-500">Socket</span>
+              {/* Overseer Card */}
+              <button
+                onClick={() => openLocalView('overseer')}
+                className="group relative p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-emerald-500/20 transition-all text-left overflow-hidden flex-shrink-0"
+              >
+                <div className="absolute top-0 right-0 w-12 h-[1px] bg-white/[0.05] group-hover:bg-emerald-500/20 transition-colors" />
+                <div className="absolute top-0 right-0 w-[1px] h-12 bg-white/[0.05] group-hover:bg-emerald-500/20 transition-colors" />
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2.5 rounded-xl bg-black/40 border border-white/5 w-fit group-hover:scale-110 transition-transform text-emerald-400 shrink-0">
+                      <Shield size={16} strokeWidth={1.5} />
+                    </div>
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-[11px] font-black text-white uppercase tracking-widest">Overseer</h3>
+                        {isThinking && <Loader2 size={9} className="animate-spin text-emerald-400" />}
+                        {overseerDecisions.length > 0 && (
+                          <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[7px] font-black">
+                            {overseerDecisions.length}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[9px] text-slate-500 font-bold leading-relaxed line-clamp-2">
+                        {supervisorInsight || 'Watching your session — click to open'}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[8px] font-black uppercase text-indigo-400">{activeMissionCount}</span>
-                    <span className="text-[8px] font-black uppercase text-slate-600">Missions</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[8px] font-black uppercase text-emerald-400">{overseerDecisions.length}</span>
-                    <span className="text-[8px] font-black uppercase text-slate-600">Alerts</span>
+                  <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={() => triggerOverseer('manual_check')}
+                      disabled={isThinking}
+                      className="px-2 py-1 rounded-md text-[7px] font-black uppercase bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all disabled:opacity-40"
+                    >
+                      {isThinking ? '...' : 'Think'}
+                    </button>
+                    <button
+                      onClick={() => triggerOverseer('nudge_me')}
+                      disabled={isThinking}
+                      className="px-2 py-1 rounded-md text-[7px] font-black uppercase bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all disabled:opacity-40"
+                    >
+                      Nudge
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => { triggerOverseer('dashboard_scan'); setView('overseer'); }}
-                    disabled={isThinking}
-                    className="px-2 py-1 rounded-md text-[8px] font-black uppercase bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all disabled:opacity-50"
-                  >
-                    {isThinking ? <Loader2 size={9} className="animate-spin" /> : 'Think'}
-                  </button>
-                  <button
-                    onClick={() => setView('missions')}
-                    className="px-2 py-1 rounded-md text-[8px] font-black uppercase bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition-all"
-                  >
-                    Mission
-                  </button>
+                <div className="mt-3 flex items-center gap-2 text-[7px] font-black uppercase tracking-[0.3em] text-white/10 group-hover:text-emerald-400/40 transition-all">
+                  Open Overseer <ChevronDown size={10} className="rotate-[-90deg]" />
                 </div>
-              </div>
+              </button>
 
               {/* Action Grid */}
-              <div className="grid grid-cols-2 gap-3 flex-shrink-0">
-                <ActionButton icon={ChatIcon} label="CHAT" mode="chat" color="text-blue-400" desc="Talk to your assistant" />
-                <ActionButton icon={Code2} label="CODE" mode="coding" color="text-jb-accent" desc="Write and run code" />
-                <ActionButton icon={Users} label="MISSIONS" mode="missions" color="text-indigo-400" desc="Multi-agent war room" />
-                <ActionButton icon={Layers} label="FLOW" mode="waterfall" color="text-jb-purple" desc="Tiered intelligence" />
+              <div className="grid grid-cols-2 gap-2 flex-shrink-0">
+                <ActionButton icon={Users}  label="MISSIONS" onClick={() => openLocalView('missions')}     color="text-indigo-400" desc="Multi-agent war room" />
+                <ActionButton icon={PenLine} label="NOTES"   onClick={() => openLocalView('notes')}        color="text-amber-400"  desc="Context &amp; directives" />
+                <ActionButton icon={Code2}  label="CODE"     onClick={() => launchInMainApp('coding')}     color="text-jb-accent"  desc="Open in main app →" />
+                <ActionButton icon={Layers} label="FLOW"     onClick={() => launchInMainApp('waterfall')}  color="text-jb-purple"  desc="Open in main app →" />
               </div>
 
               {/* Activity Feed */}
-              <div className="flex-1 bg-black/40 rounded-xl border border-white/5 p-3 flex flex-col overflow-hidden">
-                <div className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-2 flex justify-between items-center">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>Recent Activity</span>
-                  </div>
+              <div className="flex-1 bg-black/40 rounded-xl border border-white/5 p-3 flex flex-col overflow-hidden min-h-0">
+                <div className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                  <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Recent Activity</span>
                 </div>
                 <div className="flex-1 overflow-y-auto space-y-2 no-scrollbar">
                   {activities.length === 0 ? (
@@ -468,16 +435,6 @@ export const NotepadPiP = () => {
             </motion.div>
           )}
 
-          {/* ─── CHAT / CODING ─── */}
-          {(view === 'chat' || view === 'coding') && (
-            <motion.div
-              key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="flex-1 flex flex-col"
-            >
-              <ChatView compact />
-            </motion.div>
-          )}
-
           {/* ─── WATERFALL ─── */}
           {view === 'waterfall' && (
             <motion.div
@@ -485,7 +442,6 @@ export const NotepadPiP = () => {
               className="flex-1 flex flex-col overflow-y-auto no-scrollbar"
             >
               <div className="p-4"><WaterfallVisualizer /></div>
-              <div className="mt-auto"><ChatView compact /></div>
             </motion.div>
           )}
 
@@ -561,7 +517,7 @@ export const NotepadPiP = () => {
               </div>
 
               {/* Decisions Feed */}
-              <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex-[1] flex flex-col overflow-hidden min-h-0">
                 <div className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                   <div className="w-1 h-1 rounded-full bg-emerald-500/50 animate-pulse" />
                   <span>Decision Feed</span>
@@ -606,6 +562,11 @@ export const NotepadPiP = () => {
                   </div>
                 )}
               </div>
+
+              {/* Chat with Overseer */}
+              <div className="border-t border-white/5 flex-shrink-0" style={{ height: '260px' }}>
+                <ChatView compact />
+              </div>
             </motion.div>
           )}
 
@@ -616,45 +577,53 @@ export const NotepadPiP = () => {
               className="flex-1 flex flex-col p-3 gap-3 overflow-hidden"
             >
               {/* Mission Launcher */}
-              <div className="bg-indigo-500/[0.03] border border-indigo-500/15 rounded-xl p-3 space-y-3 flex-shrink-0">
-                <div className="flex items-center gap-2">
-                  <Users size={12} className="text-indigo-400" />
-                  <span className="text-[9px] font-black uppercase text-indigo-400 tracking-widest">Launch Mission</span>
-                </div>
-                <textarea
-                  value={missionGoal}
-                  onChange={(e) => setMissionGoal(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) launchMission(); }}
-                  placeholder="Define the mission goal..."
-                  className="w-full bg-black/30 border border-white/5 rounded-lg px-3 py-2 text-[10px] font-mono outline-none resize-none text-slate-300 placeholder:text-slate-700 h-16"
-                />
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1 flex-1">
-                    {MISSION_TEMPLATES.map(t => (
+              {(() => {
+                const tmpl = MISSION_TEMPLATES.find(t => t.id === missionTemplate) ?? MISSION_TEMPLATES[0];
+                return (
+                  <div className={cn('rounded-xl p-3 space-y-3 flex-shrink-0 border', tmpl.cardCls)}>
+                    <div className="flex items-center gap-2">
+                      <Users size={12} className={tmpl.iconCls} />
+                      <span className={cn('text-[9px] font-black uppercase tracking-widest', tmpl.headerCls)}>
+                        Launch Mission
+                      </span>
+                    </div>
+                    <textarea
+                      value={missionGoal}
+                      onChange={(e) => setMissionGoal(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) launchMission(); }}
+                      placeholder="Define the mission goal..."
+                      className="w-full bg-black/30 border border-white/5 rounded-lg px-3 py-2 text-[10px] font-mono outline-none resize-none text-slate-300 placeholder:text-slate-700 h-16"
+                    />
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1 flex-1">
+                        {MISSION_TEMPLATES.map(t => (
+                          <button
+                            key={t.id}
+                            onClick={() => setMissionTemplate(t.id)}
+                            className={cn(
+                              'px-2 py-1 rounded-full text-[8px] font-black uppercase border transition-all',
+                              missionTemplate === t.id ? t.activeCls : 'bg-white/[0.02] border-white/5 text-slate-600 hover:text-white',
+                            )}
+                          >
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
                       <button
-                        key={t.id}
-                        onClick={() => setMissionTemplate(t.id)}
+                        onClick={launchMission}
+                        disabled={!missionGoal.trim() || launchingMission}
                         className={cn(
-                          "px-2 py-1 rounded-full text-[8px] font-black uppercase border transition-all",
-                          missionTemplate === t.id
-                            ? "bg-indigo-600/20 border-indigo-500/40 text-indigo-400"
-                            : "bg-white/[0.02] border-white/5 text-slate-600 hover:text-white"
+                          'flex items-center gap-1.5 px-3 py-1.5 disabled:opacity-50 text-white text-[9px] font-black rounded-full transition-all',
+                          tmpl.id === 'consultation' ? 'bg-jb-purple hover:bg-jb-purple/80' : 'bg-jb-accent hover:bg-jb-accent/80',
                         )}
                       >
-                        {t.label}
+                        {launchingMission ? <Loader2 size={10} className="animate-spin" /> : <Play size={10} fill="currentColor" />}
+                        {launchingMission ? 'Launching...' : 'Launch'}
                       </button>
-                    ))}
+                    </div>
                   </div>
-                  <button
-                    onClick={launchMission}
-                    disabled={!missionGoal.trim() || launchingMission}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-[9px] font-black rounded-full transition-all"
-                  >
-                    {launchingMission ? <Loader2 size={10} className="animate-spin" /> : <Play size={10} fill="currentColor" />}
-                    {launchingMission ? 'Launching...' : 'Launch'}
-                  </button>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* Active Missions List */}
               <div className="flex-1 flex flex-col overflow-hidden">
@@ -697,15 +666,19 @@ export const NotepadPiP = () => {
                           </div>
 
                           {(m.status === 'queued' || m.status === 'active') && (
-                            <div className="space-y-1">
-                              <div className="flex justify-between text-[7px]">
-                                <span className="text-slate-600">{phaseLabel(m.progress, m.status)}</span>
-                                <span className="text-slate-700">{m.progress}%</span>
+                            <div className="space-y-1.5">
+                              <div className="flex justify-between">
+                                <span className="text-[8px] font-black uppercase tracking-wider text-slate-600">
+                                  {phaseLabel(m.progress, m.status)}
+                                </span>
+                                <span className="text-[7px] text-slate-700 font-mono">{m.progress}%</span>
                               </div>
-                              <div className="h-0.5 bg-slate-800 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-indigo-500 rounded-full transition-all duration-500"
-                                  style={{ width: `${m.progress}%` }}
+                              <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                <motion.div
+                                  className="h-full rounded-full bg-gradient-to-r from-jb-purple to-jb-accent"
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${m.progress}%` }}
+                                  transition={{ duration: 0.5, ease: 'easeOut' }}
                                 />
                               </div>
                             </div>
@@ -714,21 +687,32 @@ export const NotepadPiP = () => {
 
                         {/* Expanded result */}
                         {expandedMission === m.jobId && m.result && (
-                          <div className="border-t border-white/5 p-3 space-y-2">
-                            {m.result.synthesis && (
-                              <>
-                                <span className="text-[7px] font-black uppercase text-indigo-400">Synthesis</span>
-                                <p className="text-[8px] text-slate-400 leading-relaxed">{m.result.synthesis}</p>
-                              </>
-                            )}
+                          <div className="border-t border-white/5 p-3 space-y-3">
                             {m.result.expertOpinions && (
-                              <div className="space-y-1.5 mt-2">
-                                {m.result.expertOpinions.map((op: any, i: number) => (
-                                  <div key={i} className="text-[8px] text-slate-500 leading-relaxed">
-                                    <span className="font-black text-slate-400 uppercase">{op.role}: </span>
-                                    <span className="line-clamp-2">{op.opinion}</span>
-                                  </div>
-                                ))}
+                              <div className="space-y-2">
+                                <span className="text-[7px] font-black uppercase tracking-widest text-slate-600 block">
+                                  Expert Analysis
+                                </span>
+                                {m.result.expertOpinions.map((op: any, i: number) => {
+                                  const agentBorders = ['border-jb-purple', 'border-jb-accent', 'border-jb-orange'];
+                                  const agentText    = ['text-jb-purple',   'text-jb-accent',   'text-jb-orange'];
+                                  return (
+                                    <div key={i} className={cn('glass-card p-2.5 rounded-xl border-l-2', agentBorders[i % 3])}>
+                                      <span className={cn('text-[7px] font-black uppercase tracking-widest block mb-0.5', agentText[i % 3])}>
+                                        {op.role}
+                                      </span>
+                                      <p className="text-[8px] text-slate-400 leading-relaxed">{op.opinion}</p>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            {m.result.synthesis && (
+                              <div className="glass-panel rounded-xl p-3">
+                                <h4 className="text-[8px] font-black mb-1.5">
+                                  <span className="text-vibrant">Synthesis</span>
+                                </h4>
+                                <p className="text-[8px] text-slate-400 leading-relaxed">{m.result.synthesis}</p>
                               </div>
                             )}
                           </div>
@@ -750,22 +734,6 @@ export const NotepadPiP = () => {
         </AnimatePresence>
       </div>
 
-      {/* Command Bar */}
-      <div className="p-3 bg-[#0a0a0f] border-t border-white/5">
-        <div className="flex items-center gap-2 bg-black/40 border border-white/5 rounded-lg px-3 py-1.5 focus-within:border-jb-purple/40 transition-all shadow-inner">
-          <Terminal size={10} className="text-slate-600 flex-shrink-0" />
-          <input
-            value={command}
-            onChange={(e) => setCommand(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && sendCommand()}
-            placeholder="/think · /run · /scan · /missions · /clear"
-            className="flex-1 bg-transparent text-[10px] outline-none text-slate-300 placeholder:text-slate-800 font-mono"
-          />
-          <button onClick={sendCommand} className="text-slate-600 hover:text-jb-purple transition-colors flex-shrink-0">
-            <Send size={10} />
-          </button>
-        </div>
-      </div>
     </div>
   );
 };

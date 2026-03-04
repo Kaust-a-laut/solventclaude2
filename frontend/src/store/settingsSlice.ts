@@ -22,6 +22,8 @@ export interface SettingsSlice {
   temperature: number;
   maxTokens: number;
   settingsOpen: boolean;
+  settingsInitialTab: string | null;
+  setSettingsInitialTab: (tab: string | null) => void;
   auraMode: 'off' | 'static' | 'organic';
   thinkingModeEnabled: boolean;
   imageProvider: 'gemini' | 'pollinations' | 'local' | 'huggingface';
@@ -88,6 +90,7 @@ export const createSettingsSlice: StateCreator<AppState, [], [], SettingsSlice> 
   temperature: APP_CONFIG.defaults.temperature,
   maxTokens: APP_CONFIG.defaults.maxTokens,
   settingsOpen: false,
+  settingsInitialTab: null,
   auraMode: 'off',
   thinkingModeEnabled: false,
   imageProvider: APP_CONFIG.defaults.imageProvider,
@@ -129,6 +132,7 @@ export const createSettingsSlice: StateCreator<AppState, [], [], SettingsSlice> 
   setTemperature: (temperature) => set({ temperature }),
   setMaxTokens: (maxTokens) => set({ maxTokens }),
   setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
+  setSettingsInitialTab: (settingsInitialTab) => set({ settingsInitialTab }),
   setAuraMode: (auraMode) => set({ auraMode }),
   setThinkingModeEnabled: (thinkingModeEnabled) => set({ thinkingModeEnabled }),
   setImageProvider: (imageProvider) => set({ imageProvider }),
