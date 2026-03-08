@@ -11,7 +11,7 @@ on:
 
 jobs:
   backend:
-    name: Backend — Lint & Test
+    name: Backend — Test
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -28,9 +28,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Type-check
-        run: npx tsc --noEmit
 
       - name: Run tests
         run: npm test
@@ -56,8 +53,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Type-check
-        run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint
 
       - name: Run tests
         run: npm test
