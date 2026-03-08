@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import { AIController } from '../controllers/aiController';
 import { aiService } from '../services/aiService';
 import { debateService } from '../services/debateService';
@@ -9,6 +10,25 @@ const router = Router();
 
 // ── Core Chat ──────────────────────────────────────────────────────────────
 router.post('/chat', AIController.chat);
+
+// ── Intent Detection (single authoritative implementation) ─────────────────
+// The frontend calls this to determine routing before sending a message.
+// Keeps image intent logic in one place (aiService) instead of duplicating
+// the regex in the frontend's actionSlice.
+const detectIntentSchema = z.object({
+  message: z.string().min(1),
+  mode: z.string().optional()
+});
+
+router.post('/detect-intent', (req, res) => {
+  const parseResult = detectIntentSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({ error: 'Invalid request body', details: parseResult.error.errors });
+  }
+  const { message, mode } = parseResult.data;
+  const result = aiService.detectImageIntent(message, mode);
+  res.json(result);
+});
 
 // ── Waterfall (SSE streaming) ──────────────────────────────────────────────
 router.post('/waterfall', AIController.waterfall);
@@ -92,7 +112,9 @@ router.post('/overseer/trigger', async (req, res) => {
   supervisorService.think({
     activity: 'manual_trigger',
     data: { focus, notepadContent, recentMessages }
-  }).catch(() => {});
+  }).catch((err: unknown) => {
+    console.warn('[Overseer] manual_trigger think() failed', err instanceof Error ? err.message : err);
+  });
   res.json({ status: 'triggered', message: 'Overseer is analyzing...' });
 });
 

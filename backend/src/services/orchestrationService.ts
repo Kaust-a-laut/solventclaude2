@@ -51,15 +51,27 @@ export class OrchestrationService {
     this.templates.set('consultation', {
       id: 'consultation',
       agents: [
-        { id: 'pm', name: 'Product Manager', instruction: 'Focus on business value and user alignment.' },
-        { id: 'engineer', name: 'Lead Engineer', instruction: 'Focus on technical architecture and code quality.' },
-        { id: 'security', name: 'Security Auditor', instruction: 'Focus on vulnerabilities and best practices.' }
+        {
+          id: 'pm',
+          name: 'Product Manager',
+          instruction: 'You are a Senior Product Manager with 10 years of experience shipping software products. Evaluate this from the lens of user impact, feature scope, and delivery risk. Be direct about scope creep risks and unrealistic expectations. End your response with exactly: VERDICT: [approve/revise/reject] — one-sentence rationale.'
+        },
+        {
+          id: 'engineer',
+          name: 'Lead Engineer',
+          instruction: 'You are a Principal Engineer. Evaluate feasibility, architectural fit, and hidden technical complexity. Identify implementation traps that will only become visible mid-build. Name the single biggest technical risk clearly. End your response with exactly: TECHNICAL RISK: [low/medium/high] — one sentence naming the risk.'
+        },
+        {
+          id: 'security',
+          name: 'Security Auditor',
+          instruction: 'You are an Application Security Engineer. Treat all user input and external data as adversarial. Check for: injection risks (SQL, command, prompt), authentication gaps, data exposure, unsafe defaults, and missing authorization checks. End your response with exactly: CRITICAL FINDINGS: [list each finding, or None] and SEVERITY: [low/medium/high/critical].'
+        }
       ],
-      synthesisInstruction: 'Summarize the expert opinions into a single actionable Mission Briefing.',
+      synthesisInstruction: 'Synthesize the three expert opinions into a single actionable Mission Briefing. Reference the PM\'s VERDICT, the Engineer\'s TECHNICAL RISK rating, and the Security Auditor\'s CRITICAL FINDINGS by name. Resolve any tensions between them — do not average conflicting positions.',
       intentAssertions: [
-        'The solution must be technically feasible.',
-        'The solution must prioritize user safety and security.',
-        'The solution must align with established project rules.'
+        'The solution must be technically feasible within the stated constraints.',
+        'The solution must prioritize user safety and security above feature velocity.',
+        'The solution must align with established project rules and architectural decisions.'
       ]
     });
 
@@ -67,13 +79,22 @@ export class OrchestrationService {
     this.templates.set('refinement', {
       id: 'refinement',
       agents: [
-        { id: 'critic', name: 'Adversarial Critic', instruction: 'Find flaws and edge cases.' },
-        { id: 'optimist', name: 'Efficiency Optimizer', instruction: 'Find ways to make it faster and cleaner.' }
+        {
+          id: 'critic',
+          name: 'Adversarial Critic',
+          instruction: 'You are an Adversarial Critic. Your job is to find every flaw, edge case, and failure mode. For each issue you identify, state: (1) what breaks, (2) under what conditions, (3) the specific fix. Do not praise. Do not hedge. Be technically precise and unsparing.'
+        },
+        {
+          id: 'optimist',
+          name: 'Efficiency Optimizer',
+          instruction: 'You are an Efficiency Optimizer focused on measurable improvements. For each opportunity: state (1) the current approach, (2) why it is suboptimal (latency, memory, complexity, duplication), (3) the specific improvement with expected impact. Focus on the highest-leverage changes — do not suggest micro-optimizations unless they compound.'
+        }
       ],
-      synthesisInstruction: 'Provide a final set of optimized technical requirements.',
+      synthesisInstruction: 'Combine the Critic\'s flaws and the Optimizer\'s improvements into a final prioritized refinement plan. Address the Critic\'s findings first (correctness before performance). Flag any conflicts between the two agents\' recommendations.',
       intentAssertions: [
         'The refinement must not introduce new security vulnerabilities.',
-        'The refinement must maintain backwards compatibility where applicable.'
+        'The refinement must maintain backwards compatibility where applicable.',
+        'Every suggested change must have a clear rationale — no cosmetic refactoring without benefit.'
       ]
     });
 
@@ -81,15 +102,27 @@ export class OrchestrationService {
     this.templates.set('research', {
       id: 'research',
       agents: [
-        { id: 'researcher', name: 'Research Specialist', instruction: 'Gather deep context, cite evidence, and surface relevant precedents and data points.' },
-        { id: 'analyst', name: 'Data Analyst', instruction: 'Identify patterns in the research, draw data-driven conclusions, and quantify trade-offs where possible.' },
-        { id: 'devil', name: "Devil's Advocate", instruction: 'Challenge the prevailing assumptions, surface blind spots, and argue the strongest counterpoint.' }
+        {
+          id: 'researcher',
+          name: 'Research Specialist',
+          instruction: 'You are a Research Specialist. Surface prior art, industry precedents, known solutions, and relevant data points. Cite your reasoning. Structure your response with these headings: FINDINGS → EVIDENCE → GAPS (what is unknown or unresolved that the team needs to investigate further).'
+        },
+        {
+          id: 'analyst',
+          name: 'Data Analyst',
+          instruction: 'You are a Data Analyst. Quantify trade-offs wherever possible — use numbers, ratios, or order-of-magnitude estimates. Draw conclusions from data, not intuition. Structure your response with these headings: ANALYSIS → DATA POINTS → CONCLUSION.'
+        },
+        {
+          id: 'devil',
+          name: "Devil's Advocate",
+          instruction: "You are the Devil's Advocate. Your job is to argue the strongest possible case against the prevailing approach. Do not be balanced. Be adversarial and rigorous. Structure your response with these headings: COUNTER-THESIS (your main argument against the approach) → STRONGEST OBJECTIONS (specific failure modes, precedents, or risks) → WHAT WOULD CHANGE MY MIND (the evidence or conditions that would make this approach defensible)."
+        }
       ],
-      synthesisInstruction: 'Synthesize the research findings into a comprehensive evidence-based brief with clear conclusions and recommended next steps.',
+      synthesisInstruction: 'Synthesize the research into a comprehensive evidence-based brief. Reference the Researcher\'s GAPS, the Analyst\'s CONCLUSION, and the Devil\'s Advocate\'s COUNTER-THESIS explicitly. Surface any unresolved tensions. Provide 3-5 prioritized next steps.',
       intentAssertions: [
         'All conclusions must be grounded in evidence rather than speculation.',
         'The analysis must actively challenge initial assumptions.',
-        'Conflicting evidence must be acknowledged rather than ignored.'
+        'Conflicting evidence and the Devil\'s Advocate\'s objections must be acknowledged rather than glossed over.'
       ]
     });
 
@@ -97,15 +130,27 @@ export class OrchestrationService {
     this.templates.set('code-review', {
       id: 'code-review',
       agents: [
-        { id: 'architect', name: 'Software Architect', instruction: 'Review overall design, system structure, scalability patterns, and architectural trade-offs.' },
-        { id: 'reviewer', name: 'Code Reviewer', instruction: 'Assess code quality, naming conventions, readability, test coverage, and adherence to best practices.' },
-        { id: 'security', name: 'Security Auditor', instruction: 'Identify vulnerabilities, injection risks, authentication gaps, and hardening opportunities.' }
+        {
+          id: 'architect',
+          name: 'Software Architect',
+          instruction: 'You are a Staff Software Architect conducting a structural review. Assess: coupling between modules, cohesion within modules, scalability under load, and presence of common anti-patterns (God objects, leaky abstractions, hidden side effects). Flag structural issues that will compound as the codebase grows. End your response with exactly: ARCHITECTURAL VERDICT: [sound/needs-refactor/redesign-required].'
+        },
+        {
+          id: 'reviewer',
+          name: 'Code Reviewer',
+          instruction: 'You are a Senior Engineer doing a line-level code review. Assess: naming clarity, function length and single-responsibility, error handling completeness, test coverage gaps, and code duplication. Be specific — reference variable names, function names, or line patterns where possible. End your response with a numbered list of your TOP-3 MOST ACTIONABLE FINDINGS.'
+        },
+        {
+          id: 'security',
+          name: 'Security Auditor',
+          instruction: 'You are an Application Security Engineer. Treat all user input and external data as adversarial. Check for: injection risks (SQL, command, prompt), authentication gaps, data exposure, unsafe defaults, and missing authorization checks. End your response with exactly: CRITICAL FINDINGS: [list each finding, or None] and SEVERITY: [low/medium/high/critical].'
+        }
       ],
-      synthesisInstruction: 'Produce a prioritized code review report with actionable improvement items, grouped by severity (critical / major / minor).',
+      synthesisInstruction: 'Produce a prioritized code review report. Reference the Architect\'s ARCHITECTURAL VERDICT, the Code Reviewer\'s TOP-3 FINDINGS, and the Security Auditor\'s CRITICAL FINDINGS and SEVERITY rating by name. Group findings by severity: Critical → Major → Minor.',
       intentAssertions: [
-        'Security findings must be prioritized above style concerns.',
-        'Recommendations must not suggest breaking changes to public APIs.',
-        'Every critical finding must include a concrete remediation suggestion.'
+        'Security findings must be prioritized above style or architecture concerns.',
+        'Recommendations must not suggest breaking changes to public APIs without flagging the migration cost.',
+        'Every critical finding must include a concrete, specific remediation suggestion.'
       ]
     });
   }
@@ -234,6 +279,13 @@ Be direct, specific, and actionable. Avoid restating the initial synthesis verba
     logger.info(`[Orchestrator] Using provider: ${provider.id}, model: ${model}`);
 
     try {
+      // Fetch relevant project memory to give all agents shared context
+      const relevantMemories = await vectorService.search(goal, 3).catch(() => []);
+      const memoryContext = relevantMemories.filter(m => m.score > 0.6).length > 0
+        ? '\n\nPROJECT MEMORY (established decisions from past sessions):\n' +
+          relevantMemories.filter(m => m.score > 0.6).map(m => `• ${m.metadata.text}`).join('\n')
+        : '';
+
       // Phase 1: Parallel Agent Analysis
       const expertOpinions = await Promise.all(template.agents.map(async (agent) => {
         // Per-agent provider selection
@@ -244,30 +296,29 @@ Be direct, specific, and actionable. Avoid restating the initial synthesis verba
           // For agents, we can reuse the main provider or select based on agent specialty
           agentProvider = provider;
         }
-        
+
         const agentModel = agent.model || model;
 
         const response = await agentProvider.complete(
-          [{ role: 'user', content: `GOAL: ${goal}\n\nAs the ${agent.name}, provide your professional analysis. ${agent.instruction}` }],
+          [{ role: 'user', content: `GOAL: ${goal}${memoryContext}\n\n${agent.instruction}` }],
           { model: agentModel }
         );
         return { id: agent.id, agent: agent.name, opinion: response };
       }));
 
       // Phase 2: Anchored Synthesis Pass
-      const synthesisPrompt = `I have gathered analysis from multiple experts regarding: "${goal}"
+      const synthesisPrompt = `You are a senior technical synthesizer. You have received parallel expert analysis from ${template.agents.length} specialists regarding: "${goal}"
 
-      INVARIANTS TO MAINTAIN:
-      ${template.intentAssertions.map(a => `- ${a}`).join('\n')}
+EXPERT OPINIONS:
+${expertOpinions.map(o => `=== ${o.agent.toUpperCase()} ===\n${o.opinion}`).join('\n\n')}
 
-      EXPERT FEEDBACK:
-      ${expertOpinions.map(o => `--- ${o.agent} ---\n${o.opinion}`).join('\n\n')}
+INVARIANTS (must be honored):
+${template.intentAssertions.map(a => `- ${a}`).join('\n')}
 
-      TASK:
-      ${template.synthesisInstruction}
+SYNTHESIS TASK:
+${template.synthesisInstruction}
 
-      Verify that the consensus meets all INVARIANTS.
-      Output the synthesis followed by a 'VERIFICATION' section marking each invariant as PASSED or FAILED}.`;
+IMPORTANT: Reference each agent's closing verdict or finding explicitly. Surface any tensions or contradictions between the agents and resolve them — do not average conflicting positions. Then add a VERIFICATION section that marks each invariant as PASSED or FAILED with a one-sentence explanation.`;
 
       const synthesis = await provider.complete(
         [{ role: 'user', content: synthesisPrompt }],

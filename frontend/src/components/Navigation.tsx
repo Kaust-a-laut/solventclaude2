@@ -22,6 +22,7 @@ export const Navigation = () => {
       'text-jb-purple': 'text-jb-purple drop-shadow-[0_0_8px_rgba(157,91,210,0.6)]',
       'text-jb-orange': 'text-jb-orange drop-shadow-[0_0_8px_rgba(251,146,60,0.6)]',
       'text-jb-cyan': 'text-jb-cyan drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]',
+      'text-slate-300': 'text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.3)]',
     };
     return glowMap[color || 'text-jb-accent'] ?? 'text-jb-accent drop-shadow-[0_0_8px_rgba(60,113,247,0.6)]';
   };
@@ -31,27 +32,29 @@ export const Navigation = () => {
 
     const getLineColor = (color?: string): string => {
       const lineMap: Record<string, string> = {
-        'text-jb-accent': 'via-jb-accent/70',
-        'text-jb-purple': 'via-jb-purple/70',
-        'text-jb-orange': 'via-jb-orange/70',
-        'text-jb-cyan': 'via-jb-cyan/70',
+        'text-jb-accent': 'via-jb-accent/80',
+        'text-jb-purple': 'via-jb-purple/80',
+        'text-jb-orange': 'via-jb-orange/80',
+        'text-jb-cyan': 'via-jb-cyan/80',
+        'text-slate-300': 'via-white/60',
       };
       return lineMap[color || ''] ?? 'via-white/50';
     };
 
     const getActiveBg = (color?: string): string => {
       const bgMap: Record<string, string> = {
-        'text-jb-accent': 'bg-jb-accent/[0.07]',
-        'text-jb-purple': 'bg-jb-purple/[0.07]',
-        'text-jb-orange': 'bg-jb-orange/[0.07]',
-        'text-jb-cyan': 'bg-jb-cyan/[0.07]',
+        'text-jb-accent': 'bg-jb-accent/[0.08]',
+        'text-jb-purple': 'bg-jb-purple/[0.08]',
+        'text-jb-orange': 'bg-jb-orange/[0.08]',
+        'text-jb-cyan': 'bg-jb-cyan/[0.08]',
+        'text-slate-300': 'bg-white/[0.06]',
       };
       return bgMap[color || ''] ?? 'bg-white/5';
     };
 
     return (
       <motion.button
-        whileHover={{ x: isCollapsed ? 0 : 4, backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
+        whileHover={{ x: isCollapsed ? 0 : 4, backgroundColor: 'rgba(255, 255, 255, 0.04)' }}
         whileTap={{ scale: 0.98 }}
         onClick={() => {
           setCurrentMode(mode);
@@ -69,17 +72,20 @@ export const Navigation = () => {
         {isActive && !isCollapsed && (
           <motion.div
             layoutId="navGlow"
-            className={`absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-transparent to-transparent ${getLineColor(color)}`}
+            className={`absolute left-0 top-[20%] bottom-[20%] w-[3px] rounded-full bg-gradient-to-b from-transparent ${getLineColor(color)} to-transparent opacity-90`}
           />
         )}
-        
+        {isActive && !isCollapsed && (
+          <div className={`absolute inset-0 rounded-2xl bg-gradient-to-r from-current/5 to-transparent opacity-20 pointer-events-none`} />
+        )}
+
         <div className={cn("flex items-center relative z-10", isCollapsed ? "justify-center" : "gap-3")}>
           <Icon size={18} className={cn("transition-all duration-500", isActive ? getActiveIconClass(color) : "group-hover:text-slate-300")} />
           {!isCollapsed && (
              <span className={cn("font-bold text-[13px] tracking-tight transition-colors duration-300 whitespace-nowrap", isActive ? "text-white" : "font-semibold")}>{label}</span>
           )}
         </div>
-        
+
         {isActive && !isCollapsed && (
           <motion.div layoutId="navIndicator" className="flex items-center relative z-10">
              <ChevronRight size={12} className="text-white/30" />
@@ -95,16 +101,29 @@ export const Navigation = () => {
       isMobile ? "w-full" : (isCollapsed ? "w-20" : "w-72")
     )}>
       <div className={cn(
-        "flex items-center justify-between",
-        isCollapsed ? "p-4 flex-col gap-6" : "p-8 pb-10"
+        "flex items-center",
+        isCollapsed ? "p-4 flex-col gap-4 justify-center" : "p-6 pb-8 justify-between"
       )}>
+        {/* Brand mark */}
+        {!isCollapsed && (
+          <div className="flex items-center gap-2.5">
+            <div className="relative">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-jb-accent to-jb-purple flex items-center justify-center shadow-[0_0_12px_rgba(60,113,247,0.4)]">
+                <Sparkles size={13} className="text-white" />
+              </div>
+              <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-jb-accent to-jb-purple opacity-30 blur-sm -z-10" />
+            </div>
+            <span className="text-[13px] font-black tracking-tight text-white/90">SOLVENT</span>
+          </div>
+        )}
+
         {/* Desktop Collapse Toggle */}
         {!isMobile && (
-           <button 
+           <button
               onClick={() => setIsCollapsed(!isCollapsed)}
               className={cn(
                  "p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-colors",
-                 isCollapsed ? "mt-2" : ""
+                 isCollapsed ? "mt-1" : ""
               )}
               title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
            >
@@ -121,19 +140,36 @@ export const Navigation = () => {
 
       <div className={cn("flex-1 overflow-y-auto scrollbar-hide space-y-10", isCollapsed ? "px-2 space-y-6" : "px-6")}>
         <div className="space-y-1.5">
-          {!isCollapsed && <p className="px-4 text-[9px] font-black text-slate-600 uppercase tracking-[0.3em] mb-4 opacity-40">Modes</p>}
-          <NavItem mode="home" icon={Home} label="Overview" />
-          <NavItem mode="chat" icon={MessageSquare} label="Chat" />
+          {!isCollapsed && (
+            <div className="flex items-center gap-2 px-4 mb-4">
+              <span className="w-1 h-1 rounded-full bg-jb-accent/60" />
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">Modes</p>
+            </div>
+          )}
+          <NavItem mode="home" icon={Home} label="Overview" color="text-slate-300" />
+          <NavItem mode="chat" icon={MessageSquare} label="Chat" color="text-jb-accent" />
           <NavItem mode="vision" icon={ScanEye} label="SolventSee Lab" color="text-jb-orange" />
-          <NavItem mode="coding" icon={Code} label="Coding Suite" color="text-jb-accent" />
-          <NavItem mode="browser" icon={Globe} label="Web Search" color="text-jb-cyan" />
+          <NavItem mode="coding" icon={Code} label="Coding Suite" color="text-jb-cyan" />
+          <NavItem mode="browser" icon={Globe} label="Web Search" color="text-jb-purple" />
         </div>
+
+        {!isCollapsed && (
+          <div className="px-4">
+            <div className="h-px bg-gradient-to-r from-transparent via-white/8 to-transparent" />
+          </div>
+        )}
+
         <div className="space-y-1.5">
-           {!isCollapsed && <p className="px-4 text-[9px] font-black text-slate-600 uppercase tracking-[0.3em] mb-4 opacity-40">Model Playground</p>}
+           {!isCollapsed && (
+             <div className="flex items-center gap-2 px-4 mb-4">
+               <span className="w-1 h-1 rounded-full bg-jb-purple/60" />
+               <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">Model Playground</p>
+             </div>
+           )}
            <NavItem mode="model_playground" icon={Sparkles} label="Playground Home" color="text-jb-purple" />
-           <NavItem mode="compare" icon={GitCompare} label="Compare" />
-           <NavItem mode="debate" icon={Swords} label="Debate" />
-           <NavItem mode="collaborate" icon={Users} label="Multi-Agent" />
+           <NavItem mode="compare" icon={GitCompare} label="Compare" color="text-jb-accent" />
+           <NavItem mode="debate" icon={Swords} label="Debate" color="text-jb-orange" />
+           <NavItem mode="collaborate" icon={Users} label="Multi-Agent" color="text-jb-cyan" />
            <NavItem mode="waterfall" icon={FlaskConical} label="Waterfall Lab" color="text-jb-purple" />
         </div>
       </div>
@@ -201,11 +237,14 @@ export const Navigation = () => {
   }
 
   return (
-    <motion.div 
+    <motion.div
        className="h-full bg-black/40 backdrop-blur-3xl border-r border-white/5 flex flex-col relative z-20 overflow-hidden"
-       animate={{ width: isCollapsed ? 80 : 288 }} // 288 = w-72, 80 = w-20
+       animate={{ width: isCollapsed ? 80 : 288 }}
        transition={{ duration: 0.3, ease: "easeInOut" }}
     >
+      {/* Ambient corner glow */}
+      <div className="pointer-events-none absolute top-0 left-0 w-40 h-40 bg-jb-accent/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+      <div className="pointer-events-none absolute bottom-0 left-0 w-32 h-32 bg-jb-purple/5 rounded-full blur-3xl -translate-x-1/3 translate-y-1/3" />
       {navContent}
     </motion.div>
   );

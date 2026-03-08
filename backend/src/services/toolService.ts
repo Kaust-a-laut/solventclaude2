@@ -8,6 +8,7 @@ import screenshot from 'screenshot-desktop';
 import sharp from 'sharp';
 import { validatePath, PROJECT_ROOT } from '../utils/fileSystem';
 import { transactionService } from './transactionService';
+import { appEventBus } from '../utils/eventBus';
 
 // Security: Explicit allowlist of permitted command prefixes
 // This replaces the insecure denylist approach which was trivially bypassed
@@ -32,7 +33,6 @@ const ALLOWED_COMMAND_PREFIXES = [
   'touch ',
   'cp ',
   'mv ',
-  'rm ',
   'code ',
   'tsc ',
   'eslint ',
@@ -80,13 +80,14 @@ export class ToolService {
     const txId = await transactionService.logStart(toolName, args);
     logger.info(`[ToolService] Executing ${toolName}... (TX: ${txId})`, args);
     
-    // GUARD: Budget Enforcement — only applies to Overseer-initiated calls
+    // GUARD: Budget Enforcement — only applies to Overseer-initiated calls.
+    // Uses the event bus to notify SupervisorService, avoiding a circular import.
     if (fromOverseer) {
-      const { supervisorService } = require('./supervisorService');
       try {
-        supervisorService.incrementToolBudget();
-      } catch (e: any) {
-        await transactionService.logError(txId, e.message);
+        appEventBus.emit('supervisor:increment-tool-budget');
+      } catch (e: unknown) {
+        const err = e instanceof Error ? e : new Error(String(e));
+        await transactionService.logError(txId, err.message);
         throw e;
       }
     }
@@ -153,12 +154,10 @@ export class ToolService {
         return;
       }
       
-      const { supervisorService } = require('./supervisorService');
       logger.warn(`[ToolService] New file creation requires approval: ${filePath}`);
-      supervisorService.emitEvent('APPROVAL_REQUIRED', { 
-        type: 'file_create', 
-        path: filePath,
-        timeout: 60000 
+      appEventBus.emit('supervisor:emit-event', {
+        event: 'APPROVAL_REQUIRED',
+        data: { type: 'file_create', path: filePath, timeout: 60000 }
       });
 
       // In a real scenario, we would await a Promise here that resolves via a Socket event listener.
@@ -211,9 +210,11 @@ export class ToolService {
       await fs.writeFile(notesPath, `# Solvent Project Notes\n${formattedEntry}`);
     }
 
-    // 3. Emit Event for UI Feedback
-    const { supervisorService } = require('./supervisorService');
-    supervisorService.emitEvent('MEMORY_CRYSTALLIZED', { type, content });
+    // 3. Emit Event for UI Feedback via event bus (avoids circular import)
+    appEventBus.emit('supervisor:emit-event', {
+      event: 'MEMORY_CRYSTALLIZED',
+      data: { type, content }
+    });
 
     return {
       status: 'success',

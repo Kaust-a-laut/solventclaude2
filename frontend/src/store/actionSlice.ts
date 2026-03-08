@@ -1,6 +1,8 @@
 import { StateCreator } from 'zustand';
 import { AppState, Message } from './types';
 import { ChatService } from '../services/ChatService';
+import { fetchWithRetry } from '../lib/api-client';
+import { API_BASE_URL } from '../lib/config';
 
 export interface ActionSlice {
   sendMessage: (content: string, image?: string | null) => Promise<void>;
@@ -12,26 +14,25 @@ export const createActionSlice: StateCreator<AppState, [], [], ActionSlice> = (s
     const state = get();
     if (state.isProcessing) return;
 
-    // Detect Image Generation Intent in Chat
-    const imageKeywords = [
-      'generate an image', 'create an image', 'draw', 'paint', 'make a picture',
-      'show me a picture', 'generate a picture', 'create a picture',
-      'imagine', 'render', 'visualize', 'generate image', 'make image', 'create image'
-    ];
-    
-    // Improved detection: check for keywords or specific phrases
-    const cleanContent = content.trim().replace(/^(please|can you|could you|i want to|i need to|i'd like to)\s+/i, '');
-    const isExplicitRequest = /^(generate|draw|imagine|render|visualize|make|create)\b/i.test(cleanContent) ||
-                             /\b(draw|generate|imagine|render|visualize|make|create)\b.*\b(image|picture|photo|graphic|art|sketch)\b/i.test(content);
-    
-    const isImageRequest = imageKeywords.some(k => content.toLowerCase().includes(k)) || isExplicitRequest;
+    // Detect image generation intent via the backend's single authoritative implementation.
+    // This replaces the duplicated regex that previously lived here in the frontend.
+    let isImageRequest = false;
+    let imagePrompt = content;
+    try {
+      const intentResult = await fetchWithRetry(`${API_BASE_URL}/detect-intent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: content, mode: state.currentMode }),
+        retries: 1
+      }) as { isImageRequest: boolean; imagePrompt: string };
+      isImageRequest = intentResult.isImageRequest;
+      imagePrompt = intentResult.imagePrompt || content;
+    } catch {
+      // Intent detection is non-critical; fall through to normal chat on failure
+    }
 
-    console.log(`[DEBUG] sendMessage: mode=${state.currentMode}, isImageRequest=${isImageRequest}, content="${content.substring(0, 30)}..."`);
-
-    if (isImageRequest && (state.currentMode === 'vision' || isExplicitRequest)) {
-      const prompt = content.replace(/generate an image of|create an image of|draw|paint|make a picture of|show me a picture of|generate a picture of|create a picture of|imagine|render|visualize|generate image of|make image of|generate|draw|make|please|can you|could you/gi, '').trim();
-      console.log(`[DEBUG] Image intent detected. Prompt: "${prompt}"`);
-      return state.generateImageAction(prompt || content);
+    if (isImageRequest) {
+      return state.generateImageAction(imagePrompt);
     }
 
     const userMessage: Message = { role: 'user', content, image };

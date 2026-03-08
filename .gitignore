@@ -42,3 +42,4 @@ VIBE.md
 .solvent_hnsw.bin.meta.json
 .solvent_telemetry.jsonl
 .solvent_notes.md
+backend/generated_images/
