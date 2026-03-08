@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import fs from 'fs';
 import path from 'path';
+import { logger } from './utils/logger';
 
 // --- Import Routes ---
 import fileRoutes from './routes/fileRoutes';
@@ -56,7 +57,9 @@ io.on('connection', (socket) => {
       supervisorService.think({
         activity: 'notepad_change',
         data: { notepadContent: data.content }
-      }).catch(() => {});
+      }).catch((err: unknown) => {
+        logger.warn('[Overseer] notepad_change think() failed', { error: err instanceof Error ? err.message : String(err) });
+      });
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));
       console.error('[Socket] SYNC_NOTES handler error:', err);
@@ -69,7 +72,9 @@ io.on('connection', (socket) => {
     supervisorService.think({
       activity: 'memory_crystallized',
       data: { focus: data.content, notepadContent: data.content }
-    }).catch(() => {});
+    }).catch((err: unknown) => {
+      logger.warn('[Overseer] memory_crystallized think() failed', { error: err instanceof Error ? err.message : String(err) });
+    });
   });
 
   socket.on('disconnect', () => {
@@ -78,10 +83,6 @@ io.on('connection', (socket) => {
 });
 
 supervisorService.setIO(io);
-
-// Break circular dependency: supervisorService ↔ toolService
-import { toolService } from './services/toolService';
-supervisorService.setToolService(toolService);
 
 // --- Mission Progress Bridge: BullMQ → Socket.io ---
 // Workers can't access Socket.io directly; QueueEvents bridges the gap
@@ -98,7 +99,9 @@ try {
     supervisorService.think({
       activity: 'mission_completed',
       data: { missionId: jobId, result: returnvalue }
-    }).catch(() => {});
+    }).catch((err: unknown) => {
+      logger.warn('[Overseer] mission_completed think() failed', { error: err instanceof Error ? err.message : String(err) });
+    });
   });
 
   orchestrationEvents.on('failed', ({ jobId, failedReason }: { jobId: string; failedReason: string }) => {

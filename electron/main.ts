@@ -6,8 +6,6 @@ import crypto from 'crypto';
 import { ModelManager } from './ModelManager';
 import si from 'systeminformation';
 
-process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
-
 // Session-specific secret for Backend-Frontend authentication
 const SESSION_SECRET = process.env.BACKEND_INTERNAL_SECRET || 'solvent_default_secure_pass_2026';
 process.env.BACKEND_INTERNAL_SECRET = SESSION_SECRET;

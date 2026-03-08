@@ -1,5 +1,5 @@
 import { AIProviderFactory } from './aiProviderFactory';
-import { WaterfallService } from './waterfallService';
+import { WaterfallService, WaterfallStep } from './waterfallService';
 import { contextService } from './contextService';
 import { ChatRequestData, ChatMessage, CompletionOptions } from '../types/ai';
 import { randomUUID as uuidv4 } from 'crypto';
@@ -87,6 +87,10 @@ export class AIService {
     return searchService.webSearch(query);
   }
 
+  async runWaterfallStep(step: WaterfallStep, input: string, context: unknown, globalProvider?: string) {
+    return this.waterfallService.runStep(step, input, context, globalProvider);
+  }
+
   async processChat(data: ChatRequestData): Promise<CompletionResponse> {
     const startTime = Date.now();
     const { provider, model, image, mode, smartRouter, fallbackModel, temperature, maxTokens, apiKeys, thinkingModeEnabled, imageProvider } = data;
@@ -168,8 +172,10 @@ export class AIService {
 
   /**
    * Detects if the user message has image generation intent.
+   * Public so the /api/detect-intent route can call it directly,
+   * keeping the regex logic in one place.
    */
-  private detectImageIntent(message: string, mode?: string): ImageIntentResult {
+  detectImageIntent(message: string, mode?: string): ImageIntentResult {
     const isExplicitIntent = EXPLICIT_IMAGE_INTENT_REGEX.test(
       message.trim().replace(/^(please|can you|could you|i want to|i need to|i'd like to)\s+/i, '')
     );

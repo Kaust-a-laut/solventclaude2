@@ -2,12 +2,34 @@ import { AIProviderFactory } from './aiProviderFactory';
 import { vectorService } from './vectorService';
 import { logger } from '../utils/logger';
 import { Server } from 'socket.io';
+import { appEventBus } from '../utils/eventBus';
+import { toolService } from './toolService';
+
+// --- Interfaces replacing `any` types ---
+
+interface GraphNode {
+  id: string;
+  label: string;
+  type: string;
+  [key: string]: unknown;
+}
+
+interface GraphEdge {
+  source: string;
+  target: string;
+  label?: string;
+}
+
+interface HistoryEntry {
+  role: 'user' | 'model';
+  parts: Array<{ text: string }>;
+}
 
 export interface SupervisorState {
   lastSync: string;
   activeMission: string;
-  graphNodes: any[];
-  graphEdges: any[];
+  graphNodes: GraphNode[];
+  graphEdges: GraphEdge[];
 }
 
 // Tools the Overseer is permitted to call autonomously.
@@ -22,7 +44,6 @@ const OVERSEER_ALLOWED_TOOLS = new Set([
 
 export class SupervisorService {
   private io: Server | null = null;
-  private toolServiceRef: any = null; // injected to break circular dependency
   private isSupervisorProcessing = false; // guards supervise()
   private isThinkProcessing = false;      // guards think()
   private thinkDepth = 0;
@@ -30,21 +51,20 @@ export class SupervisorService {
   private readonly TOOL_BUDGET = 5;
   private toolCallsInCycle = 0;
 
+  constructor() {
+    // Listen for budget increment events emitted by ToolService (breaks circular import)
+    appEventBus.on('supervisor:increment-tool-budget', () => {
+      this.incrementToolBudget();
+    });
+
+    // Listen for Socket.io broadcast events emitted by ToolService
+    appEventBus.on('supervisor:emit-event', ({ event, data }: { event: string; data: unknown }) => {
+      this.emitEvent(event, data);
+    });
+  }
+
   setIO(io: Server) {
     this.io = io;
-  }
-
-  /** Called from server.ts after both services are instantiated to break the circular import. */
-  setToolService(toolService: any) {
-    this.toolServiceRef = toolService;
-  }
-
-  private getToolService(): any {
-    if (!this.toolServiceRef) {
-      // Lazy fallback for cases where setToolService hasn't been called yet
-      this.toolServiceRef = require('./toolService').toolService;
-    }
-    return this.toolServiceRef;
   }
 
   incrementToolBudget() {
@@ -54,7 +74,7 @@ export class SupervisorService {
     this.toolCallsInCycle++;
   }
 
-  async supervise(noteContent: string, currentGraph: any) {
+  async supervise(noteContent: string, currentGraph: Record<string, unknown>) {
     if (this.isSupervisorProcessing || !noteContent || noteContent.length < 20) return;
     
     this.isSupervisorProcessing = true;
@@ -108,8 +128,7 @@ export class SupervisorService {
 
         // Auto-Crystallization from Supervisor
         if (analysis.crystallize && analysis.crystallize.content) {
-           const toolService = this.getToolService();
-           await toolService.executeTool('crystallize_memory', {
+              await toolService.executeTool('crystallize_memory', {
              content: analysis.crystallize.content,
              type: analysis.crystallize.type || 'architectural_decision',
              tags: ['supervisor_detected']
@@ -137,7 +156,7 @@ export class SupervisorService {
     }
   }
 
-  emitClarificationRequest(payload: { type: string, question: string, data: any }) {
+  emitClarificationRequest(payload: { type: string, question: string, data: unknown }) {
     if (this.io) {
       this.io.emit('SUPERVISOR_CLARIFICATION', payload);
       logger.info(`[Supervisor] Clarification request emitted: ${payload.question}`);
@@ -146,7 +165,7 @@ export class SupervisorService {
     }
   }
 
-  emitEvent(event: string, payload: any) {
+  emitEvent(event: string, payload: unknown) {
     if (this.io) {
       this.io.emit(event, payload);
     }
@@ -238,7 +257,6 @@ export class SupervisorService {
     this.toolCallsInCycle = 0;
 
     try {
-      const toolService = this.getToolService();
       const gemini = await AIProviderFactory.getProvider('gemini');
 
       // 1. Build enriched live context from all signal sources

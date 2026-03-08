@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { aiService } from '../services/aiService';
+import { WaterfallStep } from '../services/waterfallService';
 import { metaMemoryService } from '../services/metaMemoryService';
 import { taskService } from '../services/taskService';
 import { z } from 'zod';
@@ -15,7 +16,7 @@ const chatRequestSchema = z.object({
   provider: z.string(),
   model: z.string(),
   messages: z.array(chatMessageSchema),
-  image: z.any().optional(),
+  image: z.string().nullable().optional(),
   mode: z.string().optional(),
   smartRouter: z.boolean().optional(),
   fallbackModel: z.string().optional(),
@@ -35,7 +36,7 @@ const chatRequestSchema = z.object({
   codingHistory: z.array(chatMessageSchema).optional(),
   browserContext: z.object({
     history: z.array(z.string()),
-    lastSearchResults: z.any().optional()
+    lastSearchResults: z.record(z.unknown()).optional()
   }).optional()
 });
 
@@ -56,9 +57,9 @@ const waterfallRequestSchema = z.object({
 });
 
 const waterfallStepRequestSchema = z.object({
-  step: z.number(),
+  step: z.enum([WaterfallStep.ARCHITECT, WaterfallStep.REASONER, WaterfallStep.EXECUTOR, WaterfallStep.REVIEWER]),
   input: z.string(),
-  context: z.any(),
+  context: z.record(z.unknown()).nullable().optional(),
   globalProvider: z.string().optional()
 });
 
@@ -200,7 +201,7 @@ export class AIController {
         });
       }
       const { step, input, context, globalProvider } = parseResult.data;
-      const result = await (aiService as any).runStep(step, input, context, globalProvider);
+      const result = await aiService.runWaterfallStep(step, input, context, globalProvider);
       res.json(result);
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));
