@@ -44,6 +44,18 @@ router.get('/models', AIController.listModels);
 router.get('/health/services', AIController.checkHealth);
 router.get('/local-image-status', AIController.checkLocalImageStatus);
 
+// ── Adversarial Debate ─────────────────────────────────────────────────────
+router.post('/debate', async (req, res) => {
+  const { topic, proponentModel, criticModel } = req.body;
+  if (!topic) return res.status(400).json({ error: 'topic is required' });
+  try {
+    const result = await debateService.conductDebate(topic, proponentModel, criticModel);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ── Agentic Compare ───────────────────────────────────────────────────────
 router.post('/compare', AIController.compare);
 

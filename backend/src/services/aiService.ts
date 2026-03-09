@@ -12,6 +12,7 @@ import { vectorService } from './vectorService';
 import { pollinationsService } from './pollinationsService';
 import { localImageService } from './localImageService';
 import { huggingFaceService } from './huggingFaceService';
+import { falService } from './falService';
 import { memoryConsolidationService } from './memoryConsolidationService';
 import { logger } from '../utils/logger';
 import { config, APP_CONSTANTS } from '../config';
@@ -433,6 +434,13 @@ Output your internal reasoning process inside <thinking> tags.`
       if (!hfKey) throw SolventError.validation('Hugging Face API Token missing');
       const result = await huggingFaceService.generateImage(prompt, hfKey, model);
       return this.saveImage(result.base64, 'Hugging Face');
+    }
+
+    if (targetProvider === 'fal') {
+      const falKey = options.apiKeys?.fal || config.FAL_API_KEY;
+      if (!falKey) throw SolventError.validation('FAL.ai API key missing — add FAL_API_KEY to .env');
+      const result = await falService.generateImage(prompt, falKey);
+      return this.saveImage(result.base64, 'FAL.ai');
     }
 
     try {

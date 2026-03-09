@@ -18,6 +18,7 @@ const envSchema = z.object({
   GROQ_API_KEY: z.string().optional(),
   OPENROUTER_API_KEY: z.string().optional(),
   HUGGINGFACE_API_KEY: z.string().optional(),
+  FAL_API_KEY: z.string().optional(),
   OLLAMA_HOST: z.string().default('http://127.0.0.1:11434'),
   // Feature flags
   ENABLE_OLLAMA: z.string().transform(v => v === 'true').default('true'),

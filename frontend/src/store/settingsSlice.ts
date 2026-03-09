@@ -26,7 +26,7 @@ export interface SettingsSlice {
   setSettingsInitialTab: (tab: string | null) => void;
   auraMode: 'off' | 'static' | 'organic';
   thinkingModeEnabled: boolean;
-  imageProvider: 'gemini' | 'pollinations' | 'local' | 'huggingface';
+  imageProvider: 'gemini' | 'pollinations' | 'local' | 'huggingface' | 'fal' | 'openai' | 'replicate';
   localImageUrl: string;
   showCodingChat: boolean;
   notepadContent: string;
@@ -56,7 +56,7 @@ export interface SettingsSlice {
   setSettingsOpen: (open: boolean) => void;
   setAuraMode: (mode: any) => void;
   setThinkingModeEnabled: (enabled: boolean) => void;
-  setImageProvider: (provider: 'gemini' | 'pollinations' | 'local' | 'huggingface') => void;
+  setImageProvider: (provider: 'gemini' | 'pollinations' | 'local' | 'huggingface' | 'fal' | 'openai' | 'replicate') => void;
   setLocalImageUrl: (url: string) => void;
   setShowCodingChat: (show: boolean) => void;
   setGlobalProvider: (provider: any) => void;
