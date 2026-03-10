@@ -111,6 +111,9 @@ export const ExportTool: React.FC<ExportToolProps> = ({ selectedImage, disabled 
 
       setIsExporting(false);
     };
+    img.onerror = () => {
+      setIsExporting(false);
+    };
     img.src = selectedImage;
   };
 
