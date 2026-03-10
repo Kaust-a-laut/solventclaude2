@@ -6,7 +6,7 @@ import { useAppStore } from '../store/useAppStore';
 
 // ─── Provider definitions ────────────────────────────────────────────────────
 
-type ProviderId = 'pollinations' | 'huggingface' | 'fal' | 'openai' | 'replicate' | 'local';
+type ProviderId = 'pollinations' | 'huggingface' | 'fal' | 'local';
 
 interface ProviderDef {
   id: ProviderId;
@@ -34,8 +34,8 @@ const IMAGE_PROVIDERS: ProviderDef[] = [
   {
     id:       'huggingface',
     label:    'Hugging Face',
-    desc:     'Free tier · SDXL models',
-    free:     true,
+    desc:     'Requires API key · SDXL models',
+    free:     false,
     keyName:  'huggingface',
     icon:     Sparkles,
     color:    'text-yellow-400',
@@ -50,26 +50,6 @@ const IMAGE_PROVIDERS: ProviderDef[] = [
     icon:     Zap,
     color:    'text-jb-orange',
     bgColor:  'bg-jb-orange/10',
-  },
-  {
-    id:       'openai',
-    label:    'DALL-E 3',
-    desc:     'OpenAI · High accuracy',
-    free:     false,
-    keyName:  'openai',
-    icon:     Sparkles,
-    color:    'text-jb-accent',
-    bgColor:  'bg-jb-accent/10',
-  },
-  {
-    id:       'replicate',
-    label:    'Replicate',
-    desc:     'Flexible model hub',
-    free:     false,
-    keyName:  'replicate',
-    icon:     Globe,
-    color:    'text-purple-400',
-    bgColor:  'bg-purple-500/10',
   },
   {
     id:       'local',
