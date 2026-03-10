@@ -33,7 +33,7 @@ const IMAGE_INTENT_KEYWORDS = [
 /**
  * Regex pattern for explicit image generation intent at start of message
  */
-const EXPLICIT_IMAGE_INTENT_REGEX = /^(draw|imagine|visualize|generate|make|create)\b/i;
+const EXPLICIT_IMAGE_INTENT_REGEX = /^(draw|imagine|visualize)\b|(generate|make|create|render)\b.{0,60}\b(image|picture|photo|art|illustration|graphic|sketch|painting)\b/i;
 
 /**
  * Regex pattern for removing image intent phrases from prompt
