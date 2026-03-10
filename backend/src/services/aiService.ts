@@ -398,7 +398,9 @@ Output your internal reasoning process inside <thinking> tags.`
         const groq = await AIProviderFactory.getProvider('groq');
         const res = await groq.complete(messages, { model: 'llama-3.3-70b-versatile', temperature: temp, maxTokens, apiKey: apiKeys?.groq });
         return { response: res, model: 'llama-3.3-70b-versatile', info: 'Groq fallback' };
-      } catch (e) {}
+      } catch (e: unknown) {
+        logger.warn('[Fallback] Groq failed', e instanceof Error ? e.message : e);
+      }
     }
 
     if (failedProvider !== 'openrouter') {
@@ -406,7 +408,9 @@ Output your internal reasoning process inside <thinking> tags.`
         const openRouter = await AIProviderFactory.getProvider('openrouter');
         const res = await openRouter.complete(messages, { model: 'google/gemini-2.0-flash-001:free', temperature: temp, maxTokens, apiKey: apiKeys?.openrouter });
         return { response: res, model: 'openrouter/gemini', info: 'OpenRouter fallback' };
-      } catch (e) {}
+      } catch (e: unknown) {
+        logger.warn('[Fallback] OpenRouter failed', e instanceof Error ? e.message : e);
+      }
     }
 
     try {
