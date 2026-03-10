@@ -690,13 +690,22 @@ export const SolventSeeArea = () => {
                   />
                 )}
 
-                {isOverlayTool && (
+                {isOverlayTool && activeTool === 'crop' && (
                   <CropTool
-                    mode={activeTool as 'crop' | 'select'}
+                    mode="crop"
                     selection={selection}
                     activeAspect={activeAspect}
                     onAspectChange={setActiveAspect}
                     onApply={handleApplyCrop}
+                    onCancel={() => setSelection(null)}
+                    disabled={!selectedImage || isProcessing}
+                  />
+                )}
+
+                {isOverlayTool && activeTool === 'select' && (
+                  <CropTool
+                    mode="select"
+                    selection={selection}
                     onCut={handleCutSelection}
                     onCopy={handleCopySelection}
                     onCancel={() => setSelection(null)}
