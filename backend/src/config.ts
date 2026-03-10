@@ -51,9 +51,9 @@ if (config.BACKEND_INTERNAL_SECRET === OLD_INSECURE_DEFAULT) {
   process.exit(1);
 }
 
-// Validate secret strength (must contain mix of characters)
-if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d\W]{32,}$/.test(config.BACKEND_INTERNAL_SECRET)) {
-  console.warn('⚠️  WARNING: BACKEND_INTERNAL_SECRET may be weak. It should contain uppercase, lowercase, and numbers.');
+// Validate secret strength (length check — Zod enforces min(32) and exits, so this is belt-and-suspenders)
+if (config.BACKEND_INTERNAL_SECRET.length < 32) {
+  console.warn('⚠️  WARNING: BACKEND_INTERNAL_SECRET is shorter than 32 characters and may be weak.');
   console.warn('   Generate a secure secret with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
 }
 
