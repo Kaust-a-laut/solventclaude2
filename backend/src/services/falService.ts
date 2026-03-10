@@ -45,6 +45,7 @@ export class FalService {
         await new Promise((r) => setTimeout(r, 2000));
         const pollRes = await axios.get(resultUrl, {
           headers: { Authorization: `Key ${apiKey}` },
+          timeout: 10_000,
         });
         if (pollRes.data?.status === 'COMPLETED' && pollRes.data?.response?.images?.[0]?.url) {
           imageUrl = pollRes.data.response.images[0].url;
