@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, X, ArrowRight } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
@@ -14,21 +14,29 @@ interface ImportToastProps {
 export const ImportToast: React.FC<ImportToastProps> = ({
   fileName, folder, filePath, fileContent, onDismiss,
 }) => {
-  const { openFiles, setOpenFiles, setActiveFile } = useAppStore();
+  const { setOpenFiles, setActiveFile } = useAppStore();
 
-  // Auto-dismiss after 5 seconds
+  // Keep ref current so the timer callback always calls the latest onDismiss
+  // without restarting the 5-second countdown on parent re-renders.
+  const onDismissRef = useRef(onDismiss);
+  useEffect(() => { onDismissRef.current = onDismiss; });
+
   useEffect(() => {
-    const id = setTimeout(onDismiss, 5000);
+    const id = setTimeout(() => onDismissRef.current(), 5000);
     return () => clearTimeout(id);
-  }, [onDismiss]);
+  }, []); // fires exactly once on mount
 
   const handleOpenInChat = () => {
+    // Read current store state at click time to avoid stale closure
+    const { openFiles } = useAppStore.getState();
     if (!openFiles.find((f) => f.path === filePath)) {
       setOpenFiles([...openFiles, { path: filePath, content: fileContent }]);
     }
     setActiveFile(filePath);
     onDismiss();
   };
+
+  const folderDisplay = folder === '.' ? '/' : `${folder}/`;
 
   return (
     <motion.div
@@ -39,14 +47,11 @@ export const ImportToast: React.FC<ImportToastProps> = ({
       className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl border border-white/10 bg-[#0d0d18] shadow-2xl max-w-sm"
     >
       <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
-      <div className="flex-1 min-w-0">
-        <p className="text-[11px] font-bold text-white/80 truncate">
-          <span className="font-mono text-white">{fileName}</span> imported
-        </p>
-        <p className="text-[9px] text-white/30 font-mono truncate">
-          {folder === '.' ? '/' : folder}/
-        </p>
-      </div>
+      <p className="flex-1 min-w-0 text-[11px] font-bold text-white/80 truncate">
+        <span className="font-mono text-white">"{fileName}"</span>
+        {' '}imported to{' '}
+        <span className="font-mono">{folderDisplay}</span>
+      </p>
       <button
         type="button"
         onClick={handleOpenInChat}
