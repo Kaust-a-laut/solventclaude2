@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FolderOpen, X, Check } from 'lucide-react';
+import { FolderOpen, X, Check, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { fetchWithRetry } from '../../lib/api-client';
 import { BASE_URL } from '../../lib/config';
@@ -32,6 +32,7 @@ export const FolderPickerModal: React.FC<FolderPickerModalProps> = ({ fileName, 
   const [dirs, setDirs] = useState<string[]>(['.']);
   const [selected, setSelected] = useState('.');
   const [loading, setLoading] = useState(true);
+  const [fetchFailed, setFetchFailed] = useState(false);
 
   useEffect(() => {
     fetchWithRetry(`${BASE_URL}/api/files/list?path=.`)
@@ -39,7 +40,7 @@ export const FolderPickerModal: React.FC<FolderPickerModalProps> = ({ fileName, 
         const nodes = Array.isArray(data) ? (data as FileNode[]) : [];
         setDirs(['.', ...flattenDirs(nodes)]);
       })
-      .catch(() => { /* keep ['.'] as fallback */ })
+      .catch(() => setFetchFailed(true))
       .finally(() => setLoading(false));
   }, []);
 
@@ -89,7 +90,9 @@ export const FolderPickerModal: React.FC<FolderPickerModalProps> = ({ fileName, 
           {/* Folder list */}
           <div className="mx-3 my-2 rounded-xl border border-white/[0.06] bg-white/[0.02] max-h-48 overflow-y-auto scrollbar-thin">
             {loading ? (
-              <div className="px-3 py-4 text-[10px] text-white/30 text-center">Loading folders…</div>
+              <div className="px-3 py-4 flex justify-center">
+                <Loader2 size={14} className="text-white/30 animate-spin" />
+              </div>
             ) : (
               dirs.map((dir) => (
                 <button
@@ -111,6 +114,13 @@ export const FolderPickerModal: React.FC<FolderPickerModalProps> = ({ fileName, 
             )}
           </div>
 
+          {/* Fallback note */}
+          {fetchFailed && (
+            <p className="px-4 pb-1 text-[9px] text-amber-400/60">
+              Couldn't load folders — will import to project root
+            </p>
+          )}
+
           {/* Actions */}
           <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/[0.06]">
             <button
@@ -125,7 +135,7 @@ export const FolderPickerModal: React.FC<FolderPickerModalProps> = ({ fileName, 
               onClick={() => onConfirm(selected)}
               className="px-3 py-1.5 rounded-xl text-[10px] font-black bg-jb-accent/15 border border-jb-accent/25 text-jb-accent hover:bg-jb-accent/25 transition-colors"
             >
-              Import here
+              Import
             </button>
           </div>
         </motion.div>
