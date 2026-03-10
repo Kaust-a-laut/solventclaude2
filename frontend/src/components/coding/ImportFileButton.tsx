@@ -1,9 +1,9 @@
-import React, { useRef, useState } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import { Upload } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Upload, AlertCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { fetchWithRetry } from '../../lib/api-client';
-import { API_BASE_URL } from '../../lib/config';
+import { BASE_URL } from '../../lib/config';
 import { FolderPickerModal } from './FolderPickerModal';
 import { ImportToast } from './ImportToast';
 
@@ -20,33 +20,39 @@ interface ToastState {
 
 export const ImportFileButton: React.FC<ImportFileButtonProps> = ({ onImported }) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const readerRef = useRef<FileReader | null>(null);
+  const isSubmittingRef = useRef(false);
   const [pendingFile, setPendingFile] = useState<{ name: string; content: string } | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Abort any in-progress FileReader on unmount
+  useEffect(() => () => { readerRef.current?.abort(); }, []);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Reset input so the same file can be re-selected
     e.target.value = '';
 
     const reader = new FileReader();
+    readerRef.current = reader;
     reader.onload = () => {
-      const content = reader.result as string;
-      setPendingFile({ name: file.name, content });
+      setPendingFile({ name: file.name, content: reader.result as string });
     };
     reader.onerror = () => setError('Could not read file.');
     reader.readAsText(file);
   };
 
   const handleConfirm = async (folder: string) => {
-    if (!pendingFile) return;
+    if (!pendingFile || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+
     const filePath = folder === '.' ? pendingFile.name : `${folder}/${pendingFile.name}`;
     const { name, content } = pendingFile;
     setPendingFile(null);
 
     try {
-      await fetchWithRetry(`${API_BASE_URL}/files/write`, {
+      await fetchWithRetry(`${BASE_URL}/api/files/write`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: filePath, content }),
@@ -54,8 +60,9 @@ export const ImportFileButton: React.FC<ImportFileButtonProps> = ({ onImported }
       onImported();
       setToast({ fileName: name, folder, filePath, fileContent: content });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Import failed';
-      setError(msg);
+      setError(err instanceof Error ? err.message : 'Import failed');
+    } finally {
+      isSubmittingRef.current = false;
     }
   };
 
@@ -79,13 +86,6 @@ export const ImportFileButton: React.FC<ImportFileButtonProps> = ({ onImported }
         <Upload size={11} />
       </button>
 
-      {/* Error message (inline, auto-clears on next click) */}
-      {error && (
-        <span className="text-[8px] text-rose-400 font-mono px-1 truncate max-w-[100px]" title={error}>
-          {error}
-        </span>
-      )}
-
       {/* Folder picker modal */}
       {pendingFile && (
         <FolderPickerModal
@@ -94,6 +94,29 @@ export const ImportFileButton: React.FC<ImportFileButtonProps> = ({ onImported }
           onClose={() => setPendingFile(null)}
         />
       )}
+
+      {/* Error toast */}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-2xl border border-rose-500/20 bg-[#0d0d18] shadow-2xl max-w-sm"
+          >
+            <AlertCircle size={14} className="text-rose-400 shrink-0" />
+            <p className="text-[11px] text-white/70">{error}</p>
+            <button
+              type="button"
+              onClick={() => setError(null)}
+              className="ml-2 text-[9px] text-white/30 hover:text-white/60"
+              aria-label="Dismiss error"
+            >
+              ✕
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Success toast */}
       <AnimatePresence>
