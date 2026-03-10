@@ -444,21 +444,10 @@ Output your internal reasoning process inside <thinking> tags.`
     }
 
     try {
-      const gemini = await AIProviderFactory.getProvider('gemini');
-      const geminiKey = options.apiKeys?.gemini || apiKey || config.GEMINI_API_KEY;
-      if (!geminiKey) throw new Error('Gemini API key missing');
-      const result = await gemini.complete([{role: 'user', content: `Generate an image with the prompt: ${prompt}`}], {
-        model: model || 'imagen-3.0-generate-001',
-        apiKey: geminiKey
-      });
-      return this.saveImage(result.base64);
-    } catch (error: any) {
-      try {
-        const result = await pollinationsService.generateImage(prompt);
-        return this.saveImage(result.base64, 'Pollinations.ai');
-      } catch (pollError: any) {
-        throw SolventError.provider('All image providers failed.');
-      }
+      const result = await pollinationsService.generateImage(prompt);
+      return this.saveImage(result.base64, 'Pollinations.ai');
+    } catch (pollError: any) {
+      throw SolventError.provider('All image providers failed.');
     }
   }
 
