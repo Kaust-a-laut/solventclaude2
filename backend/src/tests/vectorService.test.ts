@@ -1,6 +1,31 @@
-import { describe, it, beforeEach, afterEach, expect } from 'vitest';
+import { describe, it, beforeAll, beforeEach, afterEach, expect } from 'vitest';
 import { vectorService } from '../services/vectorService';
 import { config } from '../config';
+
+// Deterministic word-bag embedding so tests run without a real Gemini API key
+const makeEmbedding = (text: string): number[] => {
+  const arr = new Array(768).fill(0);
+  const words = text.toLowerCase().replace(/[^a-z0-9 ]/g, '').split(/\s+/);
+  for (const word of words) {
+    if (!word) continue;
+    let h = 5381;
+    for (let i = 0; i < word.length; i++) h = ((h << 5) + h + word.charCodeAt(i)) >>> 0;
+    arr[h % 768] += 1;
+  }
+  const mag = Math.sqrt(arr.reduce((s, v) => s + v * v, 0));
+  return mag > 0 ? arr.map(v => v / mag) : arr;
+};
+
+const mockEmbedModel = {
+  embedContent: async (text: string) => ({ embedding: { values: makeEmbedding(text) } }),
+  batchEmbedContents: async ({ requests }: any) => ({
+    embeddings: requests.map((r: any) => ({ values: makeEmbedding(r.content.parts[0].text) })),
+  }),
+};
+
+beforeAll(() => {
+  (vectorService as any).genAI = { getGenerativeModel: () => mockEmbedModel };
+});
 import fs from 'fs/promises';
 import path from 'path';
 

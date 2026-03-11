@@ -6,9 +6,10 @@ global.fetch = vi.fn();
 
 describe('useAppStore', () => {
   beforeEach(() => {
-    // Reset store state before each test if possible or just clear messages
+    // Reset store state before each test — include sessions to prevent message accumulation across tests
     useAppStore.setState({
       messages: [],
+      sessions: {},
       isProcessing: false,
     });
     vi.clearAllMocks();
