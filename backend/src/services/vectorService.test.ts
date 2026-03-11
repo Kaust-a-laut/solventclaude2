@@ -24,13 +24,24 @@ const mockEmbedModel = {
   }),
 };
 
-beforeAll(() => {
+beforeAll(async () => {
   (vectorService as any).genAI = { getGenerativeModel: () => mockEmbedModel };
+  // Wait for the constructor's un-awaited loadMemory() to finish, then reset to a clean slate
+  // so it can't race-overwrite entries added by addEntriesBatch during tests.
+  await (vectorService as any).loadMemory();
+  (vectorService as any).memory = [];
+  (vectorService as any).rebuildIndices();
 });
 
 const EMBEDDING_CACHE_PATH = path.resolve(__dirname, '../../../.solvent_embedding_cache.json');
 
 describe('VectorService Enhancements', () => {
+  beforeEach(() => {
+    // Clean memory before each test to avoid cross-test contamination
+    (vectorService as any).memory = [];
+    (vectorService as any).rebuildIndices();
+  });
+
   it('should support batch adding entries', async () => {
     const entries = [
       { text: 'Batch entry 1', metadata: { type: 'test', tags: ['batch'] } },

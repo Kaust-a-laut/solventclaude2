@@ -73,6 +73,14 @@ describe('ContextService', () => {
   });
 
   describe('Deduplication', () => {
+    beforeEach(async () => {
+      // Reset vectorService memory so production data doesn't pollute dedup counts.
+      // We also await loadMemory() to ensure the constructor's un-awaited call has settled.
+      await (vectorService as any).loadMemory();
+      (vectorService as any).memory = [];
+      (vectorService as any).rebuildIndices();
+    });
+
     it('should deduplicate semantically similar entries', async () => {
       // Add very similar entries to vector service
       const baseText = 'Authentication uses JWT tokens stored in httpOnly cookies';
