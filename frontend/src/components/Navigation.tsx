@@ -104,19 +104,6 @@ export const Navigation = () => {
         "flex items-center",
         isCollapsed ? "p-4 flex-col gap-4 justify-center" : "p-6 pb-8 justify-between"
       )}>
-        {/* Brand mark */}
-        {!isCollapsed && (
-          <div className="flex items-center gap-2.5">
-            <div className="relative">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-jb-accent to-jb-purple flex items-center justify-center shadow-[0_0_12px_rgba(60,113,247,0.4)]">
-                <Sparkles size={13} className="text-white" />
-              </div>
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-jb-accent to-jb-purple opacity-30 blur-sm -z-10" />
-            </div>
-            <span className="text-[13px] font-black tracking-tight text-white/90">SOLVENT</span>
-          </div>
-        )}
-
         {/* Desktop Collapse Toggle */}
         {!isMobile && (
            <button
@@ -143,7 +130,7 @@ export const Navigation = () => {
           {!isCollapsed && (
             <div className="flex items-center gap-2 px-4 mb-4">
               <span className="w-1 h-1 rounded-full bg-jb-accent/60" />
-              <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">Modes</p>
+              <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.3em]">Modes</p>
             </div>
           )}
           <NavItem mode="home" icon={Home} label="Overview" color="text-slate-300" />
@@ -163,10 +150,10 @@ export const Navigation = () => {
            {!isCollapsed && (
              <div className="flex items-center gap-2 px-4 mb-4">
                <span className="w-1 h-1 rounded-full bg-jb-purple/60" />
-               <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">Model Playground</p>
+               <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.3em]">Model Lab</p>
              </div>
            )}
-           <NavItem mode="model_playground" icon={Sparkles} label="Playground Home" color="text-jb-purple" />
+           <NavItem mode="model_playground" icon={Sparkles} label="Lab Center" color="text-jb-purple" />
            <NavItem mode="compare" icon={GitCompare} label="Compare" color="text-jb-accent" />
            <NavItem mode="debate" icon={Swords} label="Debate" color="text-jb-orange" />
            <NavItem mode="collaborate" icon={Users} label="Multi-Agent" color="text-jb-cyan" />

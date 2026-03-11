@@ -62,7 +62,8 @@ export const BentoCard = ({
       whileHover={{ y: -5 }}
       onClick={onClick}
       className={cn(
-        "group relative p-6 md:p-8 lg:p-10 rounded-[2.5rem] border transition-all duration-500 cursor-pointer overflow-hidden glass-panel button-glow-hover h-full flex flex-col justify-between min-h-[260px]",
+        "group relative p-6 md:p-8 lg:p-10 rounded-[2.5rem] border transition-all duration-500 cursor-pointer overflow-hidden glass-panel button-glow-hover flex flex-col justify-between",
+        preview ? "min-h-[260px]" : "w-full",
         bg, border, span, className, hoverBorder
       )}
     >
@@ -89,8 +90,8 @@ export const BentoCard = ({
         
         <div className="space-y-4 flex-1 flex flex-col">
           <div className="space-y-2">
-            <h3 className="text-xl md:text-2xl font-black text-white tracking-tighter transition-all group-hover:text-vibrant">{title}</h3>
-            <p className="text-[14px] md:text-[15px] text-slate-400 font-medium leading-[1.6]">
+            <h3 className="text-2xl md:text-3xl font-black text-white tracking-tighter transition-all group-hover:text-vibrant">{title}</h3>
+            <p className="text-base md:text-lg text-slate-400 font-medium leading-[1.6]">
               {desc}
             </p>
           </div>

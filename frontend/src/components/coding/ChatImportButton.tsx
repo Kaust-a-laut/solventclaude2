@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Paperclip, Upload, AlertCircle } from 'lucide-react';
-import { cn } from '../../lib/utils';
 import { fetchWithRetry } from '../../lib/api-client';
 import { BASE_URL } from '../../lib/config';
 import { FolderPickerModal } from './FolderPickerModal';
@@ -108,22 +107,22 @@ export const ChatImportButton: React.FC<ChatImportButtonProps> = ({ onAttach, on
       <input ref={attachInputRef} type="file" className="hidden" onChange={handleAttachChange} aria-hidden="true" />
       <input ref={importInputRef} type="file" className="hidden" onChange={handleImportChange} aria-hidden="true" />
 
-      {/* Attach button */}
+      {/* Attach button — orange */}
       <button
         type="button"
         onClick={() => { setWarning(null); attachInputRef.current?.click(); }}
-        className={cn('p-1 hover:bg-white/10 rounded text-white/30 hover:text-white/60 transition-colors')}
+        className="p-1 rounded text-orange-400/70 hover:text-orange-400 hover:bg-orange-500/10 transition-colors"
         title="Attach file to chat (no project write)"
         aria-label="Attach file to chat"
       >
         <Paperclip size={12} />
       </button>
 
-      {/* Import to project button */}
+      {/* Import to project button — blue */}
       <button
         type="button"
         onClick={() => { setWarning(null); importInputRef.current?.click(); }}
-        className={cn('p-1 hover:bg-white/10 rounded text-white/30 hover:text-white/60 transition-colors')}
+        className="p-1 rounded text-blue-400/70 hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
         title="Import file to project"
         aria-label="Import file to project"
       >

@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { useAppStore } from '../store/useAppStore';
 import { fetchWithRetry } from '../lib/api-client';
-import { API_BASE_URL } from '../lib/config';
+import { BASE_URL } from '../lib/config';
 import { FileTreePanel } from './coding/FileTreePanel';
 import { EditorTabBar } from './coding/EditorTabBar';
 import { CodingTerminal } from './coding/CodingTerminal';
@@ -117,7 +117,7 @@ export const CodingArea = () => {
   const handleFileSelect = useCallback(async (path: string) => {
     if (openFiles.find((f) => f.path === path)) { setActiveFile(path); return; }
     try {
-      const data = await fetchWithRetry(`${API_BASE_URL}/files/read?path=${encodeURIComponent(path)}`) as Record<string, string>;
+      const data = await fetchWithRetry(`${BASE_URL}/api/files/read?path=${encodeURIComponent(path)}`) as Record<string, string>;
       setOpenFiles([...openFiles, { path, content: data.content }]);
       setActiveFile(path);
     } catch { addLog(`[ERROR]: Could not open ${path}`); }
@@ -132,7 +132,7 @@ export const CodingArea = () => {
   const handleSave = useCallback(async () => {
     if (!activeFile || !currentFile) return;
     try {
-      await fetchWithRetry(`${API_BASE_URL}/files/write`, {
+      await fetchWithRetry(`${BASE_URL}/api/files/write`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: activeFile, content: currentFile.content }),
@@ -154,7 +154,7 @@ export const CodingArea = () => {
     if (!webContainer) {
       if (!activeFile) return;
       try {
-        const data = await fetchWithRetry(`${API_BASE_URL}/files/shell`, {
+        const data = await fetchWithRetry(`${BASE_URL}/api/files/shell`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ command: `node ${activeFile}` }),

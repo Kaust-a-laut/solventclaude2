@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Trash2, Sparkles } from 'lucide-react';
+import { Send, Trash2, Sparkles, ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAppStore } from '../../store/useAppStore';
 import type { AgentMessage, CodeSuggestion } from '../../store/codingSlice';
@@ -7,6 +7,7 @@ import { fetchWithRetry } from '../../lib/api-client';
 import { API_BASE_URL } from '../../lib/config';
 import { AgentCodeBlock } from './AgentCodeBlock';
 import { ChatImportButton } from './ChatImportButton';
+import { MODEL_OPTIONS } from '../ModelSelector';
 import {
   SLASH_COMMANDS,
   parseSlashCommand,
@@ -29,13 +30,14 @@ export const AgentChatPanel: React.FC = () => {
   const {
     addAgentMessage, clearAgentMessages, updateAgentMessage,
     activeFile, openFiles, selectedCloudModel, selectedCloudProvider, apiKeys,
-    setPendingDiff,
+    setPendingDiff, setSelectedCloudModel, setSelectedCloudProvider,
   } = useAppStore();
 
   // Read agentMessages from store for rendering (not for closure capture)
   const agentMessages = useAppStore((s) => s.agentMessages);
 
   const [input, setInput] = useState('');
+  const [showModelMenu, setShowModelMenu] = useState(false);
   const [fileContextActive, setFileContextActive] = useState(true);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashMenuIndex, setSlashMenuIndex] = useState(0);
@@ -233,7 +235,50 @@ export const AgentChatPanel: React.FC = () => {
           <Sparkles size={14} className="text-jb-accent" />
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Agent</span>
           <span className="text-[10px] text-white/20">·</span>
-          <span className="text-[10px] text-white/30 truncate max-w-[100px]">{selectedCloudModel ?? 'auto'}</span>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowModelMenu((v) => !v)}
+              className="flex items-center gap-1 text-[10px] text-white/30 hover:text-white/60 transition-colors"
+              aria-label="Select model"
+            >
+              <span className="truncate max-w-[100px]">
+                {MODEL_OPTIONS.find((m) => m.model === selectedCloudModel)?.displayName ?? selectedCloudModel ?? 'auto'}
+              </span>
+              <ChevronDown size={10} />
+            </button>
+            {showModelMenu && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowModelMenu(false)} aria-hidden="true" />
+                <div className="absolute top-full left-0 mt-1 w-52 rounded-xl border border-white/[0.07] bg-[#0a0a14] overflow-hidden z-50 shadow-xl">
+                  {MODEL_OPTIONS.map((m) => {
+                    const Icon = m.icon;
+                    return (
+                      <button
+                        key={m.model}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCloudModel(m.model);
+                          setSelectedCloudProvider(m.provider as Parameters<typeof setSelectedCloudProvider>[0]);
+                          setShowModelMenu(false);
+                        }}
+                        className={cn(
+                          'w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-white/5 transition-colors',
+                          selectedCloudModel === m.model && 'bg-white/[0.04]'
+                        )}
+                      >
+                        <Icon size={12} className={m.color} aria-hidden="true" />
+                        <div className="flex flex-col min-w-0">
+                          <span className={cn('text-[11px] font-medium leading-tight', m.color)}>{m.displayName}</span>
+                          <span className="text-[9px] text-white/30 leading-tight">{m.sublabel}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
         </div>
         <button
           type="button"
@@ -333,21 +378,25 @@ export const AgentChatPanel: React.FC = () => {
         )}
         {/* Text input */}
         <div className="relative flex items-end gap-2">
-          <ChatImportButton
-            onAttach={handleAttach}
-            onImported={() => { /* tree panel refreshes on its own */ }}
-          />
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder="/fix, /explain, /test…"
-            rows={2}
-            aria-expanded={showSlashMenu}
-            aria-haspopup="listbox"
-            className="flex-1 bg-white/[0.03] border border-white/[0.07] rounded-xl px-3 py-2 text-[12px] text-slate-200 placeholder-white/20 resize-none focus:outline-none focus:border-jb-accent/30 scrollbar-thin"
-          />
+          <div className="relative flex-1">
+            <div className="absolute left-2 bottom-[7px] flex items-center gap-0.5 z-10">
+              <ChatImportButton
+                onAttach={handleAttach}
+                onImported={() => { /* tree panel refreshes on its own */ }}
+              />
+            </div>
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="/fix, /explain, /test…"
+              rows={2}
+              aria-expanded={showSlashMenu}
+              aria-haspopup="listbox"
+              className="w-full bg-white/[0.03] border border-white/[0.07] rounded-xl pl-14 pr-3 py-2 text-[12px] text-slate-200 placeholder-white/20 resize-none focus:outline-none focus:border-jb-accent/30 scrollbar-thin"
+            />
+          </div>
           <button
             type="button"
             onClick={handleSend}
