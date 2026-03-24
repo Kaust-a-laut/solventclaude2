@@ -4,6 +4,7 @@ import { GraphSlice } from './graphSlice';
 import { ActionSlice } from './actionSlice';
 import { WaterfallSlice } from './waterfallSlice';
 import { CodingSlice } from './codingSlice';
+import { CollaborateSlice } from './collaborateSlice';
 
 export interface ProvenanceItem {
   id: string;
@@ -28,6 +29,7 @@ export interface ContextProvenance {
 }
 
 export interface Message {
+  id?: string;
   role: 'user' | 'assistant' | 'system' | 'model';
   content: string;
   model?: string;
@@ -89,4 +91,42 @@ export interface DeviceInfo {
   };
 }
 
-export type AppState = ChatSlice & SettingsSlice & GraphSlice & ActionSlice & WaterfallSlice & CodingSlice;
+export interface PageContent {
+  title: string;
+  content: string;
+  excerpt?: string;
+  siteName?: string;
+  author?: string;
+  publishedDate?: string;
+  url: string;
+}
+
+export interface SearchResultSet {
+  results: any[];
+  answerBox?: any;
+  relatedSearches?: { query: string }[];
+  error?: string;
+}
+
+export interface ActivityEvent {
+  id: string;
+  type: string;
+  message?: string;
+  content?: string;
+  timestamp: string | number;
+  source?: string;
+  [key: string]: unknown;
+}
+
+export interface BrowserTab {
+  id: string;
+  label: string;
+  url: string;
+  type: 'search' | 'reader' | 'idle';
+  searchResults?: SearchResultSet | null;
+  pageContent?: PageContent | null;
+  searchPage?: number;
+  isLoading?: boolean;
+}
+
+export type AppState = ChatSlice & SettingsSlice & GraphSlice & ActionSlice & WaterfallSlice & CodingSlice & CollaborateSlice;

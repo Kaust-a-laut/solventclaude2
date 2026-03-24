@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import { AppState, DeviceInfo } from './types';
+import { AppState, DeviceInfo, BrowserTab } from './types';
 import { APP_CONFIG } from '../lib/config';
 
 export interface ProviderConfig {
@@ -8,6 +8,16 @@ export interface ProviderConfig {
   defaultModel?: string;
   enabled: boolean;
   priority?: number;
+}
+
+export interface ProviderInfo {
+  id: string;
+  name: string;
+  description?: string;
+  version?: string;
+  isReady: boolean;
+  defaultModel?: string;
+  capabilities?: Record<string, unknown>;
 }
 
 export interface SettingsSlice {
@@ -32,7 +42,6 @@ export interface SettingsSlice {
   notepadContent: string;
   openFiles: { path: string; content: string }[];
   activeFile: string | null;
-  supervisorInsight: string | null;
   globalProvider: 'cloud' | 'local' | 'auto';
   deviceInfo: DeviceInfo;
   apiKeys: Record<string, string>;
@@ -40,8 +49,11 @@ export interface SettingsSlice {
   commandCenterPiPOpen: boolean;
   browserHistory: string[];
   lastSearchResults: any | null;
-  activities: any[];
-  availableProviders: any[];
+  browserTabs: BrowserTab[];
+  activeBrowserTabId: string;
+  browserPiPOpen: boolean;
+  browserInjectedContext: string | null;
+  availableProviders: ProviderInfo[];
   providerConfigs: Record<string, ProviderConfig>;
 
   setBackend: (backend: any) => void;
@@ -65,15 +77,19 @@ export interface SettingsSlice {
   setNotepadContent: (content: string) => void;
   setOpenFiles: (files: { path: string; content: string }[]) => void;
   setActiveFile: (path: string | null) => void;
-  setSupervisorInsight: (insight: string | null) => void;
   setApiKey: (provider: string, key: string) => void;
   setIsCommandCenterOpen: (open: boolean) => void;
   toggleCommandCenter: () => void;
   setCommandCenterPiPOpen: (open: boolean) => void;
   setBrowserHistory: (history: string[]) => void;
   setLastSearchResults: (results: any) => void;
-  addActivity: (activity: any) => void;
-  setAvailableProviders: (providers: any[]) => void;
+  addBrowserTab: (tab: BrowserTab) => void;
+  closeBrowserTab: (tabId: string) => void;
+  updateBrowserTab: (tabId: string, updates: Partial<BrowserTab>) => void;
+  setActiveBrowserTabId: (id: string) => void;
+  setBrowserPiPOpen: (open: boolean) => void;
+  setBrowserInjectedContext: (context: string | null) => void;
+  setAvailableProviders: (providers: ProviderInfo[]) => void;
   setProviderConfigs: (configs: Record<string, ProviderConfig>) => void;
   updateProviderConfig: (providerId: string, config: Partial<ProviderConfig>) => void;
 }
@@ -99,7 +115,6 @@ export const createSettingsSlice: StateCreator<AppState, [], [], SettingsSlice> 
   notepadContent: "",
   openFiles: [],
   activeFile: null,
-  supervisorInsight: null,
   globalProvider: 'auto',
   deviceInfo: {
     isMobile: typeof window !== 'undefined' ? window.innerWidth < 768 : false,
@@ -115,7 +130,10 @@ export const createSettingsSlice: StateCreator<AppState, [], [], SettingsSlice> 
   commandCenterPiPOpen: false,
   browserHistory: [],
   lastSearchResults: null,
-  activities: [],
+  browserTabs: [{ id: 'tab-1', label: 'New Tab', url: '', type: 'idle' }],
+  activeBrowserTabId: 'tab-1',
+  browserPiPOpen: false,
+  browserInjectedContext: null,
   availableProviders: [],
   providerConfigs: {},
 
@@ -146,7 +164,6 @@ export const createSettingsSlice: StateCreator<AppState, [], [], SettingsSlice> 
   setNotepadContent: (notepadContent) => set({ notepadContent }),
   setOpenFiles: (openFiles) => set({ openFiles }),
   setActiveFile: (activeFile) => set({ activeFile }),
-  setSupervisorInsight: (supervisorInsight) => set({ supervisorInsight }),
   setApiKey: (provider, key) => set((state) => ({
     apiKeys: { ...state.apiKeys, [provider]: key }
   })),
@@ -155,9 +172,24 @@ export const createSettingsSlice: StateCreator<AppState, [], [], SettingsSlice> 
   setCommandCenterPiPOpen: (commandCenterPiPOpen) => set({ commandCenterPiPOpen }),
   setBrowserHistory: (browserHistory) => set({ browserHistory }),
   setLastSearchResults: (lastSearchResults) => set({ lastSearchResults }),
-  addActivity: (activity) => set((state) => ({
-    activities: [activity, ...state.activities].slice(0, 50)
-      })),
+  addBrowserTab: (tab) => set((state) => ({
+    browserTabs: state.browserTabs.length >= 8 ? state.browserTabs : [...state.browserTabs, tab],
+    activeBrowserTabId: tab.id,
+  })),
+  closeBrowserTab: (tabId) => set((state) => {
+    if (state.browserTabs.length <= 1) return {};
+    const filtered = state.browserTabs.filter(t => t.id !== tabId);
+    const newActiveId = state.activeBrowserTabId === tabId
+      ? filtered[filtered.length - 1].id
+      : state.activeBrowserTabId;
+    return { browserTabs: filtered, activeBrowserTabId: newActiveId };
+  }),
+  updateBrowserTab: (tabId, updates) => set((state) => ({
+    browserTabs: state.browserTabs.map(t => t.id === tabId ? { ...t, ...updates } : t),
+  })),
+  setActiveBrowserTabId: (activeBrowserTabId) => set({ activeBrowserTabId }),
+  setBrowserPiPOpen: (browserPiPOpen) => set({ browserPiPOpen }),
+  setBrowserInjectedContext: (browserInjectedContext) => set({ browserInjectedContext }),
   setAvailableProviders: (availableProviders) => set({ availableProviders }),
   setProviderConfigs: (providerConfigs) => set({ providerConfigs }),
   updateProviderConfig: (providerId, config) => set((state) => ({

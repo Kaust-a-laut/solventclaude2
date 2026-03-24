@@ -3,10 +3,30 @@ import { AppState } from './types';
 import { fetchWithRetry, getSecret } from '../lib/api-client';
 import { API_BASE_URL } from '../lib/config';
 import { waterfallStateMachine } from '../lib/waterfallStateMachine';
+import { WATERFALL_PRESETS_BY_KEY } from '../lib/waterfallPresets';
+
+export type WaterfallModelChoice = 'A' | 'B' | { model: string; provider: string };
+export interface WaterfallModelSelection {
+  architect: WaterfallModelChoice;
+  reasoner: WaterfallModelChoice;
+  executor: WaterfallModelChoice;
+  reviewer: WaterfallModelChoice;
+}
+
+// Default to groq-speed — fastest honest pipeline
+export const DEFAULT_MODEL_SELECTION: WaterfallModelSelection =
+  WATERFALL_PRESETS_BY_KEY['groq-speed'].selection as WaterfallModelSelection;
+
+interface WaterfallStepBase { message?: string; [key: string]: unknown }
+interface ArchitectData extends WaterfallStepBase { plan: string }
+interface ReasonerData extends WaterfallStepBase { reasoning: string }
+interface ExecutorData extends WaterfallStepBase { code: string }
+interface ReviewerData extends WaterfallStepBase { review: string }
+type WaterfallStepPayload = ArchitectData | ReasonerData | ExecutorData | ReviewerData | WaterfallStepBase;
 
 export interface WaterfallStepData {
   status: 'idle' | 'processing' | 'completed' | 'error' | 'paused';
-  data: any | null;
+  data: WaterfallStepPayload | null;
   error: string | null;
 }
 
@@ -22,8 +42,13 @@ export interface WaterfallSlice {
     };
   };
   waterfallAbortController: AbortController | null;
-  
+  waterfallModelSelection: WaterfallModelSelection;
+  waterfallPresetKey: string;
+
   setWaterfallPrompt: (prompt: string) => void;
+  setWaterfallModelChoice: (stage: keyof WaterfallModelSelection, choice: WaterfallModelChoice) => void;
+  setWaterfallPreset: (presetKey: string) => void;
+  setWaterfallCustomStage: (stage: keyof WaterfallModelSelection, override: { model: string; provider: string }) => void;
   runFullWaterfall: (prompt: string, forceProceed?: boolean) => Promise<void>;
   proceedWithWaterfall: () => void;
   runWaterfallStep: (step: 'architect' | 'reasoner' | 'executor' | 'reviewer', input: any) => Promise<void>;
@@ -49,11 +74,28 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
     }
   },
   waterfallAbortController: null,
+  waterfallModelSelection: { ...DEFAULT_MODEL_SELECTION },
+  waterfallPresetKey: 'groq-speed',
   editPlanDraft: null,
   retryCount: 0,
 
   setWaterfallPrompt: (prompt) => set((state) => ({
     waterfall: { ...state.waterfall, prompt }
+  })),
+
+  setWaterfallModelChoice: (stage, choice) => set((state) => ({
+    waterfallModelSelection: { ...state.waterfallModelSelection, [stage]: choice }
+  })),
+
+  setWaterfallPreset: (presetKey) => {
+    const preset = WATERFALL_PRESETS_BY_KEY[presetKey];
+    if (!preset) return;
+    set({ waterfallPresetKey: presetKey, waterfallModelSelection: { ...preset.selection } as WaterfallModelSelection });
+  },
+
+  setWaterfallCustomStage: (stage, override) => set((state) => ({
+    waterfallPresetKey: 'custom',
+    waterfallModelSelection: { ...state.waterfallModelSelection, [stage]: override },
   })),
 
   resetWaterfall: () => {
@@ -72,6 +114,7 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
         }
       },
       waterfallAbortController: null,
+      waterfallPresetKey: 'groq-speed',
       editPlanDraft: null,
       retryCount: 0,
     });
@@ -129,27 +172,35 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
   },
 
   runFullWaterfall: async (prompt: string, forceProceed: boolean = false) => {
-    const { globalProvider, notepadContent, openFiles, waterfallAbortController } = get();
+    const { globalProvider, notepadContent, openFiles, waterfallAbortController, waterfallModelSelection } = get();
     
     if (waterfallAbortController) waterfallAbortController.abort();
 
     const controller = new AbortController();
     
+    // Push pipeline start to activity feed
+    get().addActivity({
+      id: `wf_${Date.now()}`,
+      timestamp: Date.now(),
+      type: 'waterfall',
+      content: forceProceed ? 'Pipeline resumed (gate approved)' : `Pipeline started: "${prompt.slice(0, 80)}${prompt.length > 80 ? '…' : ''}"`,
+    });
+
     // Only reset state if starting fresh (not proceeding from pause)
     if (!forceProceed) {
       set((state) => ({
         waterfallAbortController: controller,
-        waterfall: { 
-          ...state.waterfall, 
-          prompt, 
-          currentStep: 'architect', 
-          steps: { 
+        waterfall: {
+          ...state.waterfall,
+          prompt,
+          currentStep: 'architect',
+          steps: {
             ...initialStepState,
             architect: { status: 'processing', data: { message: 'Analyzing requirements...' }, error: null },
             reasoner: { ...initialStepState },
             executor: { ...initialStepState },
             reviewer: { ...initialStepState }
-          } 
+          }
         }
       }));
     } else {
@@ -165,79 +216,146 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
           'Content-Type': 'application/json',
           'X-Solvent-Secret': secret
         },
-        body: JSON.stringify({ prompt, globalProvider, notepadContent, openFiles, forceProceed }),
+        body: JSON.stringify({ prompt, globalProvider, notepadContent, openFiles, forceProceed, modelSelection: waterfallModelSelection }),
         signal: controller.signal
       });
 
       if (!response.body) throw new Error('No response body');
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
+      let sseBuffer = '';
+
+      const processSSELine = (line: string) => {
+        if (!line.startsWith('data: ')) return;
+        try {
+          const payload = JSON.parse(line.slice(6));
+          const { phase, message, estimate } = payload;
+
+          if (phase === 'retrying') {
+            set((state) => ({ retryCount: state.retryCount + 1 }));
+          }
+
+          // Push stage-transition activity events
+          const stageNames: Record<string, string> = {
+            architecting: 'Architect', reasoning: 'Reasoner', executing: 'Executor', reviewing: 'Reviewer',
+          };
+          if (stageNames[phase]) {
+            get().addActivity({
+              id: `wf_${phase}_${Date.now()}`,
+              timestamp: Date.now(),
+              type: 'waterfall',
+              content: `${stageNames[phase]} stage started`,
+            });
+          }
+
+          if (phase === 'final' && payload.status !== 'paused') {
+            const score = payload.reviewer?.score;
+            get().addActivity({
+              id: `wf_done_${Date.now()}`,
+              timestamp: Date.now(),
+              type: 'waterfall',
+              content: `Pipeline complete${score != null ? ` — Score: ${score}/100` : ''}`,
+            });
+          }
+
+          set((state) => {
+            // HANDLE GATING
+            if (phase === 'gated') {
+               return {
+                 waterfall: {
+                   ...state.waterfall,
+                   currentStep: 'architect',
+                   steps: {
+                     ...state.waterfall.steps,
+                     architect: {
+                       status: 'paused',
+                       data: { ...state.waterfall.steps.architect.data, estimate },
+                       error: message
+                     }
+                   }
+                 }
+               };
+            }
+
+            if (phase === 'final') {
+               // Gate early-return: backend returned { status: 'paused', architect } — don't overwrite stages
+               if (payload.status === 'paused') {
+                 return {
+                   waterfall: {
+                     ...state.waterfall,
+                     currentStep: 'architect',
+                     steps: {
+                       ...state.waterfall.steps,
+                       architect: {
+                         status: 'paused',
+                         data: payload.architect,
+                         error: payload.estimate ? 'Resource gate: awaiting approval' : null
+                       }
+                     }
+                   }
+                 };
+               }
+               // Real completion: all 4 stages have data
+               return {
+                 waterfall: {
+                   ...state.waterfall,
+                   currentStep: 'reviewer',
+                   steps: {
+                     architect: { status: 'completed', data: payload.architect, error: null },
+                     reasoner: { status: 'completed', data: payload.reasoner, error: null },
+                     executor: { status: 'completed', data: payload.executor, error: null },
+                     reviewer: { status: 'completed', data: payload.reviewer, error: null }
+                   }
+                 }
+               };
+            } else if (phase === 'error') {
+               // Don't throw inside set() — write error state directly
+               const errorStep = state.waterfall.currentStep || 'architect';
+               return {
+                 waterfall: {
+                   ...state.waterfall,
+                   steps: {
+                     ...state.waterfall.steps,
+                     [errorStep]: {
+                       status: 'error' as const,
+                       data: null,
+                       error: message || 'Unknown waterfall error'
+                     }
+                   }
+                 }
+               };
+            }
+
+            const newWaterfall = waterfallStateMachine.transition(state.waterfall, phase, payload);
+            return { waterfall: newWaterfall };
+          });
+        } catch (e: unknown) {
+          if (import.meta.env.DEV) console.warn('[Waterfall] Failed to process SSE line:', e);
+        }
+      };
 
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
+        // Accumulate chunks — SSE events can span multiple TCP frames
+        sseBuffer += decoder.decode(value, { stream: true });
+
+        // Split by newlines, keep last (possibly incomplete) line in buffer
+        const lines = sseBuffer.split('\n');
+        sseBuffer = lines.pop() || '';
 
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const payload = JSON.parse(line.slice(6));
-              const { phase, message, estimate } = payload;
-
-              if (phase === 'retrying') {
-                set((state) => ({ retryCount: state.retryCount + 1 }));
-              }
-
-              set((state) => {
-                // HANDLE GATING
-                if (phase === 'gated') {
-                   return {
-                     waterfall: {
-                       ...state.waterfall,
-                       currentStep: 'architect',
-                       steps: {
-                         ...state.waterfall.steps,
-                         architect: { 
-                           status: 'paused', // New status for UI to show "Resume" button
-                           data: { ...state.waterfall.steps.architect.data, estimate }, 
-                           error: message 
-                         }
-                       }
-                     }
-                   };
-                }
-
-                if (phase === 'final') {
-                   return {
-                     waterfall: {
-                       ...state.waterfall,
-                       currentStep: 'reviewer',
-                       steps: {
-                         architect: { status: 'completed', data: payload.architect, error: null },
-                         reasoner: { status: 'completed', data: payload.reasoner, error: null },
-                         executor: { status: 'completed', data: payload.executor, error: null },
-                         reviewer: { status: 'completed', data: payload.reviewer, error: null }
-                       }
-                     }
-                   };
-                } else if (phase === 'error') {
-                   throw new Error(message || 'Unknown waterfall error');
-                }
-
-                const newWaterfall = waterfallStateMachine.transition(state.waterfall, phase, payload);
-                return { waterfall: newWaterfall };
-              });
-            } catch (e) {
-              // Ignore partial chunk errors
-            }
-          }
+          processSSELine(line);
         }
+      }
+
+      // Process any remaining buffered data after stream ends
+      if (sseBuffer.trim()) {
+        processSSELine(sseBuffer.trim());
       }
     } catch (error: any) {
       if (error.name === 'AbortError') {
-        console.log('[Waterfall] Request cancelled');
       } else {
         set((state) => ({
           waterfall: {
@@ -262,7 +380,7 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
     // ... (same as before)
     const currentState = get().waterfall;
     if (!waterfallStateMachine.canTransition(currentState.currentStep, step)) {
-       console.warn(`[Waterfall] Manual step blocked: ${currentState.currentStep} -> ${step}`);
+       if (import.meta.env.DEV) console.warn(`[Waterfall] Manual step blocked: ${currentState.currentStep} -> ${step}`);
     }
 
     set((state) => ({

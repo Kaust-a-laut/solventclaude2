@@ -1,12 +1,12 @@
 import { StateCreator } from 'zustand';
-import { AppState, GraphNode, GraphEdge, OverseerDecision, ActiveMission } from './types';
+import { AppState, GraphNode, GraphEdge, OverseerDecision, ActiveMission, ActivityEvent } from './types';
 
 export interface GraphSlice {
   graphNodes: GraphNode[];
   graphEdges: GraphEdge[];
   showKnowledgeMap: boolean;
   supervisorInsight: string | null;
-  activities: any[];
+  activities: ActivityEvent[];
   overseerDecisions: OverseerDecision[];
   activeMissions: ActiveMission[];
 
@@ -16,7 +16,7 @@ export interface GraphSlice {
   setGraphData: (nodes: GraphNode[], edges: GraphEdge[]) => void;
   setShowKnowledgeMap: (show: boolean) => void;
   setSupervisorInsight: (insight: string | null) => void;
-  addActivity: (activity: any) => void;
+  addActivity: (activity: ActivityEvent) => void;
   addOverseerDecision: (decision: Omit<OverseerDecision, 'id' | 'timestamp'> & { trigger?: string }) => void;
   clearOverseerDecisions: () => void;
   upsertMission: (mission: Partial<ActiveMission> & { jobId: string }) => void;

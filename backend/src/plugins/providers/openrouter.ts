@@ -13,7 +13,7 @@ export class OpenRouterProviderPlugin implements IProviderPlugin {
   defaultModel = 'openai/gpt-4o-mini';
   capabilities = {
     supportsVision: false,
-    supportsStreaming: true,
+    supportsStreaming: false,
     supportsEmbeddings: false,
     contextWindow: 128000,
     maxOutputTokens: 8192,
@@ -62,32 +62,37 @@ export class OpenRouterProviderPlugin implements IProviderPlugin {
   async complete(messages: ChatMessage[], options: CompletionOptions): Promise<string> {
     if (!this.apiKey) throw new Error('OpenRouter provider not initialized');
 
-    const { model, temperature = 0.7, maxTokens = 2048, apiKey } = options;
+    const { model, temperature = 0.7, maxTokens = 2048, apiKey, jsonMode } = options;
     const effectiveApiKey = apiKey || this.apiKey;
+    const effectiveModel = model || this.defaultModel;
+    console.log(`[OpenRouter] Sending request: model=${effectiveModel}, messages=${messages.length}`);
 
-    const response = await axios.post(`${OPENROUTER_BASE_URL}/chat/completions`, {
-      model: model || this.defaultModel,
-      messages: messages.map(msg => ({ role: msg.role, content: msg.content })),
-      temperature,
-      max_tokens: maxTokens,
-    }, {
-      headers: {
-        'Authorization': `Bearer ${effectiveApiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://solvent.ai',
-        'X-Title': 'Solvent AI'
-      }
-    });
+    try {
+      const response = await axios.post(`${OPENROUTER_BASE_URL}/chat/completions`, {
+        model: effectiveModel,
+        messages: messages.map(msg => ({ role: msg.role, content: msg.content })),
+        temperature,
+        max_tokens: maxTokens,
+        ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
+      }, {
+        headers: {
+          'Authorization': `Bearer ${effectiveApiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://solvent.ai',
+          'X-Title': 'Solvent AI'
+        }
+      });
 
-    return response.data.choices[0].message.content;
+      console.log(`[OpenRouter] Response OK: model=${effectiveModel}`);
+      return response.data.choices[0].message.content;
+    } catch (error: any) {
+      const status = error?.response?.status;
+      const errData = error?.response?.data;
+      console.error(`[OpenRouter] Request error (${status}): model=${effectiveModel}`, JSON.stringify(errData || error.message));
+      throw error;
+    }
   }
 
-  async *stream(messages: ChatMessage[], options: CompletionOptions): AsyncGenerator<string> {
-    if (!this.apiKey) throw new Error('OpenRouter provider not initialized');
-    // Fall back to non-streaming complete for now (same pattern as groq.ts)
-    const result = await this.complete(messages, options);
-    yield result;
-  }
 }
 
 export default OpenRouterProviderPlugin;

@@ -16,7 +16,7 @@ const chatRequestSchema = z.object({
   provider: z.string(),
   model: z.string(),
   messages: z.array(chatMessageSchema),
-  image: z.string().nullable().optional(),
+  image: z.object({ data: z.string(), mimeType: z.string() }).nullable().optional(),
   mode: z.string().optional(),
   smartRouter: z.boolean().optional(),
   fallbackModel: z.string().optional(),
@@ -36,24 +36,46 @@ const chatRequestSchema = z.object({
   codingHistory: z.array(chatMessageSchema).optional(),
   browserContext: z.object({
     history: z.array(z.string()),
-    lastSearchResults: z.record(z.unknown()).optional()
+    lastSearchResults: z.array(z.object({
+      title: z.string(),
+      link: z.string(),
+      snippet: z.string().optional()
+    })).optional()
   }).optional()
 });
 
 const searchRequestSchema = z.object({
-  query: z.string().min(1, 'Query is required')
+  query: z.string().min(1, 'Query is required'),
+  page: z.number().int().min(1).optional(),
 });
 
 const compareRequestSchema = z.object({
-  messages: z.array(chatMessageSchema)
+  messages: z.array(chatMessageSchema),
+  model1: z.string().optional(),
+  provider1: z.string().optional(),
+  model2: z.string().optional(),
+  provider2: z.string().optional(),
 });
+
+const phaseSelectionSchema = z.union([
+  z.enum(['A', 'B']),
+  z.object({ model: z.string(), provider: z.string() })
+]);
+
+const modelSelectionSchema = z.object({
+  architect: phaseSelectionSchema,
+  reasoner: phaseSelectionSchema,
+  executor: phaseSelectionSchema,
+  reviewer: phaseSelectionSchema,
+}).optional();
 
 const waterfallRequestSchema = z.object({
   prompt: z.string().min(1, 'Prompt is required'),
   globalProvider: z.string().optional(),
   notepadContent: z.string().optional(),
   openFiles: z.array(z.object({ path: z.string(), content: z.string() })).optional(),
-  forceProceed: z.boolean().optional()
+  forceProceed: z.boolean().optional(),
+  modelSelection: modelSelectionSchema,
 });
 
 const waterfallStepRequestSchema = z.object({
@@ -68,9 +90,11 @@ export class AIController {
     try {
       const parseResult = chatRequestSchema.safeParse(req.body);
       if (!parseResult.success) {
-        return res.status(400).json({ 
-          error: 'Invalid request body', 
-          details: parseResult.error.errors 
+        console.error('[AIController] Invalid request body:', JSON.stringify(req.body, null, 2));
+        console.error('[AIController] Validation errors:', parseResult.error.errors);
+        return res.status(400).json({
+          error: 'Invalid request body',
+          details: parseResult.error.errors
         });
       }
       const result = await aiService.processChat(parseResult.data);
@@ -112,8 +136,8 @@ export class AIController {
           details: parseResult.error.errors 
         });
       }
-      const { query } = parseResult.data;
-      const result = await aiService.performSearch(query);
+      const { query, page } = parseResult.data;
+      const result = await aiService.performSearch(query, page);
       res.json(result);
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -130,8 +154,10 @@ export class AIController {
           details: parseResult.error.errors 
         });
       }
-      const { messages } = parseResult.data;
-      const result = await aiService.compareModels(messages);
+      const { messages, model1, provider1, model2, provider2 } = parseResult.data;
+      const result = await aiService.compareModels(messages, {
+        model1, provider1, model2, provider2,
+      });
       res.json(result);
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -160,7 +186,7 @@ export class AIController {
         return;
       }
       
-      const { prompt, globalProvider, notepadContent, openFiles, forceProceed } = parseResult.data;
+      const { prompt, globalProvider, notepadContent, openFiles, forceProceed, modelSelection } = parseResult.data;
 
       const result = await aiService.runAgenticWaterfall(
         prompt,
@@ -174,7 +200,9 @@ export class AIController {
         notepadContent,
         openFiles,
         controller.signal,
-        forceProceed
+        forceProceed,
+        undefined,
+        modelSelection
       );
 
       if (!controller.signal.aborted) {
@@ -251,6 +279,55 @@ export class AIController {
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));
       res.status(500).json({ error: err.message });
+    }
+  }
+
+  /**
+   * SSE endpoint for agent chat with real-time tool visibility.
+   * Streams AgentEvent objects as SSE `data:` lines.
+   */
+  static async agentChat(req: Request, res: Response) {
+    const controller = new AbortController();
+
+    // SSE Setup
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    req.on('close', () => {
+      controller.abort();
+      res.end();
+    });
+
+    try {
+      const parseResult = chatRequestSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        res.write(`data: ${JSON.stringify({ type: 'error', message: 'Invalid request body' })}\n\n`);
+        res.end();
+        return;
+      }
+
+      const data = { ...parseResult.data, signal: controller.signal };
+
+      await aiService.processAgentChat(
+        data,
+        (event) => {
+          if (!controller.signal.aborted) {
+            res.write(`data: ${JSON.stringify(event)}\n\n`);
+          }
+        }
+      );
+
+      if (!controller.signal.aborted) {
+        res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+        res.end();
+      }
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      if (!controller.signal.aborted) {
+        res.write(`data: ${JSON.stringify({ type: 'error', message: err.message })}\n\n`);
+        res.end();
+      }
     }
   }
 

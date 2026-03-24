@@ -35,7 +35,14 @@ export const createActionSlice: StateCreator<AppState, [], [], ActionSlice> = (s
       return state.generateImageAction(imagePrompt);
     }
 
-    const userMessage: Message = { role: 'user', content, image };
+    // Prepend browser injected context if present
+    let finalContent = content;
+    if (state.browserInjectedContext) {
+      finalContent = `[Browser Context]\n${state.browserInjectedContext}\n\n${content}`;
+      state.setBrowserInjectedContext(null);
+    }
+
+    const userMessage: Message = { role: 'user', content: finalContent, image };
     state.addMessage(userMessage, state.currentMode);
     state.setIsProcessing(true);
 
@@ -45,8 +52,8 @@ export const createActionSlice: StateCreator<AppState, [], [], ActionSlice> = (s
 
     try {
       const result = await ChatService.sendMessage({
-        messages: state.currentMode === 'coding' ? state.codingMessages : state.messages,
-        codingHistory: state.codingMessages,
+        messages: state.messages,
+        codingHistory: state.sessions['coding'] ?? [],
         currentMode: state.currentMode,
         modeConfigs: state.modeConfigs,
         selectedCloudModel: state.selectedCloudModel,
@@ -64,8 +71,9 @@ export const createActionSlice: StateCreator<AppState, [], [], ActionSlice> = (s
         },
         apiKeys: state.apiKeys,
         thinkingModeEnabled: state.thinkingModeEnabled,
-        imageProvider: state.imageProvider
-      }, content, image);
+        imageProvider: state.imageProvider,
+        activeFile: state.activeFile
+      }, finalContent, image);
 
       if (result.updatedNotepad) {
         state.setNotepadContent(result.updatedNotepad);

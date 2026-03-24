@@ -19,19 +19,19 @@ export const MessageList = ({ compact }: MessageListProps) => {
   const selectedLocalModel = useAppStore(state => state.selectedLocalModel);
   const globalProvider = useAppStore(state => state.globalProvider);
   const deviceInfo = useAppStore(state => state.deviceInfo);
-  
+  const imageProvider = useAppStore(state => state.imageProvider);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const isMobile = deviceInfo.isMobile;
 
-  // Resolve Active Model Name for the prompt/header area 
+  // Resolve Active Model Name for the prompt/header area
   // (Individual messages might vary, but for the 'AI' label we use the current config)
   const config = modeConfigs[currentMode] || { provider: 'auto', model: selectedCloudModel };
   let activeModel = config.model;
 
   if (currentMode === 'vision') {
-    const { imageProvider } = useAppStore.getState();
-    activeModel = imageProvider === 'huggingface' ? 'Stable Diffusion' : 
-                  imageProvider === 'local' ? 'Juggernaut XL' : 
+    activeModel = imageProvider === 'huggingface' ? 'Stable Diffusion' :
+                  imageProvider === 'local' ? 'Juggernaut XL' :
                   imageProvider === 'pollinations' ? 'Flux (Free)' : 'Imagen 3';
   } else if (config.provider === 'auto') {
     activeModel = globalProvider === 'local' ? selectedLocalModel : selectedCloudModel;
@@ -55,27 +55,34 @@ export const MessageList = ({ compact }: MessageListProps) => {
 
   return (
     <div className={cn(
-      "flex-1 overflow-y-auto scrollbar-thin scroll-smooth focusable-container",
-      isCompact ? "pt-20 pb-20 space-y-4" : "pt-[100px] pb-32 space-y-8",
+      "flex-1 overflow-y-auto scrollbar-thin",
+      isCompact ? "pt-20 pb-20 space-y-4" : "pt-[100px] pb-32 space-y-5",
       isMobile ? (compact ? "p-3 pt-16 pb-20" : "p-4 pt-20 pb-24") : "p-6"
-    )} ref={scrollRef} tabIndex={0}>
+    )} ref={scrollRef}>
       
       {/* Waterfall Visualization at the top (or contextually could be interspersed, but top is safe) */}
       <WaterfallVisualizer />
 
       {messages.length === 0 && !isProcessing && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 py-24 opacity-30 pointer-events-none">
-          <svg viewBox="0 0 100 100" className="w-16 h-16 fill-slate-600">
-            <path d="M38 20 L38 45 L18 82 Q15 88 22 88 L78 88 Q85 88 82 82 L62 45 L62 20 Z" />
-          </svg>
-          <p className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-600">Begin a session</p>
+        <div className="flex-1 flex flex-col items-center justify-center gap-6 py-24 pointer-events-none select-none">
+          <div className="relative">
+            <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-jb-accent/60 animate-pulse" />
+            </div>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-sm font-bold text-slate-400">Ready when you are</p>
+            <p className="text-[10px] text-slate-600 max-w-xs text-center leading-relaxed">
+              Ask a question, share an idea, or drop in a file to get started.
+            </p>
+          </div>
         </div>
       )}
 
       <AnimatePresence initial={false}>
         {messages.map((m, i) => (
-          <MessageItem 
-            key={i}
+          <MessageItem
+            key={m.id ?? i}
             message={m}
             isUser={m.role === 'user'}
             modelName={m.role === 'user' ? 'User' : (m.model || activeModel)}
@@ -87,8 +94,15 @@ export const MessageList = ({ compact }: MessageListProps) => {
       </AnimatePresence>
       
       {isProcessing && (
-         <div className="max-w-4xl mx-auto flex items-center gap-6 px-6">
-            <span className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-500 animate-pulse">Processing...</span>
+         <div className="max-w-4xl mx-auto flex items-center gap-3 px-6">
+            <div className="flex gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-jb-accent/70 animate-bounce" />
+              <span className="w-1.5 h-1.5 rounded-full bg-jb-accent/50 animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-jb-accent/30 animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+            <span className="text-[10px] font-bold text-slate-600">
+              {activeModel} is thinking
+            </span>
          </div>
       )}
     </div>

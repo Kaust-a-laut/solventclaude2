@@ -76,10 +76,10 @@ export async function getSecret(): Promise<string> {
   );
 }
 
-export async function fetchWithRetry(
+export async function fetchWithRetry<T = unknown>(
   url: string,
   options: RequestOptions = {}
-): Promise<unknown> {
+): Promise<T> {
   const { retries = 3, backoff = 1000, ...fetchOptions } = options;
   const secret = await getSecret();
 
@@ -97,7 +97,7 @@ export async function fetchWithRetry(
         delete headers['Content-Type'];
       }
 
-      const response = await fetch(url, { ...fetchOptions, headers });
+      const response = await fetch(url, { ...fetchOptions, signal: options.signal, headers });
 
       if (!response.ok) {
         let errorBody: ApiErrorResponse | string;
@@ -122,9 +122,15 @@ export async function fetchWithRetry(
         throw error;
       }
 
-      return await response.json();
+      return await response.json() as T;
     } catch (err: unknown) {
       lastError = err instanceof Error ? err : new Error(String(err));
+
+      // Don't retry client errors (4xx) — they won't succeed on retry
+      if (lastError instanceof APIError && lastError.status && lastError.status >= 400 && lastError.status < 500) {
+        throw lastError;
+      }
+
       console.error(`[API] Attempt ${attempt + 1} failed:`, {
         message: lastError.message,
         status: (lastError as APIError).status,
@@ -132,6 +138,8 @@ export async function fetchWithRetry(
       });
 
       if (attempt < retries - 1) {
+        // Check abort signal before sleeping
+        if (options.signal?.aborted) throw lastError;
         const delay = backoff * Math.pow(2, attempt);
         console.log(`[API] Retrying in ${delay}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));

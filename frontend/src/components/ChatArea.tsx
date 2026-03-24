@@ -6,7 +6,7 @@ import { Navigation } from './Navigation';
 import { ChatView } from './ChatView';
 import { HomeArea } from './HomeArea';
 import { FloatingNotepad } from './FloatingNotepad';
-import { X, Network, Loader2, Sparkles } from 'lucide-react';
+import { Network, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TitleBar } from './TitleBar';
 import { SettingsModal } from './SettingsModal';
@@ -24,8 +24,6 @@ const BrowserArea = lazy(() => import('./BrowserArea').then(m => ({ default: m.B
 const SolventSeeArea = lazy(() => import('./SolventSeeArea').then(m => ({ default: m.SolventSeeArea })));
 const ModelPlaygroundArea = lazy(() => import('./ModelPlaygroundArea').then(m => ({ default: m.ModelPlaygroundArea })));
 
-import { socket } from '../lib/socket';
-
 const LoadingFallback = () => (
   <div className="flex-1 flex flex-col items-center justify-center gap-4">
     <Loader2 className="w-8 h-8 text-jb-purple animate-spin" />
@@ -36,8 +34,6 @@ const LoadingFallback = () => (
 export const ChatArea = () => {
   const { currentMode, setCurrentMode, setDeviceInfo, deviceInfo, setSupervisorInsight, supervisorInsight, addActivity, graphNodes, isProcessing } = useAppStore();
   const device = useDevice();
-  const [clarificationRequest, setClarificationRequest] = useState<any>(null);
-
   // Graph pulse effect - track when new nodes are added
   const prevNodeCount = useRef(graphNodes.length);
   const [graphPulse, setGraphPulse] = useState(false);
@@ -65,34 +61,6 @@ export const ChatArea = () => {
     }
     prevNodeCount.current = graphNodes.length;
   }, [graphNodes.length, addActivity]);
-
-  useEffect(() => {
-    socket.on('SUPERVISOR_CLARIFICATION', (req) => {
-      setClarificationRequest(req);
-    });
-    return () => {
-      socket.off('SUPERVISOR_CLARIFICATION');
-    };
-  }, []);
-
-  const handleClarification = (approved: boolean) => {
-    if (!clarificationRequest) return;
-    
-    // Respond to backend
-    // We need a new tool or endpoint for this, or just a simple socket emit
-    // For now, let's assume we emit back a decision
-    // In a real implementation, we'd call an API endpoint to execute the invalidation
-    
-    if (approved) {
-       // Trigger the invalidation logic (which we previously built as a tool, but now we need to trigger it manually)
-       // Or better, tell the AI "Yes, do it".
-       // For this prototype, we'll just log it.
-       console.log("User approved memory invalidation:", clarificationRequest);
-       // Ideally: api.post('/memory/resolve-conflict', { ... })
-    }
-    
-    setClarificationRequest(null);
-  };
 
   useEffect(() => {
     if (window.electron?.onModeChanged) {
@@ -150,17 +118,17 @@ export const ChatArea = () => {
 
   return (
     <AuraBackground>
-      <div className="flex flex-col h-[100dvh] w-screen overflow-hidden font-sans">
+      <div className="flex flex-col flex-1 min-h-0 w-full overflow-clip font-sans">
         <TitleBar />
-        <div className="flex flex-1 overflow-hidden relative">
+        <div className="flex flex-1 overflow-clip relative">
           <Navigation />
           <AnimatePresence>
              <SettingsModal />
           </AnimatePresence>
-  
-          <div className="flex-1 flex h-full overflow-hidden relative">
+
+          <div className="flex-1 flex h-full overflow-clip relative">
              <div className={cn(
-               "flex-1 h-full flex flex-col border-r border-white/5 relative z-10 min-w-0 overflow-hidden transition-all duration-500",
+               "flex-1 h-full flex flex-col border-r border-white/5 relative z-10 min-w-0 overflow-clip transition-all duration-500",
                graphPulse && "ring-2 ring-jb-purple/20 ring-inset",
                isProcessing && "intelligence-active"
              )}>
@@ -189,42 +157,6 @@ export const ChatArea = () => {
                    {renderContent()}
                 </Suspense>
                 
-                <AnimatePresence>
-                  {/* Old supervisor toast removed - now using SupervisorHistory component */}
-                  
-                  {clarificationRequest && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 50, x: "-50%" }}
-                      animate={{ opacity: 1, y: 0, x: "-50%" }}
-                      exit={{ opacity: 0, y: 20, x: "-50%" }}
-                      className="absolute bottom-24 left-1/2 z-50 bg-amber-500/10 border border-amber-500/20 backdrop-blur-xl px-6 py-5 rounded-2xl shadow-2xl max-w-lg w-full"
-                    >
-                       <div className="flex items-start gap-4">
-                         <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
-                            <Sparkles size={16} className="text-amber-500" />
-                         </div>
-                         <div className="flex-1">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-1">Memory Conflict Detected</p>
-                            <p className="text-xs text-white font-medium mb-3 leading-relaxed">{clarificationRequest.question}</p>
-                            <div className="flex gap-2">
-                              <button 
-                                onClick={() => handleClarification(true)}
-                                className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/40 text-amber-500 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors"
-                              >
-                                Overwrite Rule
-                              </button>
-                              <button 
-                                onClick={() => handleClarification(false)}
-                                className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-slate-400 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors"
-                              >
-                                Keep Existing
-                              </button>
-                            </div>
-                         </div>
-                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
              </div>
           </div>
         </div>

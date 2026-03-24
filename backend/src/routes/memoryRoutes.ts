@@ -4,9 +4,11 @@ import { vectorService } from '../services/vectorService';
 
 const router = Router();
 
+const MAX_MEMORY_LOAD = 2000;
+
 // GET /api/v1/memory/stats
 router.get('/memory/stats', (req: Request, res: Response) => {
-  const allEntries = vectorService.getRecentEntries(10000);
+  const allEntries = vectorService.getRecentEntries(MAX_MEMORY_LOAD);
   const active = allEntries.filter(e => !e.metadata?.deprecated);
 
   const byTier: Record<string, number> = {};
@@ -27,11 +29,13 @@ router.get('/memory/entries', (req: Request, res: Response) => {
   const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
   const offset = parseInt(req.query.offset as string) || 0;
   const tier = req.query.tier as string | undefined;
+  const type = req.query.type as string | undefined;
   const search = (req.query.search as string | undefined)?.toLowerCase();
 
-  let entries = vectorService.getRecentEntries(10000).filter(e => !e.metadata?.deprecated);
+  let entries = vectorService.getRecentEntries(MAX_MEMORY_LOAD).filter(e => !e.metadata?.deprecated);
 
   if (tier) entries = entries.filter(e => e.metadata?.tier === tier);
+  if (type) entries = entries.filter(e => e.metadata?.type === type);
   if (search) {
     entries = entries.filter(e => {
       const content = (e.metadata?.content || e.metadata?.summary || '').toLowerCase();
@@ -75,6 +79,16 @@ router.post('/memory/search', async (req: Request, res: Response) => {
   res.json({ entries });
 });
 
+// PATCH /api/v1/memory/entries/:id — update entry content
+router.patch('/memory/entries/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { content } = req.body as { content?: string };
+  if (!content?.trim()) return res.status(400).json({ error: 'content is required' });
+  const ok = await vectorService.updateEntry(id, { content: content.trim(), lastUpdated: new Date().toISOString() });
+  if (ok === false) return res.status(404).json({ error: 'Entry not found' });
+  res.json({ success: true });
+});
+
 // DELETE /api/v1/memory/entries/:id — soft-delete one entry
 router.delete('/memory/entries/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -85,7 +99,7 @@ router.delete('/memory/entries/:id', async (req: Request, res: Response) => {
 
 // DELETE /api/v1/memory — soft-delete all entries (clear)
 router.delete('/memory', async (req: Request, res: Response) => {
-  const active = vectorService.getRecentEntries(10000).filter(e => !e.metadata?.deprecated);
+  const active = vectorService.getRecentEntries(MAX_MEMORY_LOAD).filter(e => !e.metadata?.deprecated);
   await Promise.all(active.map(e => vectorService.deprecateEntry(e.id, 'Cleared by user')));
   res.json({ success: true, cleared: active.length });
 });

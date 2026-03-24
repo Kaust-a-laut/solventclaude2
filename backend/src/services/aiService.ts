@@ -6,7 +6,6 @@ import { randomUUID as uuidv4 } from 'crypto';
 import path from 'path';
 import fs from 'fs/promises';
 import { SolventError } from '../utils/errors';
-import { GeminiService } from './geminiService';
 import { searchService } from './searchService';
 import { vectorService } from './vectorService';
 import { pollinationsService } from './pollinationsService';
@@ -16,8 +15,13 @@ import { falService } from './falService';
 import { memoryConsolidationService } from './memoryConsolidationService';
 import { logger } from '../utils/logger';
 import { config, APP_CONSTANTS } from '../config';
+import { MODELS } from '../constants/models';
+import type { WaterfallModelSelection } from '../constants/models';
 import { telemetryService } from './telemetryService';
 import { supervisorService } from './supervisorService';
+import type { AgentEvent } from '../types/agentEvents';
+import { BaseOpenAIService } from './baseOpenAIService';
+import { normalizeMessages } from '../utils/messageUtils';
 
 // --- Named Constants ---
 
@@ -48,7 +52,7 @@ const CODE_REQUEST_REGEX = /code|build|implement|create|react|html|css|component
 /**
  * Gemini model fallback chain
  */
-const GEMINI_MODEL_CHAIN = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+const GEMINI_MODEL_CHAIN = ['gemini-3.1-pro-preview', 'gemini-3.1-flash-lite-preview', 'gemini-3-flash-preview', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'];
 
 // --- Types ---
 
@@ -77,15 +81,8 @@ interface EnrichedContextResult {
 export class AIService {
   private waterfallService = new WaterfallService();
 
-  private normalizeMessages(messages: ChatMessage[]): ChatMessage[] {
-    return messages.map(m => ({
-      ...m,
-      role: m.role === 'model' ? 'assistant' : m.role
-    }));
-  }
-
-  async performSearch(query: string) {
-    return searchService.webSearch(query);
+  async performSearch(query: string, page?: number) {
+    return searchService.webSearch(query, page);
   }
 
   async runWaterfallStep(step: WaterfallStep, input: string, context: unknown, globalProvider?: string) {
@@ -116,7 +113,7 @@ export class AIService {
 
       // 2. Enrich Context
       const { messages: enrichedMessages, provenance } = await this.enrichContext(data);
-      const normalizedMessages = this.normalizeMessages(enrichedMessages);
+      const normalizedMessages = normalizeMessages(enrichedMessages);
 
       // 3. Inject Thinking Instructions
       const finalMessages = this.injectThinkingMode(normalizedMessages, thinkingModeEnabled);
@@ -167,6 +164,50 @@ export class AIService {
       });
       throw error;
     }
+  }
+
+  /**
+   * Agent chat: uses the event-emitting tool loop so the frontend
+   * can display real-time tool activity via SSE.
+   */
+  async processAgentChat(
+    data: ChatRequestData,
+    onEvent: (event: AgentEvent) => void
+  ): Promise<string> {
+    const { provider, model, temperature, maxTokens, apiKeys } = data;
+
+    logger.info(`[AIService] Processing agent chat with provider: ${provider}, model: ${model}`);
+
+    // Enrich context (same as processChat)
+    const { messages: enrichedMessages } = await this.enrichContext(data);
+    const normalizedMessages = normalizeMessages(enrichedMessages);
+    const finalMessages = this.injectThinkingMode(normalizedMessages, data.thinkingModeEnabled);
+
+    // Get the provider instance — must support generateChatCompletionWithEvents
+    const selectedProvider = await AIProviderFactory.getProvider(provider);
+
+    if (selectedProvider instanceof BaseOpenAIService) {
+      return selectedProvider.generateChatCompletionWithEvents(
+        finalMessages,
+        {
+          model: model || selectedProvider.defaultModel,
+          temperature,
+          maxTokens,
+          apiKey: apiKeys?.[provider],
+        },
+        onEvent
+      );
+    }
+
+    // Fallback: provider doesn't support events (e.g., Gemini) — use normal completion
+    const response = await selectedProvider.complete(finalMessages, {
+      model,
+      temperature,
+      maxTokens,
+      apiKey: apiKeys?.[provider],
+    });
+    onEvent({ type: 'text_complete', content: response });
+    return response;
   }
 
   // --- Decomposed Methods ---
@@ -240,12 +281,20 @@ export class AIService {
    */
   private injectThinkingMode(messages: ChatMessage[], thinkingModeEnabled?: boolean): ChatMessage[] {
     if (!thinkingModeEnabled) return messages;
-    
+
     const thinkingInstruction: ChatMessage = {
       role: 'system',
       content: `[DEEP THINKING MODE ACTIVE]
-You MUST perform an exhaustive chain-of-thought analysis BEFORE providing your final answer.
-Output your internal reasoning process inside <thinking> tags.`
+You MUST perform structured reasoning inside <thinking> tags BEFORE providing your final answer.
+
+Follow this framework:
+1. **Problem Decomposition** — Break the request into discrete sub-problems. Identify what is being asked vs. what is implied.
+2. **Constraint Identification** — Check project rules, open files, memory entries, and technical limitations that bound the solution space.
+3. **Hypothesis Generation** — Propose 2-3 candidate approaches. State each in one sentence.
+4. **Evaluation** — For each approach, identify strengths, risks, and trade-offs. Select the best fit.
+5. **Execution Plan** — Outline the specific steps you will take before writing the final answer.
+
+After </thinking>, deliver the answer cleanly without restating the reasoning.`
     };
     return [thinkingInstruction, ...messages];
   }
@@ -352,7 +401,7 @@ Output your internal reasoning process inside <thinking> tags.`
 
   // --- Existing Helper Methods (unchanged) ---
 
-  private async handleVisionRequest(messages: any[], image: any, model: string, temp: any, maxTokens: any, apiKey?: string, openFiles?: any[]) {
+  private async handleVisionRequest(messages: ChatMessage[], image: string | null, model: string, temp: number = 0.7, maxTokens: number = 2048, apiKey?: string, openFiles?: Array<{ path: string; content: string }>) {
     const gemini = await AIProviderFactory.getProvider('gemini');
     try {
       const targetImage = image || messages.find(m => m.image)?.image;
@@ -392,11 +441,17 @@ Output your internal reasoning process inside <thinking> tags.`
     }
   }
 
-  private async handleFallbacks(messages: any[], mode: any, fallbackModel: any, temp: any, maxTokens: any, originalError: Error, apiKeys?: Record<string, string>, failedProvider?: string) {
+  private async handleFallbacks(messages: ChatMessage[], mode: string = 'chat', fallbackModel: string = '', temp: number = 0.7, maxTokens: number = 2048, originalError: Error = new Error('Unknown'), apiKeys?: Record<string, string>, failedProvider?: string) {
+    // Normalize messages to ensure compatible roles across providers
+    const normalizedMessages = messages.map(m => ({
+      ...m,
+      role: m.role === 'model' ? 'assistant' : m.role
+    }));
+
     if (failedProvider !== 'groq') {
       try {
         const groq = await AIProviderFactory.getProvider('groq');
-        const res = await groq.complete(messages, { model: 'llama-3.3-70b-versatile', temperature: temp, maxTokens, apiKey: apiKeys?.groq });
+        const res = await groq.complete(normalizedMessages, { model: 'llama-3.3-70b-versatile', temperature: temp, maxTokens, apiKey: apiKeys?.groq });
         return { response: res, model: 'llama-3.3-70b-versatile', info: 'Groq fallback' };
       } catch (e: unknown) {
         logger.warn('[Fallback] Groq failed', e instanceof Error ? e.message : e);
@@ -406,7 +461,7 @@ Output your internal reasoning process inside <thinking> tags.`
     if (failedProvider !== 'openrouter') {
       try {
         const openRouter = await AIProviderFactory.getProvider('openrouter');
-        const res = await openRouter.complete(messages, { model: 'google/gemini-2.0-flash-001:free', temperature: temp, maxTokens, apiKey: apiKeys?.openrouter });
+        const res = await openRouter.complete(normalizedMessages, { model: 'google/gemini-2.0-flash-001:free', temperature: temp, maxTokens, apiKey: apiKeys?.openrouter });
         return { response: res, model: 'openrouter/gemini', info: 'OpenRouter fallback' };
       } catch (e: unknown) {
         logger.warn('[Fallback] OpenRouter failed', e instanceof Error ? e.message : e);
@@ -415,10 +470,11 @@ Output your internal reasoning process inside <thinking> tags.`
 
     try {
       const ollama = await AIProviderFactory.getProvider('ollama');
-      const res = await ollama.complete(messages, { model: 'qwen2.5-coder:7b', temperature: temp, maxTokens, apiKey: apiKeys?.ollama });
+      const res = await ollama.complete(normalizedMessages, { model: 'qwen2.5-coder:7b', temperature: temp, maxTokens, apiKey: apiKeys?.ollama });
       return { response: res, model: 'local/ollama', info: 'Local fallback' };
-    } catch (e: any) {
-       throw SolventError.provider(`All providers failed. Last: ${e.message}`);
+    } catch (e: unknown) {
+       const msg = e instanceof Error ? e.message : String(e);
+       throw SolventError.provider(`All providers failed. Last: ${msg}`);
     }
   }
 
@@ -468,22 +524,50 @@ Output your internal reasoning process inside <thinking> tags.`
     const models: Record<string, string[]> = {};
 
     for (const provider of providers) {
-      models[provider.id] = [provider.defaultModel || 'default-model'];
+      if (provider.id === 'openrouter') {
+        models[provider.id] = MODELS.OPENROUTER_FREE;
+      } else if (provider.id === 'groq') {
+        models[provider.id] = MODELS.GROQ_MODELS;
+      } else {
+        models[provider.id] = [provider.defaultModel || 'default-model'];
+      }
     }
 
     return models;
   }
 
-  async runAgenticWaterfall(prompt: string, globalProvider?: string, maxRetries: number = APP_CONSTANTS.WATERFALL.MAX_RETRIES, onProgress?: (phase: string, data?: any) => void, notepadContent?: string, openFiles?: any[], signal?: AbortSignal, forceProceed: boolean = false, resumeArchitect?: any) {
-    return this.waterfallService.runAgenticWaterfall(prompt, globalProvider, maxRetries, onProgress, notepadContent, openFiles, signal, forceProceed, resumeArchitect);
+  async runAgenticWaterfall(prompt: string, globalProvider?: string, maxRetries: number = APP_CONSTANTS.WATERFALL.MAX_RETRIES, onProgress?: (phase: string, data?: any) => void, notepadContent?: string, openFiles?: any[], signal?: AbortSignal, forceProceed: boolean = false, resumeArchitect?: any, modelSelection?: WaterfallModelSelection) {
+    return this.waterfallService.runAgenticWaterfall(prompt, globalProvider, maxRetries, onProgress, notepadContent, openFiles, signal, forceProceed, resumeArchitect, modelSelection);
   }
 
   async runWaterfall(prompt: string, globalProvider?: string, signal?: AbortSignal) {
     return this.runAgenticWaterfall(prompt, globalProvider, undefined, undefined, undefined, undefined, signal);
   }
 
-  async compareModels(messages: any[]) {
-    return { gemini: 'Comparison not implemented', ollama: 'Comparison not implemented' };
+  async compareModels(
+    messages: ChatMessage[],
+    opts: { model1?: string; provider1?: string; model2?: string; provider2?: string } = {},
+  ) {
+    const p1Name = opts.provider1 || 'gemini';
+    const p2Name = opts.provider2 || 'ollama';
+    const m1 = opts.model1 || undefined;
+    const m2 = opts.model2 || undefined;
+
+    const runOne = async (providerName: string, modelOverride: string | undefined): Promise<string> => {
+      const provider = await AIProviderFactory.getProvider(providerName);
+      const model = modelOverride || provider.defaultModel || 'default';
+      return provider.complete(messages, { model });
+    };
+
+    const [r1, r2] = await Promise.allSettled([
+      runOne(p1Name, m1),
+      runOne(p2Name, m2),
+    ]);
+
+    return {
+      model1: r1.status === 'fulfilled' ? r1.value : `Error: ${r1.reason?.message || r1.reason}`,
+      model2: r2.status === 'fulfilled' ? r2.value : `Error: ${r2.reason?.message || r2.reason}`,
+    };
   }
 
   async indexProject() {
