@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
+    "@tanstack/react-virtual": "^3.13.23",
     "@types/d3": "^7.4.3",
     "@webcontainer/api": "^1.6.1",
     "clsx": "^2.1.1",

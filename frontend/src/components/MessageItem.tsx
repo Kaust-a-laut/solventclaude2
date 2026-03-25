@@ -14,10 +14,11 @@ interface MessageItemProps {
   time: string;
   onDownloadImage?: (url: string, fileName: string) => void;
   compact?: boolean;
+  animate?: boolean;
 }
 
-export const MessageItem: React.FC<MessageItemProps> = ({ 
-  message, isUser, modelName = 'AI', time, onDownloadImage, compact = false
+export const MessageItem: React.FC<MessageItemProps> = ({
+  message, isUser, modelName = 'AI', time, onDownloadImage, compact = false, animate = true
 }) => {
   const [showThinking, setShowThinking] = useState(false);
   const [deprecatedIds, setDeprecatedIds] = useState<Set<string>>(new Set());
@@ -44,16 +45,19 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                   modelName?.toLowerCase().includes('local') ||
                   modelName?.toLowerCase().includes('deepseek-r1:8b'); 
 
+  const rootClassName = cn(
+    "flex gap-4 max-w-none py-6 group relative first:mt-4",
+    compact ? "px-4 py-3 gap-3" : "px-4 md:px-8",
+    isUser ? "flex-row-reverse" : "flex-row"
+  );
+
+  const Root = animate ? motion.div : 'div';
+  const rootProps = animate
+    ? { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 }, className: rootClassName }
+    : { className: rootClassName };
+
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={cn(
-        "flex gap-4 max-w-none py-6 group relative first:mt-4",
-        compact ? "px-4 py-3 gap-3" : "px-4 md:px-8",
-        isUser ? "flex-row-reverse" : "flex-row"
-      )}
-    >
+    <Root {...rootProps as any}>
       {!isUser && (
         <div className="absolute left-0 top-0 w-full h-full pointer-events-none overflow-hidden">
            <div className="absolute -left-20 top-0 w-48 h-48 bg-jb-accent/5 rounded-full blur-[100px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
@@ -314,6 +318,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
            )}
         </div>
       </div>
-    </motion.div>
+    </Root>
   );
 };
