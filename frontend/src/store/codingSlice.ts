@@ -67,6 +67,8 @@ export interface CodingSlice {
   setTerminalVisible: (v: boolean) => void;
 }
 
+const MAX_TERMINAL_LINES = 1000;
+
 export const createCodingSlice: StateCreator<AppState, [], [], CodingSlice> = (set) => ({
   pendingDiff: null,
   agentMessages: [],
@@ -76,7 +78,13 @@ export const createCodingSlice: StateCreator<AppState, [], [], CodingSlice> = (s
   terminalVisible: false,
 
   terminalLines: ['[SYSTEM]: Agentic IDE Core Initialized.'],
-  addTerminalLine: (line) => set((state) => ({ terminalLines: [...state.terminalLines, line] })),
+  addTerminalLine: (line) => set((state) => {
+    const lines = [...state.terminalLines, line];
+    if (lines.length > MAX_TERMINAL_LINES) {
+      return { terminalLines: lines.slice(-MAX_TERMINAL_LINES) };
+    }
+    return { terminalLines: lines };
+  }),
   clearTerminalLines: () => set({ terminalLines: [] }),
 
   fileTreeRefreshTrigger: 0,
