@@ -5,6 +5,20 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: './',
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-framer': ['framer-motion'],
+          'vendor-markdown': ['react-markdown', 'remark-gfm'],
+          'vendor-d3': ['d3-force', 'd3-selection', 'd3-zoom', 'd3-drag'],
+          'vendor-zustand': ['zustand'],
+        },
+      },
+    },
+    target: 'es2020',
+  },
   server: {
     host: true,
     port: 5173,
