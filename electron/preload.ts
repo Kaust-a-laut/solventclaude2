@@ -45,6 +45,9 @@ contextBridge.exposeInMainWorld('electron', {
     return () => ipcRenderer.removeListener('app-mode-changed', listener);
   },
   getSessionSecret: () => ipcRenderer.invoke('get-session-secret'),
+  // Performance Tier Detection
+  getDeviceCapability: () => ipcRenderer.invoke('get-device-capability'),
+  setTelemetryInterval: (ms: number) => ipcRenderer.send('set-telemetry-interval', ms),
   // Model Manager
   model: {
     execute: (tier: string, messages: any[]) => ipcRenderer.invoke('model:execute', tier, messages),

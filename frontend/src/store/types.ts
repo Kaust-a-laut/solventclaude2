@@ -5,6 +5,7 @@ import { ActionSlice } from './actionSlice';
 import { WaterfallSlice } from './waterfallSlice';
 import { CodingSlice } from './codingSlice';
 import { CollaborateSlice } from './collaborateSlice';
+import { PerformanceSlice } from './performanceSlice';
 
 export interface ProvenanceItem {
   id: string;
@@ -129,4 +130,4 @@ export interface BrowserTab {
   isLoading?: boolean;
 }
 
-export type AppState = ChatSlice & SettingsSlice & GraphSlice & ActionSlice & WaterfallSlice & CodingSlice & CollaborateSlice;
+export type AppState = ChatSlice & SettingsSlice & GraphSlice & ActionSlice & WaterfallSlice & CodingSlice & CollaborateSlice & PerformanceSlice;

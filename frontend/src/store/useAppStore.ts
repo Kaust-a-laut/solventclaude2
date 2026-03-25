@@ -7,6 +7,7 @@ import { createActionSlice } from './actionSlice';
 import { createWaterfallSlice } from './waterfallSlice';
 import { createCodingSlice } from './codingSlice';
 import { createCollaborateSlice } from './collaborateSlice';
+import { createPerformanceSlice } from './performanceSlice';
 
 export const useAppStore = create<AppState>()((...a) => ({
   ...createChatSlice(...a),
@@ -16,6 +17,7 @@ export const useAppStore = create<AppState>()((...a) => ({
   ...createWaterfallSlice(...a),
   ...createCodingSlice(...a),
   ...createCollaborateSlice(...a),
+  ...createPerformanceSlice(...a),
 }));
 
 export * from './types';

@@ -30,6 +30,8 @@ export const SettingsModal = () => {
     thinkingModeEnabled, setThinkingModeEnabled,
     smartRouterEnabled, setSmartRouterEnabled,
     showCodingChat, setShowCodingChat,
+    performanceMode, setPerformanceMode,
+    detectedTier,
   } = useAppStore();
 
   const [activeTab, setActiveTab] = useState<'models' | 'behavior' | 'api-keys' | 'memory'>('models');
@@ -637,6 +639,44 @@ export const SettingsModal = () => {
                       checked={showCodingChat}
                       onChange={setShowCodingChat}
                     />
+                  </div>
+                </section>
+
+                {/* Performance */}
+                <section className="space-y-2 pt-6 border-t border-white/5">
+                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-4">Performance</h4>
+                  <div className="bg-white/[0.02] border border-white/5 rounded-2xl px-5">
+                    <div className="flex items-center justify-between py-4">
+                      <div className="flex flex-col gap-0.5 pr-8">
+                        <span className="text-xs font-bold text-white">Performance Mode</span>
+                        <span className="text-[10px] text-slate-500 font-medium leading-snug">
+                          Auto detects your hardware. Full enables all visual effects. Lite reduces animation complexity and background work for smoother performance.
+                        </span>
+                      </div>
+                      <div className="flex gap-1 bg-white/5 rounded-xl p-1">
+                        {(['auto', 'full', 'lite'] as const).map((mode) => (
+                          <button
+                            key={mode}
+                            onClick={() => setPerformanceMode(mode)}
+                            className={cn(
+                              "px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all",
+                              performanceMode === mode
+                                ? "bg-jb-accent text-white shadow-[0_0_12px_rgba(60,113,247,0.3)]"
+                                : "text-slate-500 hover:text-slate-300"
+                            )}
+                          >
+                            {mode}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {performanceMode === 'auto' && (
+                      <div className="pb-3 -mt-1">
+                        <span className="text-[9px] text-slate-600 font-medium">
+                          Detected: <span className="text-slate-400 font-bold uppercase">{detectedTier}</span>
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </section>
 

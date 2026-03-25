@@ -1,6 +1,7 @@
 import { app, BrowserWindow, shell, ipcMain, session, Menu, MenuItem } from 'electron';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { spawn } from 'child_process';
 import crypto from 'crypto';
 import { ModelManager } from './ModelManager';
@@ -69,6 +70,28 @@ async function createWindow() {
   });
 
   ipcMain.handle('get-session-secret', () => SESSION_SECRET);
+
+  // --- Device Capability Detection for Performance Tier ---
+  ipcMain.handle('get-device-capability', async () => {
+    try {
+      const mem = await si.mem();
+      const cpuCores = os.cpus().length;
+      let hasDiscreteGPU = false;
+      try {
+        const graphics = await si.graphics();
+        hasDiscreteGPU = graphics.controllers.some(
+          (c) => c.vram > 512 && !/intel|integrated/i.test(c.vendor || '')
+        );
+      } catch {}
+      return {
+        ramGB: Math.round(mem.total / (1024 * 1024 * 1024)),
+        cpuCores,
+        hasDiscreteGPU,
+      };
+    } catch {
+      return { ramGB: 16, cpuCores: 8, hasDiscreteGPU: false };
+    }
+  });
 
   // Modern Window Open Handler
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
