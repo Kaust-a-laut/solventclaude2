@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
 import {
   Users, ShieldAlert, Code2, Briefcase, Play, Loader2,
   CheckCircle2, XCircle, RotateCcw, Swords, Zap, GitMerge,
@@ -125,6 +125,7 @@ export const CollaborateArea = () => {
   const [analysis, setAnalysis] = useState('');
   const [hoveredAgentId, setHoveredAgentId] = useState<string | null>(null);
   const [visibleAgentIds, setVisibleAgentIds] = useState<Set<string>>(new Set());
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const {
     collaborate,
@@ -211,128 +212,129 @@ export const CollaborateArea = () => {
     setHoveredAgentId(agentId);
   }, []);
 
+  // ── Ambient glow color (derived from active/last speaking agent) ───────────
+
+  const getConfig = (agentId: string) =>
+    agentConfigs.find(c => c.role === agentId);
+
+  const ambientGlowColor = useMemo(() => {
+    const targetId = activeAgentId
+      ?? [...messages].reverse().find(m => m.agentId !== 'user')?.agentId;
+    if (!targetId) return 'rgba(157,91,210,0.06)';
+    const config = getConfig(targetId);
+    if (!config?.borderRgba) return 'rgba(157,91,210,0.06)';
+    return `${config.borderRgba}0.06)`;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeAgentId, messages.length, agentConfigs]);
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex-1 flex flex-col bg-jb-dark overflow-hidden relative">
+    <div className="flex-1 flex flex-col overflow-hidden relative">
       {/* Dot-grid texture overlay */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-[0.035]"
+        className="absolute inset-0 pointer-events-none opacity-[0.035] z-0"
         style={{
           backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
           backgroundSize: '28px 28px',
         }}
       />
 
-      <div className="flex-1 flex flex-col max-w-5xl mx-auto w-full p-6 gap-4 overflow-hidden relative z-10">
-        <AnimatePresence mode="wait">
-          {isIdle ? (
-            /* ── IDLE: Hero Layout ─────────────────────────────────────── */
-            <motion.div
-              key="idle-hero"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="flex-1 flex flex-col items-center justify-center gap-8"
-            >
-              {/* Glow orb behind input */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-80 h-80 rounded-full bg-jb-purple/[0.08] blur-[80px]" />
-              </div>
+      {isIdle ? (
+        /* ── IDLE: Hero Layout ─────────────────────────────────────────── */
+        <div className="flex-1 flex flex-col items-center justify-center gap-8 p-6 relative z-10">
+          {/* Glow orb behind input */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-80 h-80 rounded-full bg-jb-purple/[0.08] blur-[80px]" />
+          </div>
 
-              {/* Heading */}
-              <div className="text-center relative z-10">
-                <div className="flex items-center justify-center gap-3 mb-3">
-                  <div className="relative">
-                    <div className="p-2.5 bg-jb-purple/10 border border-jb-purple/20 rounded-2xl">
-                      <Users className="text-jb-purple" size={22} />
-                    </div>
-                    <span
-                      className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-jb-purple"
-                      style={{ boxShadow: '0 0 6px rgba(157,91,210,0.8)' }}
-                    />
-                  </div>
+          {/* Heading */}
+          <div className="text-center relative z-10">
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <div className="relative">
+                <div className="p-2.5 bg-jb-purple/10 border border-jb-purple/20 rounded-2xl">
+                  <Users className="text-jb-purple" size={22} />
                 </div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">
-                  Multi-Agent Orchestration Engine
-                </p>
-                <h2 className="text-3xl font-black text-white tracking-tight">
-                  Agentic <span className="text-vibrant">War Room</span>
-                </h2>
-                <p className="text-sm text-slate-500 mt-2 max-w-md mx-auto">
-                  Launch a roundtable of specialized AI agents to analyze, debate, and synthesize around your goal.
-                </p>
-              </div>
-
-              {/* Mission launcher panel */}
-              <div className="glass-panel rounded-[1.5rem] p-5 space-y-4 w-full max-w-2xl relative z-10">
-                <textarea
-                  value={goalInput}
-                  onChange={(e) => setGoalInput(e.target.value)}
-                  placeholder="Define the engineering mission goal..."
-                  className="w-full bg-transparent text-slate-300 outline-none resize-none h-28 text-base font-medium placeholder:text-slate-700"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleLaunch();
-                    }
-                  }}
-                />
-                <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-white/5">
-                  <span className="text-[9px] text-slate-600 uppercase tracking-widest font-black">Template:</span>
-                  {MISSION_TEMPLATES.map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => setMissionType(t.id)}
-                      title={t.description}
-                      className={cn(
-                        'px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border transition-all',
-                        missionType === t.id
-                          ? t.activeCls
-                          : 'bg-white/5 border-white/10 text-slate-500 hover:text-slate-300',
-                      )}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-
-                  {/* Launch button inline */}
-                  <button
-                    onClick={handleLaunch}
-                    disabled={!goalInput.trim()}
-                    className={cn(
-                      'ml-auto flex items-center gap-2 px-5 py-2 text-white text-[11px] font-black rounded-full transition-all uppercase tracking-wider',
-                      'bg-gradient-to-r from-jb-purple to-jb-accent disabled:opacity-40',
-                      goalInput.trim() && 'shadow-[0_0_20px_rgba(157,91,210,0.35)] hover:shadow-[0_0_28px_rgba(157,91,210,0.5)]',
-                    )}
-                  >
-                    <Play size={13} fill="currentColor" /> Launch Mission
-                  </button>
-                </div>
-              </div>
-
-              {/* Mission History */}
-              <div className="w-full max-w-2xl relative z-10">
-                <MissionHistory
-                  missions={activeMissions}
-                  isOpen={showHistory}
-                  onToggle={() => setShowHistory((v) => !v)}
+                <span
+                  className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-jb-purple"
+                  style={{ boxShadow: '0 0 6px rgba(157,91,210,0.8)' }}
                 />
               </div>
-            </motion.div>
-          ) : (
-            /* ── ACTIVE: Compact Layout ────────────────────────────────── */
-            <motion.div
-              key="active-layout"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="flex-1 flex flex-col gap-4 overflow-hidden"
-            >
-              {/* ── Goal bar ──────────────────────────────────────────── */}
-              <div className="glass-panel rounded-2xl px-4 py-2.5 flex items-center gap-3 flex-shrink-0">
+            </div>
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">
+              Multi-Agent Orchestration Engine
+            </p>
+            <h2 className="text-3xl font-black text-white tracking-tight">
+              Agentic <span className="text-vibrant">War Room</span>
+            </h2>
+            <p className="text-sm text-slate-500 mt-2 max-w-md mx-auto">
+              Launch a roundtable of specialized AI agents to analyze, debate, and synthesize around your goal.
+            </p>
+          </div>
+
+          {/* Mission launcher panel */}
+          <div className="glass-panel rounded-[1.5rem] p-5 space-y-4 w-full max-w-2xl relative z-10">
+            <textarea
+              value={goalInput}
+              onChange={(e) => setGoalInput(e.target.value)}
+              placeholder="Define the engineering mission goal..."
+              className="w-full bg-transparent text-slate-300 outline-none resize-none h-28 text-base font-medium placeholder:text-slate-700"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleLaunch();
+                }
+              }}
+            />
+            <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-white/5">
+              <span className="text-[9px] text-slate-600 uppercase tracking-widest font-black">Template:</span>
+              {MISSION_TEMPLATES.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setMissionType(t.id)}
+                  title={t.description}
+                  className={cn(
+                    'px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border transition-all',
+                    missionType === t.id
+                      ? t.activeCls
+                      : 'bg-white/5 border-white/10 text-slate-500 hover:text-slate-300',
+                  )}
+                >
+                  {t.label}
+                </button>
+              ))}
+
+              {/* Launch button inline */}
+              <button
+                onClick={handleLaunch}
+                disabled={!goalInput.trim()}
+                className={cn(
+                  'ml-auto flex items-center gap-2 px-5 py-2 text-white text-[11px] font-black rounded-full transition-all uppercase tracking-wider',
+                  'bg-gradient-to-r from-jb-purple to-jb-accent disabled:opacity-40',
+                  goalInput.trim() && 'shadow-[0_0_20px_rgba(157,91,210,0.35)] hover:shadow-[0_0_28px_rgba(157,91,210,0.5)]',
+                )}
+              >
+                <Play size={13} fill="currentColor" /> Launch Mission
+              </button>
+            </div>
+          </div>
+
+          {/* Mission History */}
+          <div className="w-full max-w-2xl relative z-10">
+            <MissionHistory
+              missions={activeMissions}
+              isOpen={showHistory}
+              onToggle={() => setShowHistory((v) => !v)}
+            />
+          </div>
+        </div>
+      ) : (
+        /* ── ACTIVE: Flat Layout (no extra nesting) ──────────────────── */
+        <>
+          {/* ── Goal bar — fixed ──────────────────────────────────────── */}
+          <div className="flex-shrink-0 relative z-10 px-6 pt-6">
+            <div className="max-w-5xl mx-auto w-full">
+              <div className="glass-panel rounded-2xl px-4 py-2.5 flex items-center gap-3">
                 <span className="text-[9px] text-slate-600 uppercase tracking-widest font-black">Goal:</span>
                 <span className="text-sm text-slate-300 flex-1 truncate">{goal || goalInput}</span>
                 <div className="flex items-center gap-1.5">
@@ -378,9 +380,13 @@ export const CollaborateArea = () => {
                   )}
                 </div>
               </div>
+            </div>
+          </div>
 
-              {/* ── Agent Roster ──────────────────────────────────────── */}
-              {agents.length > 0 && (
+          {/* ── Agent Roster — fixed ──────────────────────────────────── */}
+          {agents.length > 0 && (
+            <div className="flex-shrink-0 relative z-10 px-6 pt-4">
+              <div className="max-w-5xl mx-auto w-full">
                 <AgentRoster
                   agents={agents}
                   agentConfigs={agentConfigs}
@@ -392,70 +398,95 @@ export const CollaborateArea = () => {
                   visibleAgentIds={visibleAgentIds}
                   onAgentHover={handleAgentHover}
                 />
-              )}
+              </div>
+            </div>
+          )}
 
-              {/* ── Conversation Feed (fills remaining space) ─────────── */}
-              <ConversationFeed
-                messages={messages}
-                agentConfigs={agentConfigs}
-                activeAgentId={activeAgentId}
-                status={status}
-                hoveredAgentId={hoveredAgentId}
-                onVisibleAgentsChange={handleVisibleAgentsChange}
-              />
+          {/* ── Messages — SCROLLABLE (HomeArea pattern) ──────────────── */}
+          <div className="flex-1 min-h-0 relative z-10">
+            {/* Ambient glow — stays fixed while messages scroll */}
+            <motion.div
+              className="absolute inset-0 pointer-events-none z-0"
+              animate={{
+                background: `radial-gradient(ellipse at 50% 80%, ${ambientGlowColor} 0%, transparent 70%)`,
+              }}
+              transition={{ duration: 1.5, ease: 'easeInOut' }}
+            />
+            {/* Scroll container — exact HomeArea pattern */}
+            <div
+              ref={scrollContainerRef}
+              className="absolute inset-0 overflow-y-scroll scrollbar-thin z-10"
+            >
+              <div className="max-w-5xl mx-auto w-full px-6 py-4">
+                <ConversationFeed
+                  messages={messages}
+                  agentConfigs={agentConfigs}
+                  activeAgentId={activeAgentId}
+                  status={status}
+                  hoveredAgentId={hoveredAgentId}
+                  scrollContainerRef={scrollContainerRef}
+                  onVisibleAgentsChange={handleVisibleAgentsChange}
+                />
 
-              {/* ── User Interjection Input ────────────────────────────── */}
-              {isActive && (
+                {/* ── Synthesis Panel (inside scroll) ──────────────────── */}
+                <AnimatePresence>
+                  {synthesis && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5 }}
+                      className="mt-4"
+                    >
+                      <div className="glass-panel rounded-[1.5rem] p-5 border-l-4 border-emerald-500/60">
+                        <div className="flex items-center gap-2 mb-3">
+                          <GitMerge size={14} className="text-emerald-400" />
+                          <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400">
+                            Consensus Synthesis
+                          </span>
+                        </div>
+                        <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
+                          {synthesis}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* ── Analysis Panel (inside scroll) ───────────────────── */}
+                <AnimatePresence>
+                  {isComplete && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 12 }}
+                      transition={{ duration: 0.4 }}
+                      className="mt-4"
+                    >
+                      <AnalysisPanel
+                        status={analysisStatus}
+                        analysis={analysis}
+                        onAnalyze={handleAnalyze}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+
+          {/* ── User Interjection Input — fixed at bottom ─────────────── */}
+          {isActive && (
+            <div className="flex-shrink-0 relative z-10 px-6 pb-2">
+              <div className="max-w-5xl mx-auto w-full">
                 <UserInterjectionInput
                   onSend={injectUserMessage}
                   disabled={!!activeAgentId}
                 />
-              )}
-
-              {/* ── Synthesis Panel ─────────────────────────────────────── */}
-              <AnimatePresence>
-                {synthesis && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="glass-panel rounded-[1.5rem] p-5 border-l-4 border-emerald-500/60 flex-shrink-0"
-                  >
-                    <div className="flex items-center gap-2 mb-3">
-                      <GitMerge size={14} className="text-emerald-400" />
-                      <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400">
-                        Consensus Synthesis
-                      </span>
-                    </div>
-                    <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
-                      {synthesis}
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* ── Conclusive Analysis Panel ───────────────────────────── */}
-              <AnimatePresence>
-                {isComplete && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 12 }}
-                    transition={{ duration: 0.4 }}
-                    className="flex-shrink-0"
-                  >
-                    <AnalysisPanel
-                      status={analysisStatus}
-                      analysis={analysis}
-                      onAnalyze={handleAnalyze}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
+              </div>
+            </div>
           )}
-        </AnimatePresence>
-      </div>
+        </>
+      )}
     </div>
   );
 };

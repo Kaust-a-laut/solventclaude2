@@ -5,6 +5,38 @@ import { ChatMessage } from '../types/ai';
 
 export class MemoryConsolidationService {
   /**
+   * Schedule consolidation via BullMQ for reliable retry.
+   * Falls back to fire-and-forget if Redis/BullMQ is unavailable.
+   */
+  async scheduleConsolidation(mode: string, messages: ChatMessage[]) {
+    try {
+      const { taskService } = await import('./taskService');
+      await taskService.enqueueMemoryJob('consolidation', { mode, messages });
+      logger.info(`[Memory] Consolidation job enqueued for mode: ${mode}`);
+    } catch {
+      // Redis unavailable — fall back to fire-and-forget
+      this.consolidateSession(mode, messages).catch(err =>
+        logger.warn(`[Memory] Fire-and-forget consolidation failed: ${err.message}`)
+      );
+    }
+  }
+
+  /**
+   * Schedule knowledge extraction via BullMQ for reliable retry.
+   * Falls back to fire-and-forget if Redis/BullMQ is unavailable.
+   */
+  async scheduleKnowledgeExtraction(content: string) {
+    try {
+      const { taskService } = await import('./taskService');
+      await taskService.enqueueMemoryJob('extraction', { content });
+      logger.info('[Memory] Knowledge extraction job enqueued');
+    } catch {
+      // Redis unavailable — fall back to fire-and-forget
+      this.extractKnowledge(content).catch(() => {});
+    }
+  }
+
+  /**
    * Summarizes a conversation segment and stores it in the vector database.
    * This reduces context window usage and improves long-term recall.
    */

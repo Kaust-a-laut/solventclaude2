@@ -94,6 +94,18 @@ export class TaskService {
     );
   }
 
+  /**
+   * Enqueue a memory consolidation or extraction job with retry support.
+   */
+  async enqueueMemoryJob(jobType: 'consolidation' | 'extraction', data: any): Promise<string> {
+    return this.dispatchJob(
+      TaskQueue.MEMORY_GARDENING,
+      `memory-${jobType}`,
+      { type: `memory-${jobType}`, data },
+      { attempts: 3, backoff: { type: 'exponential', delay: 2000 } }
+    );
+  }
+
   async dispatchImageGenerationJob(prompt: string, model?: string, opts?: any): Promise<string> {
     return this.dispatchJob(
       TaskQueue.IMAGE_GEN,

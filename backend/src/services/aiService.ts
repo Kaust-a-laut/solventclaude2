@@ -22,6 +22,8 @@ import { supervisorService } from './supervisorService';
 import type { AgentEvent } from '../types/agentEvents';
 import { BaseOpenAIService } from './baseOpenAIService';
 import { normalizeMessages } from '../utils/messageUtils';
+import { fitConversation } from '../utils/conversationWindow';
+import { getContextBudget } from '../utils/tokenEstimator';
 
 // --- Named Constants ---
 
@@ -115,8 +117,17 @@ export class AIService {
       const { messages: enrichedMessages, provenance } = await this.enrichContext(data);
       const normalizedMessages = normalizeMessages(enrichedMessages);
 
+      // 2.5. Fit conversation to token budget (sliding window with summarization)
+      const contextBudget = getContextBudget(model, maxTokens || 2048);
+      const { messages: windowedMessages, wasTruncated } = await fitConversation(
+        normalizedMessages, contextBudget.history
+      );
+      if (wasTruncated) {
+        logger.info(`[AIService] Conversation windowed: ${normalizedMessages.length} -> ${windowedMessages.length} messages`);
+      }
+
       // 3. Inject Thinking Instructions
-      const finalMessages = this.injectThinkingMode(normalizedMessages, thinkingModeEnabled);
+      const finalMessages = this.injectThinkingMode(windowedMessages, thinkingModeEnabled);
 
       // 4. Execute Completion
       let responseData: CompletionResponse;
@@ -393,10 +404,11 @@ After </thinking>, deliver the answer cleanly without restating the reasoning.`
     response: CompletionResponse
   ): void {
     if (!mode || !response.response) return;
-    
+
     const allMessages = [...messages, { role: 'assistant', content: response.response }];
-    memoryConsolidationService.consolidateSession(mode, allMessages as any).catch(e => logger.error('Memory sync failed', e));
-    memoryConsolidationService.extractKnowledge(response.response).catch(e => logger.warn('[AIService] Knowledge extraction failed', e));
+    // Use scheduled consolidation for reliable retry via BullMQ
+    memoryConsolidationService.scheduleConsolidation(mode, allMessages as any);
+    memoryConsolidationService.scheduleKnowledgeExtraction(response.response);
   }
 
   // --- Existing Helper Methods (unchanged) ---

@@ -98,13 +98,17 @@ function determineNextSpeaker(
 // ─── Delegation / addressing detection ────────────────────────────────────────
 
 function detectAddressing(content: string, agents: MissionAgent[]): string | undefined {
-  // Check for @mentions or "Name, what do you think" patterns
+  // Check for @mentions, direct questions, and natural conversational references
   for (const agent of agents) {
+    const name = agent.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // escape regex chars
     const patterns = [
       new RegExp(`@${agent.id}\\b`, 'i'),
-      new RegExp(`@${agent.name}\\b`, 'i'),
-      new RegExp(`${agent.name},\\s+(what|how|do you|could you|can you|would you)`, 'i'),
-      new RegExp(`(ask|defer to|hand off to|over to)\\s+(?:the\\s+)?${agent.name}`, 'i'),
+      new RegExp(`@${name}\\b`, 'i'),
+      new RegExp(`${name},\\s+(what|how|do you|could you|can you|would you)`, 'i'),
+      new RegExp(`(ask|defer to|hand off to|over to)\\s+(?:the\\s+)?${name}`, 'i'),
+      // Natural conversational references
+      new RegExp(`(building on|responding to|as|like)\\s+(?:the\\s+)?${name}`, 'i'),
+      new RegExp(`${name}'s\\s+(point|concern|analysis|suggestion|proposal|argument|finding|objection)`, 'i'),
     ];
     if (patterns.some(p => p.test(content))) return agent.id;
   }
@@ -116,9 +120,12 @@ function classifyMessageType(
   transcript: ConversationMessage[]
 ): ConversationMessage['type'] {
   const lower = content.toLowerCase();
-  if (/\bi agree\b|\bthat's right\b|\bexactly\b|\bgood point\b/.test(lower)) return 'agreement';
-  if (/\bi disagree\b|\bhowever\b|\bon the contrary\b|\bpush back\b/.test(lower)) return 'disagreement';
-  if (/\bwhat do you think\b|\bover to you\b|\byour take\b/.test(lower)) return 'delegation';
+  // Agreement — require explicit agreement phrases, not just hedging words
+  if (/\bi agree\b|\bthat's (a good|an excellent|a fair|a valid) point\b|\bexactly right\b|\bwell said\b|\bspot on\b|\bthat's right\b/.test(lower)) return 'agreement';
+  // Disagreement — require explicit pushback, not just "however" which is common in normal discussion
+  if (/\bi (disagree|push back|take issue)\b|\bthat's not (right|accurate|correct)\b|\bon the contrary\b|\bi'd challenge\b|\bthat overlooks\b/.test(lower)) return 'disagreement';
+  // Delegation — handing off to another speaker
+  if (/\bwhat do you think\b|\bover to you\b|\byour take\b|\bi'd like to hear from\b|\bweigh in\b/.test(lower)) return 'delegation';
   return 'contribution';
 }
 
@@ -169,33 +176,53 @@ function buildAgentPrompt(
   agent: MissionAgent,
   allAgents: MissionAgent[],
   transcript: ConversationMessage[],
-  goal: string
+  goal: string,
+  currentRound: number
 ): Array<{ role: 'system' | 'user'; content: string }> {
+  // Use conversation-specific instruction if available, fall back to original
+  const instruction = agent.conversationInstruction || agent.instruction;
+
   const roster = allAgents
     .filter(a => a.id !== agent.id)
     .map(a => `- ${a.name} (${a.id})`)
     .join('\n');
 
-  const systemPrompt = `${agent.instruction}
+  // Round-aware conversation rules
+  const roundGuidance = currentRound <= 1
+    ? 'This is Round 1. Present your initial expert perspective on the goal. You may reference the roster above to set expectations for who should weigh in on what.'
+    : `This is Round ${currentRound}. The discussion is underway. Focus on responding to what others have said — build on agreements, challenge disagreements, and push toward actionable consensus. Do NOT restate your previous points. Add new insight or react to new information.`;
+
+  const systemPrompt = `${instruction}
 
 You are in a collaborative roundtable discussion with these other experts:
 ${roster}
 
-CONVERSATION RULES:
-1. Address other experts by name when responding to their points.
-2. Build on or constructively challenge specific points made by others.
-3. Keep your response to 2-4 paragraphs maximum.
-4. Be direct and substantive. Avoid filler language.
-5. If you want another expert to weigh in, address them directly.
-6. Work toward actionable consensus — don't repeat yourself.`;
+${roundGuidance}
 
+CONVERSATION RULES:
+1. You MUST reference at least one specific point from a previous speaker by name (e.g., "I agree with Lead Engineer's point about X, but..."). The only exception is if you are the very first speaker.
+2. Build on, challenge, or extend specific claims — do not produce an independent report.
+3. Keep your response to 2-4 paragraphs maximum. Be direct and substantive.
+4. Do NOT repeat your own previous points. If you've already said it, move on.
+5. If you want another expert to weigh in on something specific, address them directly by name.
+6. Do NOT use structured report formats (VERDICT, FINDINGS, RISK LEVEL, etc.). Write in natural conversational prose.`;
+
+  // Enhanced transcript format — show addressing relationships
   const transcriptStr = transcript
-    .map(m => `[${m.agentName}]: ${m.content}`)
+    .map(m => {
+      const addressingNote = m.addressing
+        ? ` (responding to ${allAgents.find(a => a.id === m.addressing)?.name || m.addressing})`
+        : '';
+      return `[${m.agentName}${addressingNote}]: ${m.content}`;
+    })
     .join('\n\n');
 
-  const userPrompt = transcriptStr
-    ? `GOAL: ${goal}\n\nCONVERSATION SO FAR:\n${transcriptStr}\n\nIt's your turn. Respond to the discussion above.`
-    : `GOAL: ${goal}\n\nYou are speaking first. Open the discussion with your expert perspective on this goal.`;
+  let userPrompt: string;
+  if (!transcriptStr) {
+    userPrompt = `GOAL: ${goal}\n\nYou are speaking first. Open the discussion with your expert perspective on this goal. Be direct and set the stage for the other experts to respond.`;
+  } else {
+    userPrompt = `GOAL: ${goal}\n\nCONVERSATION SO FAR:\n${transcriptStr}\n\nIt's your turn. Engage with what others have said — respond to their specific points, challenge or build on their arguments, and advance the discussion toward a conclusion.`;
+  }
 
   return [
     { role: 'system' as const, content: systemPrompt },
@@ -307,7 +334,7 @@ export async function* runConversation(
     };
 
     // Build prompt and call LLM
-    const messages = buildAgentPrompt(nextAgent, agents, session.transcript, fullGoal);
+    const messages = buildAgentPrompt(nextAgent, agents, session.transcript, fullGoal, session.currentRound);
 
     let content = '';
     try {
