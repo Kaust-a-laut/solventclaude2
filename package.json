@@ -42,7 +42,7 @@
   "scripts": {
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && npm run dev",
-    "build:electron": "esbuild electron/preload.ts --outfile=electron/preload.js --bundle --platform=node --external:electron && esbuild electron/main.ts --outfile=electron/main.js --bundle --platform=node --external:electron --external:systeminformation",
+    "build:electron": "esbuild electron/preload.ts --outfile=electron/preload.js --bundle --platform=node --external:electron --minify --tree-shaking=true && esbuild electron/main.ts --outfile=electron/main.js --bundle --platform=node --external:electron --external:systeminformation --minify --tree-shaking=true",
     "desktop": "npm run build:electron && electron electron/main.js",
     "build:frontend": "cd frontend && npm run build",
     "test:e2e": "npm run build:electron && playwright test"

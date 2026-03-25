@@ -208,25 +208,40 @@ async function createWindow() {
 
   ipcMain.handle('get-notepad', () => notepadBuffer);
 
-  // --- Telemetry Loop ---
-  setInterval(async () => {
+  // Tier-aware telemetry with staggered system calls
+  let telemetryInterval = 10_000;
+  let telemetryTick = 0;
+
+  ipcMain.on('set-telemetry-interval', (_event, intervalMs: number) => {
+    telemetryInterval = Math.max(5000, Math.min(60000, intervalMs));
+  });
+
+  const runTelemetry = async () => {
     try {
+      telemetryTick++;
+      let stats: Record<string, number> = {};
+
       const cpu = await si.currentLoad();
       const mem = await si.mem();
-      const network = await si.networkStats();
-      const disk = await si.fsStats();
-      
-      const stats = {
-        cpu: Math.round(cpu.currentLoad),
-        mem: Math.round((mem.active / mem.total) * 100),
-        net: network[0] ? Math.round(network[0].rx_sec / 1024) : 0, // KB/s
-        disk: disk.wx_sec ? Math.round(disk.wx_sec / 1024) : 0 // KB/s
-      };
+      stats.cpu = Math.round(cpu.currentLoad);
+      stats.mem = Math.round((mem.active / mem.total) * 100);
+
+      if (telemetryTick % 2 === 0) {
+        const network = await si.networkStats();
+        const disk = await si.fsStats();
+        stats.net = network[0] ? Math.round(network[0].rx_sec / 1024) : 0;
+        stats.disk = disk.wx_sec ? Math.round(disk.wx_sec / 1024) : 0;
+      }
+
       BrowserWindow.getAllWindows().forEach(win => {
         win.webContents.send('system-telemetry', stats);
       });
     } catch (e) {}
-  }, 2000);
+
+    setTimeout(runTelemetry, telemetryInterval);
+  };
+
+  setTimeout(runTelemetry, 3000);
 
   // Sync external changes
   let fsWait = false;
@@ -234,7 +249,7 @@ async function createWindow() {
     if (filename && eventType === 'change') {
       if (fsWait) return;
       fsWait = true;
-      setTimeout(() => { fsWait = false; }, 100);
+      setTimeout(() => { fsWait = false; }, 500);
 
       try {
         const newContent = fs.readFileSync(NOTES_FILE, 'utf-8');
@@ -268,8 +283,14 @@ async function createWindow() {
     
     const backendProcess = spawn('node', [backendPath], {
       env: { ...process.env, BACKEND_INTERNAL_SECRET: SESSION_SECRET, PORT: '3001' },
-      stdio: 'inherit'
+      stdio: ['ignore', 'pipe', 'pipe']
     });
+
+    if (backendProcess.stderr) {
+      backendProcess.stderr.on('data', (data: Buffer) => {
+        console.error(`[Backend] ${data.toString().trimEnd()}`);
+      });
+    }
 
     app.on('will-quit', () => {
       backendProcess.kill();
