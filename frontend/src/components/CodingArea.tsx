@@ -6,6 +6,8 @@ import type { editor as MonacoEditor } from 'monaco-editor';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { useAppStore } from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
+import { TIER_CONFIG } from '../lib/performanceTier';
 import { fetchWithRetry, getSecret } from '../lib/api-client';
 import { BASE_URL } from '../lib/config';
 import { FileTreePanel } from './coding/FileTreePanel';
@@ -54,8 +56,31 @@ export const CodingArea = () => {
     setFileTreeVisible, setChatPanelVisible, setTerminalVisible,
     panelWidths,
     terminalLines, addTerminalLine, clearTerminalLines,
-  } = useAppStore();
+    activeTier,
+  } = useAppStore(
+    useShallow((state) => ({
+      openFiles: state.openFiles,
+      setOpenFiles: state.setOpenFiles,
+      activeFile: state.activeFile,
+      setActiveFile: state.setActiveFile,
+      pendingDiff: state.pendingDiff,
+      clearPendingDiff: state.clearPendingDiff,
+      fileTreeVisible: state.fileTreeVisible,
+      chatPanelVisible: state.chatPanelVisible,
+      terminalVisible: state.terminalVisible,
+      setFileTreeVisible: state.setFileTreeVisible,
+      setChatPanelVisible: state.setChatPanelVisible,
+      setTerminalVisible: state.setTerminalVisible,
+      panelWidths: state.panelWidths,
+      terminalLines: state.terminalLines,
+      addTerminalLine: state.addTerminalLine,
+      clearTerminalLines: state.clearTerminalLines,
+      activeTier: state.activeTier,
+    }))
+  );
+  const tierConfig = TIER_CONFIG[activeTier];
   const [bootStatus, setBootStatus] = useState<'idle' | 'booting' | 'ready' | 'error'>('idle');
+  const [bootRequested, setBootRequested] = useState(false);
   const [webContainer, setWebContainer] = useState<WebContainer | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -129,6 +154,13 @@ export const CodingArea = () => {
       clearBootPromise();
     }
   }, [addLog]);
+
+  // Deferred boot: only boot WebContainer when explicitly requested
+  useEffect(() => {
+    if (bootRequested && bootStatus === 'idle') {
+      bootWebContainer();
+    }
+  }, [bootRequested, bootStatus, bootWebContainer]);
 
   useEffect(() => {
     if (!webContainer || openFiles.length === 0) return;
@@ -208,6 +240,11 @@ export const CodingArea = () => {
   const handleRun = useCallback(async () => {
     setTerminalVisible(true);
 
+    // Trigger deferred WebContainer boot on first run if not yet started
+    if (bootStatus === 'idle') {
+      setBootRequested(true);
+    }
+
     // Kill any existing process before starting a new one
     if (runningProcRef.current) {
       runningProcRef.current.kill();
@@ -245,7 +282,7 @@ export const CodingArea = () => {
     } finally {
       setIsRunning(false);
     }
-  }, [webContainer, activeFile, openFiles, addLog, setTerminalVisible]);
+  }, [webContainer, activeFile, openFiles, addLog, setTerminalVisible, bootStatus]);
 
   // ── Diff Apply/Reject ──────────────────────────────────────────────────────
 
@@ -461,7 +498,7 @@ export const CodingArea = () => {
                   fontSize: 13,
                   lineHeight: 1.6,
                   fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
-                  minimap: { enabled: false },
+                  minimap: { enabled: tierConfig.monacoMinimap },
                   scrollBeyondLastLine: false,
                   padding: { top: 16 },
                   overviewRulerLanes: 0,
@@ -473,7 +510,8 @@ export const CodingArea = () => {
                   smoothScrolling: true,
                   cursorBlinking: 'smooth',
                   cursorSmoothCaretAnimation: 'on',
-                  bracketPairColorization: { enabled: true },
+                  bracketPairColorization: { enabled: tierConfig.monacoBracketColors },
+                  quickSuggestionsDelay: activeTier === 'lite' ? 300 : 100,
                   scrollbar: {
                     alwaysConsumeMouseWheel: true,
                   },
