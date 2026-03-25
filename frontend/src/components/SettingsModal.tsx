@@ -7,6 +7,7 @@ import {
   Search, Trash2, Pencil, Check, Tag, Filter, Star, Hash
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { API_BASE_URL, BASE_URL } from '../lib/config';
 import { cn } from '../lib/utils';
 import { fetchWithRetry } from '../lib/api-client';
@@ -32,7 +33,47 @@ export const SettingsModal = () => {
     showCodingChat, setShowCodingChat,
     performanceMode, setPerformanceMode,
     detectedTier,
-  } = useAppStore();
+  } = useAppStore(
+    useShallow((state) => ({
+      settingsOpen: state.settingsOpen,
+      setSettingsOpen: state.setSettingsOpen,
+      settingsInitialTab: state.settingsInitialTab,
+      setSettingsInitialTab: state.setSettingsInitialTab,
+      modeConfigs: state.modeConfigs,
+      setModeConfig: state.setModeConfig,
+      temperature: state.temperature,
+      setTemperature: state.setTemperature,
+      maxTokens: state.maxTokens,
+      setMaxTokens: state.setMaxTokens,
+      globalProvider: state.globalProvider,
+      setGlobalProvider: state.setGlobalProvider,
+      auraMode: state.auraMode,
+      setAuraMode: state.setAuraMode,
+      apiKeys: state.apiKeys,
+      setApiKey: state.setApiKey,
+      selectedCloudModel: state.selectedCloudModel,
+      setSelectedCloudModel: state.setSelectedCloudModel,
+      selectedLocalModel: state.selectedLocalModel,
+      setSelectedLocalModel: state.setSelectedLocalModel,
+      selectedCloudProvider: state.selectedCloudProvider,
+      setSelectedCloudProvider: state.setSelectedCloudProvider,
+      selectedOpenRouterModel: state.selectedOpenRouterModel,
+      setSelectedOpenRouterModel: state.setSelectedOpenRouterModel,
+      imageProvider: state.imageProvider,
+      setImageProvider: state.setImageProvider,
+      localImageUrl: state.localImageUrl,
+      setLocalImageUrl: state.setLocalImageUrl,
+      thinkingModeEnabled: state.thinkingModeEnabled,
+      setThinkingModeEnabled: state.setThinkingModeEnabled,
+      smartRouterEnabled: state.smartRouterEnabled,
+      setSmartRouterEnabled: state.setSmartRouterEnabled,
+      showCodingChat: state.showCodingChat,
+      setShowCodingChat: state.setShowCodingChat,
+      performanceMode: state.performanceMode,
+      setPerformanceMode: state.setPerformanceMode,
+      detectedTier: state.detectedTier,
+    }))
+  );
 
   const [activeTab, setActiveTab] = useState<'models' | 'behavior' | 'api-keys' | 'memory'>('models');
   const [availableModels, setAvailableModels] = useState<{
@@ -311,6 +352,7 @@ export const SettingsModal = () => {
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        style={{ willChange: 'transform' }}
         className="w-full max-w-7xl h-[92vh] bg-[#050508] border border-white/5 rounded-[40px] shadow-2xl relative overflow-hidden flex"
       >
         {/* ── Left Sidebar ───────────────────────────────────────────────── */}

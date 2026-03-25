@@ -1,6 +1,7 @@
 import React from 'react';
 import { MessageItem } from './MessageItem';
 import { useAppStore } from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { cn } from '../lib/utils';
 import { downloadImage } from '../lib/file-utils';
 import { WaterfallVisualizer } from './WaterfallVisualizer';
@@ -11,14 +12,18 @@ interface MessageListProps {
 }
 
 export const MessageList = ({ compact }: MessageListProps) => {
-  const currentMode = useAppStore(state => state.currentMode);
-  const isProcessing = useAppStore(state => state.isProcessing);
-  const modeConfigs = useAppStore(state => state.modeConfigs);
-  const selectedCloudModel = useAppStore(state => state.selectedCloudModel);
-  const selectedLocalModel = useAppStore(state => state.selectedLocalModel);
-  const globalProvider = useAppStore(state => state.globalProvider);
-  const deviceInfo = useAppStore(state => state.deviceInfo);
-  const imageProvider = useAppStore(state => state.imageProvider);
+  const { currentMode, isProcessing, modeConfigs, selectedCloudModel, selectedLocalModel, globalProvider, deviceInfo, imageProvider } = useAppStore(
+    useShallow((state) => ({
+      currentMode: state.currentMode,
+      isProcessing: state.isProcessing,
+      modeConfigs: state.modeConfigs,
+      selectedCloudModel: state.selectedCloudModel,
+      selectedLocalModel: state.selectedLocalModel,
+      globalProvider: state.globalProvider,
+      deviceInfo: state.deviceInfo,
+      imageProvider: state.imageProvider,
+    }))
+  );
 
   const { scrollRef, virtualizer, messages } = useVirtualMessages();
   const isMobile = deviceInfo.isMobile;

@@ -1,5 +1,6 @@
 import React, { Suspense, useEffect, lazy, useState, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useDevice } from '../hooks/useDevice';
 import AuraBackground from './AuraBackground';
 import { Navigation } from './Navigation';
@@ -32,7 +33,19 @@ const LoadingFallback = () => (
 );
 
 export const ChatArea = () => {
-  const { currentMode, setCurrentMode, setDeviceInfo, deviceInfo, setSupervisorInsight, supervisorInsight, addActivity, graphNodes, isProcessing } = useAppStore();
+  const { currentMode, setCurrentMode, setDeviceInfo, deviceInfo, setSupervisorInsight, supervisorInsight, addActivity, graphNodes, isProcessing } = useAppStore(
+    useShallow((state) => ({
+      currentMode: state.currentMode,
+      setCurrentMode: state.setCurrentMode,
+      setDeviceInfo: state.setDeviceInfo,
+      deviceInfo: state.deviceInfo,
+      setSupervisorInsight: state.setSupervisorInsight,
+      supervisorInsight: state.supervisorInsight,
+      addActivity: state.addActivity,
+      graphNodes: state.graphNodes,
+      isProcessing: state.isProcessing,
+    }))
+  );
   const device = useDevice();
   // Graph pulse effect - track when new nodes are added
   const prevNodeCount = useRef(graphNodes.length);
@@ -128,7 +141,7 @@ export const ChatArea = () => {
 
           <div className="flex-1 flex h-full overflow-clip relative">
              <div className={cn(
-               "flex-1 h-full flex flex-col border-r border-white/5 relative z-10 min-w-0 overflow-clip transition-all duration-500",
+               "flex-1 h-full flex flex-col border-r border-white/5 relative z-10 min-w-0 min-h-0 overflow-clip transition-all duration-500",
                graphPulse && "ring-2 ring-jb-purple/20 ring-inset",
                isProcessing && "intelligence-active"
              )}>

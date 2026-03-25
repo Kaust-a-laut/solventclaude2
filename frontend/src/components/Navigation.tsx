@@ -207,11 +207,12 @@ export const Navigation = () => {
                 onClick={() => setIsOpen(false)}
                 className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
               />
-              <motion.div 
+              <motion.div
                 initial={{ x: -300 }}
                 animate={{ x: 0 }}
                 exit={{ x: -300 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                style={{ willChange: 'transform' }}
                 className="fixed top-0 left-0 bottom-0 w-[85%] max-w-[320px] bg-slate-950 z-[60] border-r border-white/10 shadow-2xl"
               >
                 {navContent}
