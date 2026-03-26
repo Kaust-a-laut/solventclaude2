@@ -5,8 +5,8 @@ import { parseGraphData } from '../lib/graph-parser';
 const THINKING_MODEL_LOCAL = 'deepseek-r1:8b';
 const THINKING_MODEL_CLOUD = 'deepseek-r1-distill-llama-70b';
 
-// Re-exported from shared location
-export { NATIVE_THINKING_MODELS } from '../lib/thinkingModels';
+import { NATIVE_THINKING_MODELS } from '../lib/thinkingModels';
+export { NATIVE_THINKING_MODELS };
 
 export interface ChatParams {
   messages: any[];
