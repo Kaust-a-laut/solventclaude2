@@ -5,6 +5,7 @@ import { useAppStore } from '../store/useAppStore';
 import { useSpeechToText } from '../hooks/useSpeechToText';
 import { cn } from '../lib/utils';
 import { fetchWithRetry } from '../lib/api-client';
+import { NATIVE_THINKING_MODELS, THINK_ONLY_MODELS, DUAL_MODE_MODELS } from '../lib/thinkingModels';
 
 const MODE_PLACEHOLDERS: Record<string, string> = {
   chat: 'Ask anything...',
@@ -24,7 +25,7 @@ interface ChatInputProps {
 }
 
 export const ChatInput = ({ compact = false }: ChatInputProps) => {
-  const { sendMessage, generateImageAction, isProcessing, addMessage, deviceInfo, thinkingModeEnabled, setThinkingModeEnabled, currentMode } = useAppStore();
+  const { sendMessage, generateImageAction, isProcessing, addMessage, deviceInfo, thinkingModeEnabled, setThinkingModeEnabled, currentMode, selectedCloudModel, selectedLocalModel, globalProvider } = useAppStore();
   const [input, setInput] = useState('');
   const [showMenu, setShowMenu] = useState(false);
   const [uploadMode, setUploadMode] = useState<'image' | 'file'>('image');
@@ -33,6 +34,14 @@ export const ChatInput = ({ compact = false }: ChatInputProps) => {
   const [isUploading, setIsUploading] = useState(false);
 
   const menuRef = useRef<HTMLDivElement>(null);
+  const activeModel = globalProvider === 'local' ? selectedLocalModel : selectedCloudModel;
+
+  // Turn off thinking mode if user switches to a non-thinking model
+  useEffect(() => {
+    if (thinkingModeEnabled && !NATIVE_THINKING_MODELS.has(activeModel)) {
+      setThinkingModeEnabled(false);
+    }
+  }, [activeModel, thinkingModeEnabled, setThinkingModeEnabled]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -193,25 +202,42 @@ export const ChatInput = ({ compact = false }: ChatInputProps) => {
                   </motion.div>
                </button>
 
-               {/* Dedicated Deep Thinking Toggle next to Upload */}
-               <button 
+               {/* Deep Thinking — locked-on for think-only, toggle for dual-mode, hidden otherwise */}
+               {THINK_ONLY_MODELS.has(activeModel) && (
+               <div
+                 className={cn(
+                   "flex items-center justify-center rounded-2xl border",
+                   compact ? "w-8 h-8" : (deviceInfo.isMobile ? "w-8 h-8" : "w-10 h-10"),
+                   "bg-black/40 border-jb-purple/30 shadow-[0_0_15px_rgba(157,91,210,0.15)] cursor-default"
+                 )}
+                 title="This model always uses deep thinking"
+               >
+                  <Brain
+                    size={compact ? 15 : (deviceInfo.isMobile ? 16 : 18)}
+                    className="text-jb-purple drop-shadow-[0_0_8px_rgba(157,91,210,0.8)]"
+                  />
+               </div>
+               )}
+               {DUAL_MODE_MODELS.has(activeModel) && (
+               <button
                  onClick={() => setThinkingModeEnabled(!thinkingModeEnabled)}
                  className={cn(
-                   "flex items-center justify-center transition-all rounded-2xl border transition-all duration-300",
+                   "flex items-center justify-center transition-all rounded-2xl border duration-300",
                    compact ? "w-8 h-8" : (deviceInfo.isMobile ? "w-8 h-8" : "w-10 h-10"),
                    "bg-black/40 border-white/5 hover:border-white/10",
                    thinkingModeEnabled && "border-jb-purple/30 shadow-[0_0_15px_rgba(157,91,210,0.15)]"
                  )}
-                 title="Deep Thinking Mode"
+                 title="Toggle Deep Thinking"
                >
-                  <Brain 
-                    size={compact ? 15 : (deviceInfo.isMobile ? 16 : 18)} 
+                  <Brain
+                    size={compact ? 15 : (deviceInfo.isMobile ? 16 : 18)}
                     className={cn(
                       "transition-all duration-500",
                       thinkingModeEnabled ? "text-jb-purple animate-pulse drop-shadow-[0_0_8px_rgba(157,91,210,0.8)]" : "text-slate-500"
-                    )} 
+                    )}
                   />
                </button>
+               )}
 
                <AnimatePresence>
                   {showMenu && (

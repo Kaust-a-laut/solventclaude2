@@ -61,14 +61,6 @@ export const ChatHeader = ({ compact }: ChatHeaderProps) => {
     displayModel = imageProvider === 'huggingface' ? 'Stable Diffusion' :
                    imageProvider === 'local' ? 'Juggernaut XL' :
                    imageProvider === 'pollinations' ? 'Flux (Free)' : 'Imagen 3';
-  } else if (thinkingModeEnabled) {
-    if (globalProvider === 'local') {
-      displayProvider = 'ollama' as any;
-      displayModel = 'deepseek-r1:8b';
-    } else {
-      displayProvider = 'groq' as any;
-      displayModel = 'llama-3.3-70b-versatile';
-    }
   } else if (globalProvider === 'local') {
     displayProvider = 'ollama' as any;
     displayModel = selectedLocalModel;

@@ -5,6 +5,9 @@ import { parseGraphData } from '../lib/graph-parser';
 const THINKING_MODEL_LOCAL = 'deepseek-r1:8b';
 const THINKING_MODEL_CLOUD = 'deepseek-r1-distill-llama-70b';
 
+// Re-exported from shared location
+export { NATIVE_THINKING_MODELS } from '../lib/thinkingModels';
+
 export interface ChatParams {
   messages: any[];
   currentMode: string;
@@ -45,13 +48,28 @@ export class ChatService {
     let model = config.model;
 
     if (thinkingModeEnabled) {
-      // Force reasoning-capable models when thinking mode is active
-      if (globalProvider === 'local') {
+      // Resolve the model first (same logic as non-thinking path)
+      if (provider === 'auto') {
+        if (globalProvider === 'local') {
+          provider = 'ollama';
+          model = selectedLocalModel;
+        } else {
+          provider = selectedCloudProvider || 'gemini';
+          model = selectedCloudModel;
+        }
+      } else if (globalProvider === 'local' && provider !== 'ollama') {
         provider = 'ollama';
-        model = THINKING_MODEL_LOCAL;
-      } else {
-        provider = 'groq';
-        model = THINKING_MODEL_CLOUD;
+        model = selectedLocalModel;
+      }
+      // Only swap if the resolved model doesn't have native thinking
+      if (!NATIVE_THINKING_MODELS.has(model)) {
+        if (globalProvider === 'local') {
+          provider = 'ollama';
+          model = THINKING_MODEL_LOCAL;
+        } else {
+          provider = 'groq';
+          model = THINKING_MODEL_CLOUD;
+        }
       }
     } else if (provider === 'auto') {
       if (globalProvider === 'local') {
