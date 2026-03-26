@@ -2,6 +2,14 @@
 
 Solvent AI is a **smart, hierarchical AI assistant** designed to seamlessly switch between cloud-based reasoning (Gemini Pro/Vision) and local privacy-focused models (Ollama/Qwen).
 
+## 📚 Documentation
+
+- **[IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md)** — Complete summary of all features and changes
+- **[QUICK_REFERENCE.md](./QUICK_REFERENCE.md)** — Developer quick reference guide
+- **[CHANGELOG.md](./CHANGELOG.md)** — Full changelog
+- **[HARDENING_PLAN.md](./HARDENING_PLAN.md)** — Original hardening plan
+- **[docs/bug-fixes-plan.md](./docs/bug-fixes-plan.md)** — Bug fixes implementation plan
+
 ## 🚀 Features
 
 - **Smart Router:** Automatically routes queries between Gemini (Cloud) and Ollama (Local) based on complexity, availability, and user mode.
@@ -11,6 +19,17 @@ Solvent AI is a **smart, hierarchical AI assistant** designed to seamlessly swit
 - **Vision Support:** Multimodal capabilities using Gemini Vision.
 - **Async Task Infrastructure:** Redis-backed queue system for handling high-latency operations like project indexing and memory maintenance.
 - **Plugin Architecture:** Dynamic plugin system for extending AI providers and tools without modifying core code.
+
+### 🆕 New Features (March 2026)
+
+- **Session Persistence:** Conversations auto-save to disk and survive restarts
+- **Conversation Branching:** Fork from any message to explore alternative paths
+- **Decision Review:** Approve/reject Supervisor actions before execution
+- **Mission Dashboard:** Real-time visibility into agent activity
+- **Global Search:** Cmd+K to search across all sessions and memories
+- **Browser Pin/Unpin:** Save important pages for quick access
+- **Codebase Indexing:** Automatic file watching and incremental indexing
+- **Error Boundaries:** Graceful error handling throughout the UI
 
 ## 🏗 Architecture
 

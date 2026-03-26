@@ -32,6 +32,46 @@ export interface SupervisorState {
   graphEdges: GraphEdge[];
 }
 
+export interface PendingDecision {
+  id: string;
+  timestamp: number;
+  decision: string;
+  intervention: {
+    needed: boolean;
+    type: 'warning' | 'suggestion' | 'action';
+    message: string;
+    toolToExecute: { name: string; args: Record<string, unknown> } | null;
+  } | null;
+  crystallize: { content: string; type: string } | null;
+  mentalMapUpdate: string | null;
+  status: 'pending' | 'approved' | 'rejected' | 'expired';
+  trigger: string;
+  expiresAt: number;
+}
+
+export interface DecisionRecord {
+  id: string;
+  timestamp: number;
+  trigger: 'notepad_change' | 'memory_crystallization' | 'mission_complete' | 'manual' | 'guidance';
+  decision: string;
+  intervention: {
+    needed: boolean;
+    type?: 'warning' | 'suggestion' | 'action';
+    message?: string;
+    toolToExecute?: { name: string; args: Record<string, unknown> } | null;
+    result?: unknown;
+  } | null;
+  crystallize: { content: string; type: string } | null;
+  mentalMapUpdate: string | null;
+  status: 'auto_approved' | 'pending' | 'approved' | 'rejected' | 'expired';
+  contextSnapshot: {
+    notepadExcerpt: string;
+    recentMessages: number;
+    memoriesQueried: number;
+  };
+  relatedDecisions: string[];
+}
+
 // Tools the Overseer is permitted to call autonomously.
 // Restricting to this set prevents prompt-injection attacks from escalating to
 // arbitrary shell execution or memory invalidation.
@@ -40,6 +80,12 @@ const OVERSEER_ALLOWED_TOOLS = new Set([
   'read_file',
   'list_files',
   'web_search',
+]);
+
+// Tools that can be auto-approved without user confirmation (safe read-only ops)
+const AUTO_APPROVE_TOOLS = new Set([
+  'read_file',
+  'list_files',
 ]);
 
 export class SupervisorService {
@@ -56,6 +102,16 @@ export class SupervisorService {
   private decisionLedger: string[] = [];
   private readonly MAX_LEDGER_ENTRIES = 10;
 
+  // Pending decisions queue for approval flow
+  private pendingDecisions: Map<string, PendingDecision> = new Map();
+  private decisionHistory: DecisionRecord[] = [];
+  private readonly DECISION_HISTORY_SIZE = 50;
+  private readonly APPROVAL_TIMEOUT_MS = 60_000; // 60 seconds
+
+  // Auto-approval settings (can be configured via settings)
+  private autoApproveReadOnly = true;
+  private autoApproveCrystallize = true;
+
   constructor() {
     // Listen for budget increment events emitted by ToolService (breaks circular import)
     appEventBus.on('supervisor:increment-tool-budget', () => {
@@ -66,6 +122,9 @@ export class SupervisorService {
     appEventBus.on('supervisor:emit-event', ({ event, data }: { event: string; data: unknown }) => {
       this.emitEvent(event, data);
     });
+
+    // Start expiration checker for pending decisions
+    this.startExpirationChecker();
   }
 
   setIO(io: Server) {
@@ -131,14 +190,14 @@ export class SupervisorService {
           logger.info('[Supervisor] State synchronization emitted.');
         }
 
-        // Auto-Crystallization from Supervisor
-        if (analysis.crystallize && analysis.crystallize.content) {
-              await toolService.executeTool('crystallize_memory', {
-             content: analysis.crystallize.content,
-             type: analysis.crystallize.type || 'architectural_decision',
-             tags: ['supervisor_detected']
-           }, true);
-           logger.info(`[Supervisor] Crystallized: ${analysis.crystallize.content}`);
+        // Auto-Crystallization from Supervisor — only if auto-approve is on
+        if (analysis.crystallize && analysis.crystallize.content && this.autoApproveCrystallize) {
+          await this.executeToolWithResult('crystallize_memory', {
+            content: analysis.crystallize.content,
+            type: analysis.crystallize.type || 'architectural_decision',
+            tags: ['supervisor_detected']
+          }, crypto.randomUUID());
+          logger.info(`[Supervisor] Crystallized: ${analysis.crystallize.content}`);
         }
       }
 
@@ -317,22 +376,74 @@ RESPONSE FORMAT (strict JSON):
           }
         }
 
-        // Execute Tool if Overseer decides it's necessary — validate against allowlist first
-        if (result.intervention?.toolToExecute) {
-          const toolName = result.intervention.toolToExecute.name;
-          if (OVERSEER_ALLOWED_TOOLS.has(toolName)) {
-            logger.info(`[Overseer] Executing autonomous tool: ${toolName}`);
-            await toolService.executeTool(toolName, result.intervention.toolToExecute.args, true);
-          } else {
-            logger.warn(`[Overseer] Blocked disallowed tool from LLM output: ${toolName}`);
-          }
+        // Create a decision record for history
+        const decisionRecord: DecisionRecord = {
+          id: crypto.randomUUID(),
+          timestamp: Date.now(),
+          trigger: this.mapActivityToTrigger(context.activity),
+          decision: result.decision || '',
+          intervention: result.intervention || null,
+          crystallize: result.crystallize || null,
+          mentalMapUpdate: result.mentalMapUpdate || null,
+          status: 'pending',
+          contextSnapshot: {
+            notepadExcerpt: context.data?.notepadContent?.slice(0, 200) || '',
+            recentMessages: context.data?.recentMessages?.length || 0,
+            memoriesQueried: 0 // Would need to track this in buildLiveContext
+          },
+          relatedDecisions: []
+        };
+
+        // Check if tool execution can be auto-approved
+        const toolName = result.intervention?.toolToExecute?.name;
+        const canAutoApprove = toolName && (
+          (this.autoApproveReadOnly && AUTO_APPROVE_TOOLS.has(toolName)) ||
+          (this.autoApproveCrystallize && toolName === 'crystallize_memory')
+        );
+
+        if (canAutoApprove && toolName) {
+          // Auto-execute safe tools
+          logger.info(`[Overseer] Auto-approved tool: ${toolName}`);
+          await this.executeToolWithResult(toolName, result.intervention!.toolToExecute!.args, decisionRecord.id);
+          decisionRecord.status = 'auto_approved';
+          this.addToHistory(decisionRecord);
+          this.emitEvent('OVERSEER_DECISION', { ...result, status: 'auto_approved', id: decisionRecord.id });
+        } else if (result.intervention?.needed && result.intervention.toolToExecute) {
+          // Queue for approval
+          const pendingDecision: PendingDecision = {
+            id: decisionRecord.id,
+            timestamp: Date.now(),
+            decision: result.decision || '',
+            intervention: result.intervention,
+            crystallize: result.crystallize,
+            mentalMapUpdate: result.mentalMapUpdate,
+            status: 'pending',
+            trigger: context.activity,
+            expiresAt: Date.now() + this.APPROVAL_TIMEOUT_MS
+          };
+
+          this.pendingDecisions.set(pendingDecision.id, pendingDecision);
+          decisionRecord.status = 'pending';
+          this.addToHistory(decisionRecord);
+
+          // Notify UI of pending decision
+          this.emitEvent('DECISION_PENDING', {
+            ...pendingDecision,
+            timeRemaining: this.APPROVAL_TIMEOUT_MS
+          });
+
+          logger.info(`[Overseer] Decision queued for approval: ${pendingDecision.id}`);
+        } else {
+          // No tool execution needed, just record the decision
+          decisionRecord.status = 'auto_approved';
+          this.addToHistory(decisionRecord);
+          this.emitEvent('OVERSEER_DECISION', { ...result, status: 'auto_approved', id: decisionRecord.id });
         }
 
-        // Notify UI via Socket
-        this.emitEvent('OVERSEER_DECISION', result);
-
-        // Auto-Crystallize
-        if (result.crystallize?.content) {
+        // Handle crystallization separately — but only if it wasn't already
+        // executed as part of the tool-approval path above (avoids duplicate entries)
+        const toolAlreadyCrystallized = toolName === 'crystallize_memory' && canAutoApprove;
+        if (result.crystallize?.content && this.autoApproveCrystallize && !toolAlreadyCrystallized) {
           await toolService.executeTool('crystallize_memory', {
             content: result.crystallize.content,
             type: result.crystallize.type,
@@ -347,6 +458,157 @@ RESPONSE FORMAT (strict JSON):
       this.thinkDepth--;
       this.isThinkProcessing = false;
     }
+  }
+
+  /**
+   * Start periodic checker for expired pending decisions
+   */
+  private startExpirationChecker() {
+    setInterval(() => {
+      const now = Date.now();
+      for (const [id, decision] of this.pendingDecisions.entries()) {
+        if (decision.expiresAt < now && decision.status === 'pending') {
+          decision.status = 'expired';
+          this.pendingDecisions.delete(id);
+          
+          // Update history record
+          const historyRecord = this.decisionHistory.find(r => r.id === id);
+          if (historyRecord) {
+            historyRecord.status = 'expired';
+          }
+          
+          this.emitEvent('DECISION_EXPIRED', { id, decision: decision.decision });
+          logger.info(`[Overseer] Decision expired: ${id}`);
+        }
+      }
+    }, 5000); // Check every 5 seconds
+  }
+
+  /**
+   * Map activity string to trigger type
+   */
+  private mapActivityToTrigger(activity: string): DecisionRecord['trigger'] {
+    if (activity.includes('notepad')) return 'notepad_change';
+    if (activity.includes('memory') || activity.includes('crystall')) return 'memory_crystallization';
+    if (activity.includes('mission')) return 'mission_complete';
+    if (activity.includes('manual')) return 'manual';
+    if (activity.includes('guidance')) return 'guidance';
+    return 'notepad_change';
+  }
+
+  /**
+   * Add decision to history with size limit
+   */
+  private addToHistory(record: DecisionRecord) {
+    this.decisionHistory.unshift(record);
+    if (this.decisionHistory.length > this.DECISION_HISTORY_SIZE) {
+      this.decisionHistory.pop();
+    }
+  }
+
+  /**
+   * Execute tool and store result in decision record
+   */
+  private async executeToolWithResult(toolName: string, args: Record<string, unknown>, decisionId: string) {
+    if (!OVERSEER_ALLOWED_TOOLS.has(toolName)) {
+      throw new Error(`Tool '${toolName}' is not in the Overseer allowed-tools list`);
+    }
+    try {
+      const result = await toolService.executeTool(toolName, args, true);
+      const record = this.decisionHistory.find(r => r.id === decisionId);
+      if (record && record.intervention) {
+        record.intervention.result = result;
+      }
+      return result;
+    } catch (error) {
+      logger.error(`[Overseer] Tool execution failed: ${toolName}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Approve a pending decision
+   */
+  async approveDecision(decisionId: string): Promise<{ success: boolean; error?: string }> {
+    const decision = this.pendingDecisions.get(decisionId);
+    if (!decision) {
+      return { success: false, error: 'Decision not found' };
+    }
+
+    if (decision.status !== 'pending') {
+      return { success: false, error: 'Decision already resolved' };
+    }
+
+    try {
+      // Execute the tool
+      if (decision.intervention?.toolToExecute) {
+        await this.executeToolWithResult(
+          decision.intervention.toolToExecute.name,
+          decision.intervention.toolToExecute.args,
+          decisionId
+        );
+      }
+
+      // Update status
+      decision.status = 'approved';
+      this.pendingDecisions.delete(decisionId);
+
+      // Update history
+      const record = this.decisionHistory.find(r => r.id === decisionId);
+      if (record) {
+        record.status = 'approved';
+      }
+
+      this.emitEvent('DECISION_RESOLVED', { id: decisionId, status: 'approved' });
+      logger.info(`[Overseer] Decision approved: ${decisionId}`);
+
+      return { success: true };
+    } catch (error) {
+      logger.error(`[Overseer] Failed to execute approved decision: ${decisionId}`, error);
+      return { success: false, error: error instanceof Error ? error.message : 'Execution failed' };
+    }
+  }
+
+  /**
+   * Reject a pending decision
+   */
+  async rejectDecision(decisionId: string, reason?: string): Promise<{ success: boolean; error?: string }> {
+    const decision = this.pendingDecisions.get(decisionId);
+    if (!decision) {
+      return { success: false, error: 'Decision not found' };
+    }
+
+    if (decision.status !== 'pending') {
+      return { success: false, error: 'Decision already resolved' };
+    }
+
+    decision.status = 'rejected';
+    this.pendingDecisions.delete(decisionId);
+
+    // Update history
+    const record = this.decisionHistory.find(r => r.id === decisionId);
+    if (record) {
+      record.status = 'rejected';
+    }
+
+    this.emitEvent('DECISION_RESOLVED', { id: decisionId, status: 'rejected', reason });
+    logger.info(`[Overseer] Decision rejected: ${decisionId}${reason ? ` - ${reason}` : ''}`);
+
+    return { success: true };
+  }
+
+  /**
+   * Get all pending decisions
+   */
+  getPendingDecisions(): PendingDecision[] {
+    return Array.from(this.pendingDecisions.values());
+  }
+
+  /**
+   * Get decision history
+   */
+  getDecisionHistory(limit: number = 50, offset: number = 0): DecisionRecord[] {
+    return this.decisionHistory.slice(offset, offset + limit);
   }
 
   /**

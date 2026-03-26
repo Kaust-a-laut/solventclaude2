@@ -3,8 +3,10 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import { z } from 'zod';
 import { logger } from './utils/logger';
 
 // --- Import Routes ---
@@ -22,6 +24,14 @@ import { pluginManager } from './services/pluginManager';
 import { settingsService } from './services/settingsService';
 import { taskService, TaskQueue } from './services/taskService';
 import { SocketBatcher } from './lib/socketBatcher';
+import { SocketRateLimiter } from './utils/socketRateLimiter';
+import { codebaseIndexer } from './services/codebaseIndexer';
+
+// Timing-safe secret comparison to prevent timing attacks
+function safeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
 
 const app = express();
 const httpServer = createServer(app);
@@ -48,17 +58,62 @@ const io = new Server(httpServer, {
 
 const port = config.PORT || 3001;
 
+// --- Socket.io Security ---
+
+// Zod schemas for socket event payloads
+const syncNotesSchema = z.object({
+  content: z.string().max(50_000, 'content exceeds 50KB limit'),
+  graph: z.record(z.unknown()).optional(),
+});
+
+const crystallizeMemorySchema = z.object({
+  content: z.string().max(50_000, 'content exceeds 50KB limit'),
+});
+
+// Rate limiter: per-socket, 1-minute sliding window
+const socketLimiter = new SocketRateLimiter(60_000);
+const RATE_LIMITS = {
+  SYNC_NOTES: 10,          // max 10 per minute
+  CRYSTALLIZE_MEMORY: 5,   // max 5 per minute
+};
+
+// Authentication middleware — validates the same secret used by REST API
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token;
+  if (!token || typeof token !== 'string' || !safeCompare(token, config.BACKEND_INTERNAL_SECRET)) {
+    logger.warn('[Socket] Rejected unauthenticated connection', { id: socket.id });
+    return next(new Error('Authentication required'));
+  }
+  next();
+});
+
 // --- Socket Connection ---
 io.on('connection', (socket) => {
   console.log(`[Socket] Client connected: ${socket.id}`);
+  // Join a session room so we can target emissions later
+  const sessionRoom = `session:${socket.id}`;
+  socket.join(sessionRoom);
 
   socket.on('SYNC_NOTES', async (data) => {
+    // Rate limit check
+    if (!socketLimiter.check(socket.id, 'SYNC_NOTES', RATE_LIMITS.SYNC_NOTES)) {
+      socket.emit('rate-limited', { event: 'SYNC_NOTES', retryAfterMs: 60_000 });
+      return;
+    }
+
+    // Input validation
+    const parsed = syncNotesSchema.safeParse(data);
+    if (!parsed.success) {
+      socket.emit('error', { message: parsed.error.issues[0]?.message || 'Invalid payload', type: 'VALIDATION_ERROR' });
+      return;
+    }
+
     try {
-      await supervisorService.supervise(data.content, data.graph);
+      await supervisorService.supervise(parsed.data.content, parsed.data.graph ?? {});
       // Proactive Overseer think() — fire-and-forget with notepad as primary signal
       supervisorService.think({
         activity: 'notepad_change',
-        data: { notepadContent: data.content }
+        data: { notepadContent: parsed.data.content }
       }).catch((err: unknown) => {
         logger.warn('[Overseer] notepad_change think() failed', { error: err instanceof Error ? err.message : String(err) });
       });
@@ -71,9 +126,22 @@ io.on('connection', (socket) => {
 
   // Memory crystallization event → trigger Overseer awareness
   socket.on('CRYSTALLIZE_MEMORY', (data) => {
+    // Rate limit check
+    if (!socketLimiter.check(socket.id, 'CRYSTALLIZE_MEMORY', RATE_LIMITS.CRYSTALLIZE_MEMORY)) {
+      socket.emit('rate-limited', { event: 'CRYSTALLIZE_MEMORY', retryAfterMs: 60_000 });
+      return;
+    }
+
+    // Input validation
+    const parsed = crystallizeMemorySchema.safeParse(data);
+    if (!parsed.success) {
+      socket.emit('error', { message: parsed.error.issues[0]?.message || 'Invalid payload', type: 'VALIDATION_ERROR' });
+      return;
+    }
+
     supervisorService.think({
       activity: 'memory_crystallized',
-      data: { focus: data.content, notepadContent: data.content }
+      data: { focus: parsed.data.content, notepadContent: parsed.data.content }
     }).catch((err: unknown) => {
       logger.warn('[Overseer] memory_crystallized think() failed', { error: err instanceof Error ? err.message : String(err) });
     });
@@ -81,6 +149,7 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log(`[Socket] Client disconnected: ${socket.id}`);
+    socketLimiter.cleanup(socket.id);
   });
 });
 
@@ -118,7 +187,7 @@ try {
 
 // --- Global Middleware ---
 app.use(cors(corsOptions));
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ limit: '10mb' }));
 
 // --- Security Middleware ---
 app.use(helmet({
@@ -184,7 +253,7 @@ app.use((req, res, next) => {
   if (isPublicPath) return next();
 
   const clientSecret = req.headers['x-solvent-secret'];
-  if (clientSecret !== API_SECRET) {
+  if (!clientSecret || typeof clientSecret !== 'string' || !safeCompare(clientSecret, API_SECRET)) {
     console.warn(`[SECURITY] Unauthorized request to ${req.path} from ${req.ip}`);
     return res.status(401).json({ error: 'Unauthorized: Invalid session secret' });
   }
@@ -230,6 +299,18 @@ async function initializePlugins(): Promise<void> {
   }
 }
 
+// Start codebase indexer in background (non-blocking)
+async function startCodebaseIndexing(): Promise<void> {
+  try {
+    // Start file watcher for incremental indexing
+    await codebaseIndexer.start({ rootPath: process.cwd() });
+    console.log('[Server] Codebase indexer started with file watcher enabled');
+  } catch (error) {
+    console.error('[Server] Failed to start codebase indexer:', error);
+    // Don't fail server - indexing is optional
+  }
+}
+
 // Health check that reflects plugin state
 app.get('/health', (req, res) => {
   const healthStatus = {
@@ -252,12 +333,18 @@ async function startServer(): Promise<void> {
 
   // Wait for plugins to initialize before accepting requests
   await initializePlugins();
-  
-  httpServer.listen(port, '0.0.0.0', () => {
-    console.log(`Server with Real-Time Overseer running on http://0.0.0.0:${port}`);
+
+  const host = process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1');
+  httpServer.listen(port, host, () => {
+    console.log(`Server with Real-Time Overseer running on http://${host}:${port}`);
     if (pluginsDegraded) {
       console.warn('[Server] Running in degraded mode - some plugin features may be unavailable');
     }
+  });
+
+  // Start codebase indexing in background (non-blocking)
+  startCodebaseIndexing().catch(error => {
+    console.error('[Server] Background codebase indexing failed to start:', error);
   });
 }
 

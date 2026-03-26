@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import path from 'path';
 import { z } from 'zod';
 import { AIController } from '../controllers/aiController';
 import { BrowseController } from '../controllers/browseController';
@@ -7,8 +8,10 @@ import { aiService } from '../services/aiService';
 import { debateService } from '../services/debateService';
 import { supervisorService } from '../services/supervisorService';
 import { orchestrationService } from '../services/orchestrationService';
+import { ConversationStorageService } from '../services/conversationStorageService';
 
 const router = Router();
+const storageService = new ConversationStorageService();
 
 // ── Core Chat ──────────────────────────────────────────────────────────────
 router.post('/chat', AIController.chat);
@@ -167,6 +170,244 @@ router.get('/plugins', async (req, res) => {
     };
 
     res.json(pluginsInfo);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ── Session Persistence ────────────────────────────────────────────────────
+router.get('/sessions', async (req, res) => {
+  try {
+    const { mode, search, limit = '50', offset = '0' } = req.query;
+    let sessions = await storageService.listSessions(mode as string);
+    
+    if (search) {
+      const query = search as string;
+      sessions = sessions.filter(s => 
+        s.title.toLowerCase().includes(query.toLowerCase()) ||
+        s.messages.some(m => m.content.toLowerCase().includes(query.toLowerCase()))
+      );
+    }
+    
+    const parsedLimit = parseInt(limit as string, 10);
+    const parsedOffset = parseInt(offset as string, 10);
+    const paginated = sessions.slice(parsedOffset, parsedOffset + parsedLimit);
+    
+    res.json({ sessions: paginated, total: sessions.length });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/sessions/search', async (req, res) => {
+  try {
+    const { q, limit = '20' } = req.query;
+    if (!q) {
+      return res.status(400).json({ error: 'Query parameter "q" is required' });
+    }
+    const results = await storageService.searchSessions(q as string, parseInt(limit as string, 10));
+    res.json({ results });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/sessions/:id', async (req, res) => {
+  try {
+    const session = await storageService.loadSession(req.params.id);
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+    res.json(session);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/sessions', async (req, res) => {
+  try {
+    const { id, mode, title, messages, parentMessageId, parentSessionId } = req.body;
+    
+    if (!id || !mode || !Array.isArray(messages)) {
+      return res.status(400).json({ error: 'id, mode, and messages are required' });
+    }
+    
+    const storedMessages = storageService.toStoredMessages(messages);
+    const now = Date.now();
+    
+    const session = {
+      id,
+      mode,
+      title: title || storageService.generateTitle(messages[0]?.content || 'New Conversation'),
+      messages: storedMessages,
+      createdAt: now,
+      updatedAt: now,
+      parentMessageId,
+      parentSessionId,
+      metadata: {
+        modelsUsed: [...new Set(messages.map(m => m.model).filter(Boolean))],
+        messageCount: messages.length,
+        tokenEstimate: messages.reduce((acc, m) => acc + m.content.length / 4, 0),
+        tags: []
+      }
+    };
+    
+    await storageService.saveSession(session);
+    res.json(session);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/sessions/:id', async (req, res) => {
+  try {
+    const existing = await storageService.loadSession(req.params.id);
+    if (!existing) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+    
+    const { messages, title } = req.body;
+    const updated = {
+      ...existing,
+      title: title || existing.title,
+      messages: messages ? storageService.toStoredMessages(messages) : existing.messages,
+      updatedAt: Date.now(),
+      metadata: {
+        ...existing.metadata,
+        messageCount: messages ? messages.length : existing.metadata.messageCount,
+        modelsUsed: messages
+          ? [...new Set(messages.map((m: any) => m.model).filter(Boolean))] as string[]
+          : existing.metadata.modelsUsed
+      }
+    };
+    
+    await storageService.saveSession(updated);
+    res.json(updated);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete('/sessions/:id', async (req, res) => {
+  try {
+    await storageService.deleteSession(req.params.id);
+    res.json({ success: true, message: 'Session deleted' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ── Overseer Decision Review ────────────────────────────────────────────────
+router.get('/overseer/pending', async (req, res) => {
+  try {
+    const pending = supervisorService.getPendingDecisions();
+    res.json({ decisions: pending });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/overseer/history', async (req, res) => {
+  try {
+    const { limit = '50', offset = '0', trigger, status } = req.query;
+    let history = supervisorService.getDecisionHistory(
+      parseInt(limit as string, 10),
+      parseInt(offset as string, 10)
+    );
+
+    if (trigger) {
+      history = history.filter(h => h.trigger === trigger);
+    }
+    if (status) {
+      history = history.filter(h => h.status === status);
+    }
+
+    res.json({ decisions: history, total: history.length });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/overseer/approve', async (req, res) => {
+  try {
+    const { decisionId } = req.body;
+    if (!decisionId) {
+      return res.status(400).json({ error: 'decisionId is required' });
+    }
+
+    const result = await supervisorService.approveDecision(decisionId);
+    if (result.success) {
+      res.json({ success: true, message: 'Decision approved' });
+    } else {
+      res.status(400).json({ error: result.error });
+    }
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/overseer/reject', async (req, res) => {
+  try {
+    const { decisionId, reason } = req.body;
+    if (!decisionId) {
+      return res.status(400).json({ error: 'decisionId is required' });
+    }
+
+    const result = await supervisorService.rejectDecision(decisionId, reason);
+    if (result.success) {
+      res.json({ success: true, message: 'Decision rejected' });
+    } else {
+      res.status(400).json({ error: result.error });
+    }
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ── Codebase Indexing ────────────────────────────────────────────────────────
+router.post('/codebase/index', async (req, res) => {
+  try {
+    const { rootPath = process.cwd() } = req.body;
+
+    // Prevent arbitrary filesystem traversal — rootPath must be within cwd
+    const resolved = path.resolve(rootPath);
+    if (!resolved.startsWith(process.cwd())) {
+      return res.status(400).json({ error: 'rootPath must be within the project directory' });
+    }
+
+    const { codebaseIndexer } = await import('../services/codebaseIndexer');
+
+    // Perform full index
+    await codebaseIndexer.indexProject(resolved);
+
+    res.json({ success: true, message: 'Codebase indexing complete' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/codebase/status', async (req, res) => {
+  try {
+    const { codebaseIndexer } = await import('../services/codebaseIndexer');
+    const status = codebaseIndexer.getStatus();
+    res.json(status);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/codebase/watch', async (req, res) => {
+  try {
+    const { rootPath = process.cwd(), enabled } = req.body;
+    const { codebaseIndexer } = await import('../services/codebaseIndexer');
+    
+    if (enabled) {
+      await codebaseIndexer.start({ rootPath });
+      res.json({ success: true, message: 'File watcher started' });
+    } else {
+      await codebaseIndexer.stop();
+      res.json({ success: true, message: 'File watcher stopped' });
+    }
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

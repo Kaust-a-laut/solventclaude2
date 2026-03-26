@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   Search, ArrowLeft, ArrowRight, RotateCw, Globe,
@@ -96,6 +96,7 @@ export const BrowserArea = () => {
     updateBrowserTab, setActiveBrowserTabId,
     browserPiPOpen, setBrowserPiPOpen,
     browserInjectedContext, setBrowserInjectedContext,
+    browserPinnedUrls, addBrowserPinnedUrl, removeBrowserPinnedUrl,
     setCurrentMode,
   } = useAppStore();
 
@@ -108,6 +109,11 @@ export const BrowserArea = () => {
   const [summaryInstruction, setSummaryInstruction] = useState('');
   const [showSummaryInput, setShowSummaryInput] = useState(false);
   const pipWindowRef = useRef<Window | null>(null);
+  const pipCleanupRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    return () => { pipCleanupRef.current?.(); };
+  }, []);
 
   const tabId = activeTab?.id || 'tab-1';
 
@@ -228,6 +234,22 @@ export const BrowserArea = () => {
     setCurrentMode('chat');
   }, [setBrowserInjectedContext, setCurrentMode]);
 
+  // ── Pin/Unpin URL ───────────────────────────────────────────────────
+  const togglePinUrl = useCallback(() => {
+    if (!activeTab?.url || !activeTab?.pageContent?.title) return;
+    
+    const isPinned = browserPinnedUrls.some((p: { url: string }) => p.url === activeTab.url);
+    if (isPinned) {
+      removeBrowserPinnedUrl(activeTab.url);
+    } else {
+      // Auto-generate summary from page content
+      const summary = activeTab.pageContent.content.slice(0, 500).split('\n').slice(0, 3).join(' ');
+      addBrowserPinnedUrl(activeTab.url, activeTab.pageContent.title, summary);
+    }
+  }, [activeTab, browserPinnedUrls, removeBrowserPinnedUrl, addBrowserPinnedUrl]);
+
+  const isCurrentUrlPinned = activeTab?.url && browserPinnedUrls.some((p: { url: string }) => p.url === activeTab.url);
+
   // ── Tab Management ─────────────────────────────────────────────────
   const handleAddTab = useCallback(() => {
     const id = `tab-${Date.now()}`;
@@ -287,11 +309,19 @@ export const BrowserArea = () => {
       root.render(<BrowserPiP />);
       setBrowserPiPOpen(true);
 
-      pipWin.addEventListener('pagehide', () => {
+      const onPageHide = () => {
         root.unmount();
         setBrowserPiPOpen(false);
         pipWindowRef.current = null;
-      });
+      };
+      pipWin.addEventListener('pagehide', onPageHide);
+      pipCleanupRef.current = () => {
+        pipWin.removeEventListener('pagehide', onPageHide);
+        root.unmount();
+        pipWin.close();
+        setBrowserPiPOpen(false);
+        pipWindowRef.current = null;
+      };
     } catch (err) {
       console.error('Document PiP failed:', err);
     }
@@ -412,6 +442,17 @@ export const BrowserArea = () => {
               </div>
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-2 pt-2">
+                <button
+                  onClick={togglePinUrl}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 border text-[9px] font-black uppercase tracking-widest rounded-xl transition-all",
+                    isCurrentUrlPinned
+                      ? "bg-jb-accent border-jb-accent text-white"
+                      : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10"
+                  )}
+                >
+                  {isCurrentUrlPinned ? '📌 Unpin' : '📌 Pin Page'}
+                </button>
                 <button
                   onClick={() => handleSummarize()}
                   disabled={isSummarizing}
@@ -680,6 +721,50 @@ export const BrowserArea = () => {
           </div>
         )}
       </div>
+
+      {/* Pinned URLs Panel */}
+      {browserPinnedUrls.length > 0 && (
+        <div className="absolute top-4 left-4 z-20 w-72 max-h-96 overflow-y-auto">
+          <div className="bg-black/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="p-3 border-b border-white/5 flex items-center gap-2">
+              <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">📌 Pinned Pages</span>
+              <span className="text-[7px] font-mono text-slate-600 bg-white/5 px-1 rounded">{browserPinnedUrls.length}</span>
+            </div>
+            <div className="p-2 space-y-1">
+              {browserPinnedUrls.map((pinned: { url: string; title: string; summary?: string }) => (
+                <div
+                  key={pinned.url}
+                  className="group p-2 bg-white/[0.02] border border-white/5 rounded-lg hover:border-jb-accent/20 transition-all"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[9px] font-bold text-white truncate">{pinned.title}</p>
+                      <p className="text-[7px] text-slate-500 truncate">{pinned.url}</p>
+                      {pinned.summary && (
+                        <p className="text-[7px] text-slate-600 mt-1 line-clamp-2">{pinned.summary}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => removeBrowserPinnedUrl(pinned.url)}
+                      className="opacity-0 group-hover:opacity-100 p-1 text-slate-600 hover:text-rose-400 transition-all"
+                    >
+                      <X size={8} />
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => {
+                      handleNavigate(pinned.url);
+                    }}
+                    className="w-full mt-1.5 py-1 bg-white/5 hover:bg-jb-accent/10 border border-white/5 hover:border-jb-accent/20 rounded text-[7px] font-black uppercase tracking-widest text-slate-500 hover:text-jb-accent transition-all"
+                  >
+                    Open Page
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Status Bar */}
       <div className="h-12 px-8 bg-black border-t border-white/5 flex justify-between items-center relative z-30">

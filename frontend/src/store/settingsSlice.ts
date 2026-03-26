@@ -53,6 +53,7 @@ export interface SettingsSlice {
   activeBrowserTabId: string;
   browserPiPOpen: boolean;
   browserInjectedContext: string | null;
+  browserPinnedUrls: Array<{ url: string; title: string; summary?: string }>;
   availableProviders: ProviderInfo[];
   providerConfigs: Record<string, ProviderConfig>;
 
@@ -89,6 +90,9 @@ export interface SettingsSlice {
   setActiveBrowserTabId: (id: string) => void;
   setBrowserPiPOpen: (open: boolean) => void;
   setBrowserInjectedContext: (context: string | null) => void;
+  setBrowserPinnedUrls: (urls: Array<{ url: string; title: string; summary?: string }>) => void;
+  addBrowserPinnedUrl: (url: string, title: string, summary?: string) => void;
+  removeBrowserPinnedUrl: (url: string) => void;
   setAvailableProviders: (providers: ProviderInfo[]) => void;
   setProviderConfigs: (configs: Record<string, ProviderConfig>) => void;
   updateProviderConfig: (providerId: string, config: Partial<ProviderConfig>) => void;
@@ -134,6 +138,7 @@ export const createSettingsSlice: StateCreator<AppState, [], [], SettingsSlice> 
   activeBrowserTabId: 'tab-1',
   browserPiPOpen: false,
   browserInjectedContext: null,
+  browserPinnedUrls: [],
   availableProviders: [],
   providerConfigs: {},
 
@@ -190,6 +195,13 @@ export const createSettingsSlice: StateCreator<AppState, [], [], SettingsSlice> 
   setActiveBrowserTabId: (activeBrowserTabId) => set({ activeBrowserTabId }),
   setBrowserPiPOpen: (browserPiPOpen) => set({ browserPiPOpen }),
   setBrowserInjectedContext: (browserInjectedContext) => set({ browserInjectedContext }),
+  setBrowserPinnedUrls: (browserPinnedUrls) => set({ browserPinnedUrls }),
+  addBrowserPinnedUrl: (url, title, summary) => set((state) => ({
+    browserPinnedUrls: [...state.browserPinnedUrls, { url, title, summary }]
+  })),
+  removeBrowserPinnedUrl: (url) => set((state) => ({
+    browserPinnedUrls: state.browserPinnedUrls.filter(p => p.url !== url)
+  })),
   setAvailableProviders: (availableProviders) => set({ availableProviders }),
   setProviderConfigs: (providerConfigs) => set({ providerConfigs }),
   updateProviderConfig: (providerId, config) => set((state) => ({

@@ -64,19 +64,21 @@ router.post('/memory/search', async (req: Request, res: Response) => {
   if (!query) return res.status(400).json({ error: 'query is required' });
 
   const results = await vectorService.search(query, limit);
-  const entries = results.map((r: any) => ({
+  const formattedResults = results.map((r: any) => ({
     id: r.id,
     score: r.score,
-    type: r.metadata?.type || null,
-    tier: r.metadata?.tier || null,
-    content: r.metadata?.content || r.metadata?.summary || '',
-    importance: r.metadata?.importance ?? null,
-    confidence: r.metadata?.confidence ?? null,
-    timestamp: r.metadata?.timestamp || r.metadata?.lastUpdated || null,
-    tags: r.metadata?.tags || [],
+    text: r.metadata?.content || r.metadata?.summary || '',
+    metadata: {
+      type: r.metadata?.type || null,
+      tier: r.metadata?.tier || null,
+      importance: r.metadata?.importance ?? null,
+      confidence: r.metadata?.confidence ?? null,
+      timestamp: r.metadata?.timestamp || r.metadata?.lastUpdated || null,
+      tags: r.metadata?.tags || [],
+    },
   }));
 
-  res.json({ entries });
+  res.json({ results: formattedResults });
 });
 
 // PATCH /api/v1/memory/entries/:id — update entry content
