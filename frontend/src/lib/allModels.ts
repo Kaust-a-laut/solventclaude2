@@ -6,6 +6,22 @@ import { OPENROUTER_FREE_ALL_MODELS, OPENROUTER_FREE_CHAT_MODELS } from './openr
 import { DASHSCOPE_ALL_MODELS, DASHSCOPE_CHAT_MODELS } from './dashscopeModels';
 import { CEREBRAS_ALL_MODELS, CEREBRAS_CHAT_MODELS } from './cerebrasModels';
 
+// ── Ollama Cloud models ──────────────────────────────────────────────────────
+
+export const OLLAMA_CLOUD_CHAT_MODELS = [
+  { label: 'GLM-4.7',              value: 'glm-4.7:cloud' },
+  { label: 'GLM-5',                value: 'glm-5:cloud' },
+  { label: 'Kimi K2.5',            value: 'kimi-k2.5:cloud' },
+  { label: 'Kimi K2 Thinking',     value: 'kimi-k2-thinking:cloud' },
+  { label: 'DeepSeek V3.1 (671B)', value: 'deepseek-v3.1:671b-cloud' },
+  { label: 'DeepSeek V3.2',        value: 'deepseek-v3.2:cloud' },
+  { label: 'Qwen 3.5',             value: 'qwen3.5:cloud' },
+  { label: 'Qwen3 Coder (480B)',   value: 'qwen3-coder:480b-cloud' },
+  { label: 'Nemotron 3 Super',     value: 'nemotron-3-super:cloud' },
+  { label: 'MiniMax M2.1',         value: 'minimax-m2.1:cloud' },
+  { label: 'Cogito 2.1 (671B)',    value: 'cogito-2.1:671b-cloud' },
+] as const;
+
 // ── Gemini models (shared across ChatHeader + Compare/Debate) ────────────────
 
 export const GEMINI_CHAT_MODELS = [
@@ -34,6 +50,12 @@ export const ALL_MODELS = [
   ...OPENROUTER_FREE_ALL_MODELS,
   ...DASHSCOPE_ALL_MODELS,
   ...CEREBRAS_ALL_MODELS,
+  ...OLLAMA_CLOUD_CHAT_MODELS.map(m => ({
+    provider: 'ollama' as const,
+    model: m.value,
+    label: m.label,
+    group: 'Ollama Cloud' as const,
+  })),
   { provider: 'ollama',     model: 'qwen2.5-coder:7b',               label: 'Qwen 2.5 Coder 7B',    group: 'Local' },
   { provider: 'ollama',     model: 'qwen2.5-coder:14b',              label: 'Qwen 2.5 Coder 14B',   group: 'Local' },
   { provider: 'ollama',     model: 'deepseek-r1:8b',                 label: 'DeepSeek R1 8B',        group: 'Local' },
@@ -76,6 +98,11 @@ export const PROVIDER_GROUPS = [
     id: 'cerebras',
     label: 'Cerebras',
     models: [...CEREBRAS_CHAT_MODELS],
+  },
+  {
+    id: 'ollama',
+    label: 'Ollama Cloud',
+    models: [...OLLAMA_CLOUD_CHAT_MODELS],
   },
 ] as const;
 

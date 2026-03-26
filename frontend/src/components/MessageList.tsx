@@ -4,7 +4,6 @@ import { useAppStore } from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import { cn } from '../lib/utils';
 import { downloadImage } from '../lib/file-utils';
-import { WaterfallVisualizer } from './WaterfallVisualizer';
 import { useVirtualMessages } from '../lib/useVirtualMessages';
 
 interface MessageListProps {
@@ -57,9 +56,6 @@ export const MessageList = ({ compact }: MessageListProps) => {
       isCompact ? "pt-20 pb-20 space-y-4" : "pt-[100px] pb-32 space-y-5",
       isMobile ? (compact ? "p-3 pt-16 pb-20" : "p-4 pt-20 pb-24") : "p-6"
     )} ref={scrollRef}>
-
-      {/* Waterfall Visualization at the top (or contextually could be interspersed, but top is safe) */}
-      <WaterfallVisualizer />
 
       {messages.length === 0 && !isProcessing && (
         <div className="flex-1 flex flex-col items-center justify-center gap-6 py-24 pointer-events-none select-none">

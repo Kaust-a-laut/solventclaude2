@@ -42,6 +42,19 @@ export const MODELS = {
     LLAMA_3: 'llama3',
     DEEPSEEK_CODER: 'deepseek-coder-v2'
   },
+  OLLAMA_CLOUD: [
+    'glm-4.7:cloud',
+    'glm-5:cloud',
+    'kimi-k2.5:cloud',
+    'kimi-k2-thinking:cloud',
+    'deepseek-v3.1:671b-cloud',
+    'deepseek-v3.2:cloud',
+    'qwen3.5:cloud',
+    'qwen3-coder:480b-cloud',
+    'nemotron-3-super:cloud',
+    'minimax-m2.1:cloud',
+    'cogito-2.1:671b-cloud',
+  ],
   OPENROUTER: {
     CLAUDE_SONNET_4: 'anthropic/claude-sonnet-4',
     CLAUDE_3_5_SONNET: 'anthropic/claude-3.5-sonnet',
