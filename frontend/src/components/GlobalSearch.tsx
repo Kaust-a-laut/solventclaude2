@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Search, MessageSquare, FileText, Brain, History, 
-  ChevronRight, X, Command, Clock, Folder
+import {
+  Search, MessageSquare, FileText, Brain, History,
+  ChevronRight, X, Command, Clock, Folder, AlertTriangle
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { api } from '../lib/api';
@@ -35,6 +35,7 @@ export const GlobalSearch: React.FC = () => {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   const { loadSession, setMessages } = useAppStore();
 
   // Open on Cmd+K or Ctrl+K
@@ -127,6 +128,7 @@ export const GlobalSearch: React.FC = () => {
       setResults(formattedResults);
     } catch (error) {
       console.error('[GlobalSearch] Search failed:', error);
+      setError(error instanceof Error ? error.message : 'Search failed');
     } finally {
       setIsLoading(false);
     }
@@ -232,7 +234,19 @@ export const GlobalSearch: React.FC = () => {
 
                 {/* Results */}
                 <div className="max-h-[60vh] overflow-y-auto">
-                  {isLoading ? (
+                  {error ? (
+                    <div className="p-8 text-center">
+                      <AlertTriangle size={24} className="text-rose-500 mx-auto mb-2" />
+                      <p className="text-[10px] text-rose-400 uppercase tracking-widest">Search Error</p>
+                      <p className="text-[8px] text-slate-500 mt-1">{error}</p>
+                      <button
+                        onClick={() => { setError(null); setQuery(''); }}
+                        className="mt-3 px-3 py-1.5 bg-rose-500/20 border border-rose-500/30 rounded-lg text-[9px] text-rose-300 hover:bg-rose-500/30 transition-all"
+                      >
+                        Try Again
+                      </button>
+                    </div>
+                  ) : isLoading ? (
                     <div className="p-8 text-center">
                       <div className="inline-block w-5 h-5 border-2 border-jb-accent border-t-transparent rounded-full animate-spin" />
                       <p className="text-[10px] text-slate-500 mt-2 uppercase tracking-widest">Searching...</p>
