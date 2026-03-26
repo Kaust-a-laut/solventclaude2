@@ -8,22 +8,25 @@ describe('Provider Resolution Integration', () => {
   });
 
   it('should resolve providers using the 3-tier fallback mechanism', async () => {
-    // Test explicit provider resolution
     const providers = pluginManager.getAllProviders();
-    if (providers.length > 0) {
-      const firstProvider = providers[0];
-      const resolvedExplicit = await pluginManager.resolveProvider(firstProvider.id);
-      expect(resolvedExplicit.id).toBe(firstProvider.id);
+    if (providers.length === 0) return;
 
-      // Test default provider resolution
-      const resolvedDefault = await pluginManager.resolveProvider(undefined, firstProvider.id);
-      expect(resolvedDefault.id).toBe(firstProvider.id);
+    // Find a provider that is actually ready (has API key or doesn't need one)
+    const readyProvider = providers.find(p => p.isReady());
+    if (!readyProvider) return; // No ready providers in this environment
 
-      // Test fallback to first available provider
-      const resolvedFallback = await pluginManager.resolveProvider('nonexistent-provider', 'nonexistent-default');
-      expect(resolvedFallback).toBeDefined();
-      expect(resolvedFallback.isReady()).toBe(true);
-    }
+    // Test explicit provider resolution with a ready provider
+    const resolvedExplicit = await pluginManager.resolveProvider(readyProvider.id);
+    expect(resolvedExplicit.id).toBe(readyProvider.id);
+
+    // Test default provider resolution
+    const resolvedDefault = await pluginManager.resolveProvider(undefined, readyProvider.id);
+    expect(resolvedDefault.id).toBe(readyProvider.id);
+
+    // Test fallback to first available provider
+    const resolvedFallback = await pluginManager.resolveProvider('nonexistent-provider', 'nonexistent-default');
+    expect(resolvedFallback).toBeDefined();
+    expect(resolvedFallback.isReady()).toBe(true);
   });
 
   it('should filter providers by capabilities', async () => {
