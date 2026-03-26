@@ -69,7 +69,8 @@ describe('VectorService Enhancements', () => {
     await vectorService.getEmbedding(text);
     const end2 = Date.now();
     
-    expect(end2 - start2).toBeLessThanOrEqual(end1 - start1);
+    // Cached call should be fast (under 50ms); allow slack for CI timing jitter
+    expect(end2 - start2).toBeLessThanOrEqual(50);
   });
 
   it('should filter by type using index', async () => {
