@@ -18,7 +18,7 @@ interface AgentContribution {
 
 interface MissionProgress {
   jobId: string;
-  progress: number;
+  progress: number; // 0-100
   currentAgent?: { name: string; role: string };
   phase?: 'thinking' | 'speaking' | 'synthesizing';
   roundNumber?: number;
@@ -26,7 +26,7 @@ interface MissionProgress {
   tokensUsed?: { in: number; out: number };
   agentContributions?: AgentContribution[];
   startedAt?: number;
-  status?: 'queued' | 'active' | 'complete' | 'failed';
+  status: 'queued' | 'active' | 'complete' | 'failed';
 }
 
 interface ConsensusHistory {

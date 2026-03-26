@@ -13,7 +13,7 @@ interface SearchResult {
   title: string;
   excerpt: string;
   score?: number;
-  metadata?: {
+  metadata: {
     mode?: string;
     date?: string;
     messageCount?: number;
