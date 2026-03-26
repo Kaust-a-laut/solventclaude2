@@ -71,18 +71,18 @@ export class GeminiProviderPlugin implements IProviderPlugin {
       throw new Error('Gemini provider not initialized');
     }
 
-    const { model, temperature = 0.7, maxTokens = 2048, apiKey } = options;
+    const { model, temperature = 0.7, maxTokens = 2048, apiKey, jsonMode } = options;
     const effectiveApiKey = apiKey || config.GEMINI_API_KEY;
 
-    if (effectiveApiKey) {
-      this.genAI = new GoogleGenerativeAI(effectiveApiKey);
-    }
+    // Use a local client to avoid mutating this.genAI under concurrency
+    const genAI = effectiveApiKey ? new GoogleGenerativeAI(effectiveApiKey) : this.genAI!;
 
-    const modelInstance = this.genAI.getGenerativeModel({
+    const modelInstance = genAI.getGenerativeModel({
       model: model || this.defaultModel,
       generationConfig: {
         temperature,
         maxOutputTokens: maxTokens,
+        ...(jsonMode ? { responseMimeType: 'application/json' } : {}),
       }
     });
 
@@ -95,7 +95,11 @@ export class GeminiProviderPlugin implements IProviderPlugin {
     const lastMessage = messages[messages.length - 1].content;
     const result = await chat.sendMessage(lastMessage);
     const response = await result.response;
-    return response.text();
+    const text = response.text();
+    if (!text || text.length === 0) {
+      throw new Error(`Gemini returned empty response for model ${model || this.defaultModel}`);
+    }
+    return text;
   }
 
   async *stream(messages: ChatMessage[], options: CompletionOptions): AsyncGenerator<string> {
@@ -139,11 +143,10 @@ export class GeminiProviderPlugin implements IProviderPlugin {
     const { model, temperature = 0.7, maxTokens = 2048, apiKey } = options || {};
     const effectiveApiKey = apiKey || config.GEMINI_API_KEY;
 
-    if (effectiveApiKey) {
-      this.genAI = new GoogleGenerativeAI(effectiveApiKey);
-    }
+    // Use a local client to avoid mutating this.genAI under concurrency
+    const genAI = effectiveApiKey ? new GoogleGenerativeAI(effectiveApiKey) : this.genAI!;
 
-    const modelInstance = this.genAI.getGenerativeModel({
+    const modelInstance = genAI.getGenerativeModel({
       model: model || 'gemini-3-flash-preview',
       generationConfig: {
         temperature,

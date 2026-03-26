@@ -100,6 +100,13 @@ export class ToolService {
       return { status: 'dry_run', message: msg };
     }
 
+    // Frontend-deferred tools: return a marker result instead of executing
+    if (toolName.startsWith('ide_')) {
+      const deferredResult = { status: 'deferred_to_frontend', tool: toolName, args };
+      await transactionService.logComplete(txId, deferredResult);
+      return deferredResult;
+    }
+
     try {
       let result;
       switch (toolName) {

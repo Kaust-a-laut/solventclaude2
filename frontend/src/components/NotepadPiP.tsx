@@ -1,13 +1,15 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import {
   PenLine, X, Shield,
   Database, LayoutGrid, ExternalLink,
   Code2, Settings,
   Layers, Trash2, ChevronDown, Sparkles,
-  Brain,
+  Brain, FlaskConical,
   Play, Loader2, CheckCircle2, XCircle,
-  Users
+  Users, Terminal as TerminalIcon, FileText,
+  Wrench, Check, AlertCircle, FolderOpen,
+  Eye, EyeOff, MessageSquare, Diff, ArrowRight,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -72,15 +74,87 @@ const interventionColor = {
   action: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
 };
 
+// ─── Helper: Mini Terminal ────────────────────────────────────────────────────
+
+const TERMINAL_COLOR_MAP: [RegExp, string][] = [
+  [/^\[SYSTEM\]/,    'text-jb-accent/60'],
+  [/^\[ERROR\]/,     'text-rose-400'],
+  [/^\[STDERR\]/,    'text-rose-400/70'],
+  [/^\[WATERFALL\]/, 'text-jb-purple/70'],
+  [/^\[AGENT\]/,     'text-emerald-400/70'],
+];
+
+const MiniTerminal: React.FC<{ lines: string[] }> = ({ lines }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (ref.current) ref.current.scrollTop = ref.current.scrollHeight;
+  }, [lines.length]);
+
+  const tail = lines.slice(-40);
+  return (
+    <div
+      ref={ref}
+      className="flex-1 bg-black/40 rounded-lg border border-white/5 p-2 overflow-y-auto no-scrollbar font-mono text-[8px] leading-[1.6] min-h-0"
+    >
+      {tail.length === 0 ? (
+        <div className="h-full flex items-center justify-center opacity-20">
+          <span className="text-[8px] font-black uppercase">Terminal empty</span>
+        </div>
+      ) : (
+        tail.map((line, i) => {
+          const colorCls = TERMINAL_COLOR_MAP.find(([re]) => re.test(line))?.[1] || 'text-slate-500';
+          return (
+            <div key={i} className={cn('whitespace-pre-wrap break-all', colorCls)}>
+              {line}
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+};
+
+// ─── Helper: Toggle Pill ──────────────────────────────────────────────────────
+
+const TogglePill: React.FC<{
+  icon: React.ElementType;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}> = ({ icon: Icon, label, active, onClick }) => (
+  <button
+    onClick={onClick}
+    className={cn(
+      'flex items-center gap-1 px-2 py-1 rounded-md text-[7px] font-black uppercase transition-all border',
+      active
+        ? 'bg-jb-accent/15 border-jb-accent/25 text-jb-accent'
+        : 'bg-white/[0.02] border-white/5 text-slate-600 hover:text-white',
+    )}
+  >
+    <Icon size={8} />
+    {label}
+    {active ? <Eye size={7} /> : <EyeOff size={7} />}
+  </button>
+);
+
+// ─── Main Component ──────────────────────────────────────────────────────────
+
 export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDetach?: () => void } = {}) => {
   const {
     notepadContent, setNotepadContent, supervisorInsight, setSupervisorInsight,
     thinkingModeEnabled, setThinkingModeEnabled, auraMode, setAuraMode,
     globalProvider, setGlobalProvider, setCurrentMode, activities,
-    messages
+    messages, waterfall, waterfallAbortController,
+    // Coding suite state
+    terminalLines, clearTerminalLines, agentMessages,
+    pendingDiff, clearPendingDiff,
+    openFiles, activeFile,
+    fileTreeVisible, setFileTreeVisible,
+    chatPanelVisible, setChatPanelVisible,
+    terminalVisible, setTerminalVisible,
   } = useAppStore();
 
-  const [view, setView] = useState<'dash' | 'notes' | 'overseer' | 'missions' | 'waterfall'>('dash');
+  const [view, setView] = useState<'dash' | 'notes' | 'overseer' | 'missions' | 'waterfall' | 'code'>('dash');
   const [isCompact, setIsCompact] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -173,14 +247,15 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
     if (!missionGoal.trim()) return;
     setLaunchingMission(true);
     try {
-      const data = await fetchWithRetry(`${API_BASE_URL}/collaborate`, {
+      const data = await fetchWithRetry<{ jobId?: string }>(`${API_BASE_URL}/collaborate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ goal: missionGoal, missionType: missionTemplate, async: true }),
       });
-      if (data.jobId) {
+      const jobId = data.jobId;
+      if (jobId) {
         setActiveMissions(prev => [{
-          jobId: data.jobId,
+          jobId,
           goal: missionGoal,
           missionType: missionTemplate,
           status: 'queued' as const,
@@ -395,12 +470,88 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                 </div>
               </button>
 
+              {/* Pipeline Status Card */}
+              {(() => {
+                const STAGE_ORDER = ['architect', 'reasoner', 'executor', 'reviewer'] as const;
+                const pipelineIdle = !waterfall.currentStep && waterfall.steps.architect.status === 'idle';
+                const pipelineActive = waterfallAbortController !== null || waterfall.currentStep !== null;
+                const pipelineComplete = STAGE_ORDER.every((s) => waterfall.steps[s].status === 'completed');
+                const reviewerScore = waterfall.steps.reviewer.data?.score;
+                const currentStage = waterfall.currentStep;
+
+                if (!pipelineIdle) {
+                  return (
+                    <button
+                      onClick={() => openLocalView('waterfall')}
+                      className="group relative p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-jb-purple/20 transition-all text-left overflow-hidden flex-shrink-0"
+                    >
+                      <div className="absolute top-0 right-0 w-12 h-[1px] bg-white/[0.05] group-hover:bg-jb-purple/20 transition-colors" />
+                      <div className="absolute top-0 right-0 w-[1px] h-12 bg-white/[0.05] group-hover:bg-jb-purple/20 transition-colors" />
+                      <div className="flex items-start gap-3">
+                        <div className="p-2.5 rounded-xl bg-black/40 border border-white/5 w-fit group-hover:scale-110 transition-transform text-jb-purple shrink-0">
+                          <FlaskConical size={16} strokeWidth={1.5} />
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-[11px] font-black text-white uppercase tracking-widest">Pipeline</h3>
+                            {pipelineComplete && reviewerScore != null && (
+                              <span className={cn(
+                                'px-1.5 py-0.5 rounded-full text-[8px] font-black tabular-nums',
+                                reviewerScore >= 90 ? 'bg-emerald-500/20 text-emerald-400' :
+                                reviewerScore >= 80 ? 'bg-sky-500/20 text-sky-400' :
+                                reviewerScore >= 70 ? 'bg-amber-500/20 text-amber-400' :
+                                'bg-rose-500/20 text-rose-400',
+                              )}>
+                                {reviewerScore}/100
+                              </span>
+                            )}
+                            {!pipelineComplete && currentStage && (
+                              <Loader2 size={9} className="animate-spin text-jb-purple" />
+                            )}
+                          </div>
+                          <p className="text-[9px] text-slate-500 font-bold leading-relaxed line-clamp-1">
+                            {pipelineComplete
+                              ? waterfall.prompt.slice(0, 60) + (waterfall.prompt.length > 60 ? '…' : '')
+                              : currentStage
+                                ? `${currentStage.charAt(0).toUpperCase() + currentStage.slice(1)} stage running…`
+                                : 'Pipeline active'}
+                          </p>
+                          {/* Mini stage dots */}
+                          <div className="flex items-center gap-1.5 pt-1">
+                            {STAGE_ORDER.map((s) => {
+                              const st = waterfall.steps[s].status;
+                              return (
+                                <div
+                                  key={s}
+                                  className={cn(
+                                    'w-2 h-2 rounded-full transition-all',
+                                    st === 'completed' ? 'bg-emerald-400' :
+                                    st === 'processing' ? 'bg-jb-accent animate-pulse' :
+                                    st === 'error' ? 'bg-rose-400' :
+                                    st === 'paused' ? 'bg-amber-400' :
+                                    'bg-slate-800',
+                                  )}
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex items-center gap-2 text-[7px] font-black uppercase tracking-[0.3em] text-white/10 group-hover:text-jb-purple/40 transition-all">
+                        {pipelineComplete ? 'View Results' : 'Monitor Pipeline'} <ChevronDown size={10} className="rotate-[-90deg]" />
+                      </div>
+                    </button>
+                  );
+                }
+                return null;
+              })()}
+
               {/* Action Grid */}
               <div className="grid grid-cols-2 gap-2 flex-shrink-0">
                 <ActionButton icon={Users}  label="MISSIONS" onClick={() => openLocalView('missions')}     color="text-indigo-400" desc="Multi-agent war room" />
                 <ActionButton icon={PenLine} label="NOTES"   onClick={() => openLocalView('notes')}        color="text-amber-400"  desc="Context &amp; directives" />
-                <ActionButton icon={Code2}  label="CODE"     onClick={() => launchInMainApp('coding')}     color="text-jb-accent"  desc="Open in main app →" />
-                <ActionButton icon={Layers} label="FLOW"     onClick={() => launchInMainApp('waterfall')}  color="text-jb-purple"  desc="Open in main app →" />
+                <ActionButton icon={Code2}  label="CODE"     onClick={() => openLocalView('code')}         color="text-jb-accent"  desc="IDE control panel" />
+                <ActionButton icon={Layers} label="FLOW"     onClick={() => openLocalView('waterfall')}    color="text-jb-purple"  desc="Pipeline monitor" />
               </div>
 
               {/* Activity Feed */}
@@ -422,8 +573,9 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                           "font-black uppercase text-[6px] px-1 py-0.5 rounded-sm shrink-0 h-fit mt-0.5",
                           act.type === 'user_message' ? "bg-blue-500/20 text-blue-400" :
                           act.type === 'ai_code_update' ? "bg-emerald-500/20 text-emerald-400" :
-                          act.type === 'command' ? "bg-jb-purple/20 text-jb-purple" : "bg-white/10 text-white/50"
-                        )}>{String(act.type || '').replace('_', ' ').slice(0, 10)}</span>
+                          act.type === 'waterfall' ? "bg-jb-purple/20 text-jb-purple" :
+                          act.type === 'command' ? "bg-jb-orange/20 text-jb-orange" : "bg-white/10 text-white/50"
+                        )}>{act.type === 'waterfall' ? 'flow' : String(act.type || '').replace('_', ' ').slice(0, 10)}</span>
                         <span className="text-slate-400/80 line-clamp-2 font-mono">
                           {act.content || act.detail || act.path || act.message || JSON.stringify(act)}
                         </span>
@@ -566,6 +718,222 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
               {/* Chat with Overseer */}
               <div className="border-t border-white/5 flex-shrink-0" style={{ height: '260px' }}>
                 <ChatView compact />
+              </div>
+            </motion.div>
+          )}
+
+          {/* ─── CODE CONTROL PANEL ─── */}
+          {view === 'code' && (
+            <motion.div
+              key="code" initial={{ opacity: 0, x: 5 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -5 }}
+              className="flex-1 flex flex-col p-3 gap-2 overflow-hidden"
+            >
+              {/* Status bar */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Code2 size={12} className="text-jb-accent" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-jb-accent">IDE Control</span>
+                <div className="flex-1" />
+                {pendingDiff && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[7px] font-black animate-pulse">
+                    Diff pending
+                  </span>
+                )}
+                {agentMessages.some(m => m.isStreaming) && (
+                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-jb-accent/20 text-jb-accent text-[7px] font-black">
+                    <Loader2 size={8} className="animate-spin" /> Agent active
+                  </span>
+                )}
+                <button
+                  onClick={() => launchInMainApp('coding')}
+                  className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[7px] font-black uppercase bg-jb-accent/10 text-jb-accent hover:bg-jb-accent/20 transition-all"
+                  title="Open full IDE"
+                >
+                  Open IDE <ArrowRight size={8} />
+                </button>
+              </div>
+
+              {/* Active file indicator */}
+              {activeFile && (
+                <div className="flex items-center gap-1.5 px-2 py-1.5 bg-black/30 rounded-lg border border-white/5 flex-shrink-0">
+                  <FileText size={10} className="text-jb-accent/60 shrink-0" />
+                  <span className="text-[9px] font-mono text-slate-400 truncate">{activeFile}</span>
+                </div>
+              )}
+
+              {/* Open files list */}
+              {openFiles.length > 0 && (
+                <div className="flex-shrink-0 space-y-1">
+                  <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest ml-1">Open Files</span>
+                  <div className="flex flex-wrap gap-1">
+                    {openFiles.map((f) => {
+                      const name = f.path.split('/').pop() || f.path;
+                      const isActive = f.path === activeFile;
+                      return (
+                        <span
+                          key={f.path}
+                          className={cn(
+                            'px-2 py-0.5 rounded-md text-[8px] font-mono border transition-all',
+                            isActive
+                              ? 'bg-jb-accent/15 border-jb-accent/30 text-jb-accent'
+                              : 'bg-black/20 border-white/5 text-slate-500',
+                          )}
+                          title={f.path}
+                        >
+                          {name}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Pending diff card */}
+              {pendingDiff && (
+                <div className="flex-shrink-0 bg-amber-500/[0.04] border border-amber-500/15 rounded-xl p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Diff size={12} className="text-amber-400" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-amber-400">Pending Diff</span>
+                  </div>
+                  <p className="text-[9px] font-mono text-slate-400 truncate">{pendingDiff.filePath}</p>
+                  <p className="text-[8px] text-slate-500 line-clamp-2">{pendingDiff.description}</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        // Apply diff: update the open file content to the modified version
+                        const { openFiles: files, activeFile: af } = useAppStore.getState();
+                        const updated = files.map(f =>
+                          f.path === pendingDiff.filePath ? { ...f, content: pendingDiff.modified } : f
+                        );
+                        useAppStore.getState().setOpenFiles(updated);
+                        clearPendingDiff();
+                      }}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[8px] font-black uppercase bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-all border border-emerald-500/20"
+                    >
+                      <Check size={9} /> Apply
+                    </button>
+                    <button
+                      onClick={clearPendingDiff}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[8px] font-black uppercase bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-all border border-rose-500/15"
+                    >
+                      <XCircle size={9} /> Reject
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Agent activity */}
+              <div className="flex-shrink-0 max-h-[140px] overflow-hidden">
+                <div className="text-[7px] font-black text-slate-600 uppercase tracking-widest mb-1.5 flex items-center gap-1.5 ml-1">
+                  <MessageSquare size={8} />
+                  <span>Agent Activity</span>
+                  <span className="text-slate-700">({agentMessages.length})</span>
+                </div>
+                {agentMessages.length === 0 ? (
+                  <div className="flex items-center justify-center py-3 opacity-20">
+                    <span className="text-[8px] font-black uppercase">No agent activity</span>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5 overflow-y-auto max-h-[110px] no-scrollbar">
+                    {agentMessages.slice(-3).map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={cn(
+                          'rounded-lg px-2.5 py-1.5 border text-[9px]',
+                          msg.role === 'user'
+                            ? 'bg-jb-accent/[0.05] border-jb-accent/15 text-slate-400'
+                            : 'bg-white/[0.02] border-white/5 text-slate-400',
+                        )}
+                      >
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className={cn(
+                            'text-[7px] font-black uppercase tracking-wider',
+                            msg.role === 'user' ? 'text-jb-accent' : 'text-emerald-400',
+                          )}>
+                            {msg.role === 'user' ? 'You' : 'Agent'}
+                          </span>
+                          {msg.isStreaming && <Loader2 size={7} className="animate-spin text-jb-accent" />}
+                          {msg.fileContext && (
+                            <span className="text-[6px] text-slate-600 font-mono ml-auto truncate max-w-[120px]">
+                              {msg.fileContext.split('/').pop()}
+                            </span>
+                          )}
+                        </div>
+                        <p className="line-clamp-2 leading-relaxed">{msg.content || (msg.isStreaming ? 'Thinking...' : '')}</p>
+                        {/* Tool events summary */}
+                        {msg.toolEvents && msg.toolEvents.length > 0 && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {msg.toolEvents
+                              .filter(e => e.type === 'tool_start')
+                              .slice(-4)
+                              .map((e) => {
+                                const hasResult = msg.toolEvents!.some(r => r.callId === e.callId && r.type === 'tool_result');
+                                const hasError = msg.toolEvents!.some(r => r.callId === e.callId && r.type === 'tool_error');
+                                const target = (e.args?.path as string)?.split('/').pop()
+                                  || (e.args?.command as string)?.slice(0, 20)
+                                  || e.tool;
+                                return (
+                                  <span
+                                    key={e.callId}
+                                    className={cn(
+                                      'flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[7px] font-mono border',
+                                      hasError ? 'bg-rose-500/10 border-rose-500/15 text-rose-400' :
+                                      hasResult ? 'bg-emerald-500/10 border-emerald-500/15 text-emerald-400' :
+                                      'bg-white/5 border-white/10 text-slate-500',
+                                    )}
+                                  >
+                                    {!hasResult && !hasError && <Loader2 size={7} className="animate-spin" />}
+                                    {hasResult && <Check size={7} />}
+                                    {hasError && <AlertCircle size={7} />}
+                                    {target}
+                                  </span>
+                                );
+                              })}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Mini terminal */}
+              <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+                <div className="text-[7px] font-black text-slate-600 uppercase tracking-widest mb-1.5 flex items-center gap-1.5 ml-1">
+                  <TerminalIcon size={8} />
+                  <span>Terminal</span>
+                  <span className="text-slate-700">({terminalLines.length})</span>
+                  <button
+                    onClick={clearTerminalLines}
+                    className="ml-auto p-0.5 rounded text-slate-700 hover:text-rose-400 transition-colors"
+                    title="Clear terminal"
+                  >
+                    <Trash2 size={8} />
+                  </button>
+                </div>
+                <MiniTerminal lines={terminalLines} />
+              </div>
+
+              {/* Quick actions */}
+              <div className="flex items-center gap-1.5 flex-shrink-0 pt-1 border-t border-white/5">
+                <span className="text-[7px] font-black text-slate-700 uppercase tracking-wider mr-1">Panels:</span>
+                <TogglePill
+                  icon={FolderOpen}
+                  label="Tree"
+                  active={fileTreeVisible}
+                  onClick={() => setFileTreeVisible(!fileTreeVisible)}
+                />
+                <TogglePill
+                  icon={MessageSquare}
+                  label="Chat"
+                  active={chatPanelVisible}
+                  onClick={() => setChatPanelVisible(!chatPanelVisible)}
+                />
+                <TogglePill
+                  icon={TerminalIcon}
+                  label="Term"
+                  active={terminalVisible}
+                  onClick={() => setTerminalVisible(!terminalVisible)}
+                />
               </div>
             </motion.div>
           )}

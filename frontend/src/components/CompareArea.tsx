@@ -3,7 +3,10 @@ import { useAppStore } from '../store/useAppStore';
 import { API_BASE_URL } from '../lib/config';
 import { getSecret } from '../lib/api-client';
 import { GitCompare, Sparkles, RefreshCw, Bot, AlertCircle, Cloud, Shield } from 'lucide-react';
+import { ModelPickerDropdown } from './ModelPickerDropdown';
+import { ALL_MODELS, toKey, fromKey } from '../lib/allModels';
 import { parse } from 'marked';
+import DOMPurify from 'dompurify';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { BentoItem } from './BentoGrid';
@@ -11,9 +14,14 @@ import { BentoItem } from './BentoGrid';
 export const CompareArea = () => {
   const { deviceInfo } = useAppStore();
   const [isComparing, setIsComparing] = useState(false);
-  const [results, setResults] = useState<{ gemini: string; ollama: string } | null>(null);
+  const [results, setResults] = useState<{ model1: string; model2: string } | null>(null);
   const [prompt, setPrompt] = useState("");
+  const [model1Key, setModel1Key] = useState(toKey('gemini', 'gemini-3.1-pro-preview'));
+  const [model2Key, setModel2Key] = useState(toKey('ollama', 'qwen2.5-coder:7b'));
   const [error, setError] = useState<string | null>(null);
+
+  const model1Label = ALL_MODELS.find(m => toKey(m.provider, m.model) === model1Key)?.label ?? model1Key;
+  const model2Label = ALL_MODELS.find(m => toKey(m.provider, m.model) === model2Key)?.label ?? model2Key;
 
   const handleCompare = async () => {
     if (!prompt.trim()) return;
@@ -27,7 +35,11 @@ export const CompareArea = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Solvent-Secret': secret },
         body: JSON.stringify({
-          messages: [{ role: 'user', content: prompt }]
+          messages: [{ role: 'user', content: prompt }],
+          model1: fromKey(model1Key).model,
+          provider1: fromKey(model1Key).provider,
+          model2: fromKey(model2Key).model,
+          provider2: fromKey(model2Key).provider,
         })
       });
       
@@ -79,8 +91,27 @@ export const CompareArea = () => {
                   placeholder="Enter benchmarking objective..."
                 />
             </div>
-            <button 
-                onClick={handleCompare} 
+            {/* Model A selector */}
+            <ModelPickerDropdown
+              value={model1Key}
+              onChange={setModel1Key}
+              models={ALL_MODELS}
+              accent="blue"
+              label="Model A"
+              disabled={isComparing}
+            />
+
+            {/* Model B selector */}
+            <ModelPickerDropdown
+              value={model2Key}
+              onChange={setModel2Key}
+              models={ALL_MODELS}
+              accent="orange"
+              label="Model B"
+              disabled={isComparing}
+            />
+            <button
+                onClick={handleCompare}
                 disabled={isComparing || !prompt.trim()}
                 className="bg-white text-black hover:bg-jb-accent hover:text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all disabled:opacity-20 shadow-[0_20px_40px_rgba(0,0,0,0.3)] group"
             >
@@ -109,7 +140,7 @@ export const CompareArea = () => {
         deviceInfo.isMobile ? "grid-cols-1" : "grid-cols-2"
       )}>
         
-        {/* Gemini Pro Column */}
+        {/* Model A Column */}
         <BentoItem delay={0.1} className="min-h-[500px] flex flex-col">
             <div className="flex items-center justify-between border-b border-white/5 pb-6 mb-6">
                 <div className="flex items-center gap-4">
@@ -117,15 +148,15 @@ export const CompareArea = () => {
                         <Bot size={20} />
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-white font-black text-sm uppercase tracking-tight">Gemini 1.5 Pro</span>
+                        <span className="text-white font-black text-sm uppercase tracking-tight">{model1Label}</span>
                         <div className="flex items-center gap-2 mt-0.5">
                             <Cloud size={10} className="text-slate-500" />
-                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Global Cloud Node</span>
+                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{fromKey(model1Key).provider}</span>
                         </div>
                     </div>
                 </div>
-                <div className="px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase tracking-widest">
-                   Nominal
+                <div className="px-3 py-1 rounded-lg bg-jb-accent/10 border border-jb-accent/20 text-jb-accent text-[9px] font-black uppercase tracking-widest">
+                   Model A
                 </div>
             </div>
             <div className="flex-1 text-slate-300">
@@ -134,7 +165,7 @@ export const CompareArea = () => {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       className="prose prose-invert prose-sm max-w-none leading-relaxed" 
-                      dangerouslySetInnerHTML={{ __html: parse(results.gemini || '') as string }} 
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parse(results.model1 || '') as string) }}
                     />
                 ) : (
                     <div className="h-full flex flex-col justify-center gap-4 opacity-20">
@@ -147,7 +178,7 @@ export const CompareArea = () => {
             </div>
         </BentoItem>
 
-        {/* Ollama Column */}
+        {/* Model B Column */}
         <BentoItem delay={0.2} className="min-h-[500px] flex flex-col">
             <div className="flex items-center justify-between border-b border-white/5 pb-6 mb-6">
                 <div className="flex items-center gap-4">
@@ -155,24 +186,24 @@ export const CompareArea = () => {
                         <Bot size={20} />
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-white font-black text-sm uppercase tracking-tight">Qwen 2.5</span>
+                        <span className="text-white font-black text-sm uppercase tracking-tight">{model2Label}</span>
                         <div className="flex items-center gap-2 mt-0.5">
                             <Shield size={10} className="text-slate-500" />
-                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Private Edge Model</span>
+                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{fromKey(model2Key).provider}</span>
                         </div>
                     </div>
                 </div>
                 <div className="px-3 py-1 rounded-lg bg-jb-orange/10 border border-jb-orange/20 text-jb-orange text-[9px] font-black uppercase tracking-widest">
-                   Local
+                   Model B
                 </div>
             </div>
             <div className="flex-1 text-slate-300">
                 {results ? (
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="prose prose-invert prose-sm max-w-none leading-relaxed" 
-                      dangerouslySetInnerHTML={{ __html: parse(results.ollama || '') as string }} 
+                      className="prose prose-invert prose-sm max-w-none leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parse(results.model2 || '') as string) }}
                     />
                 ) : (
                     <div className="h-full flex flex-col justify-center gap-4 opacity-20">

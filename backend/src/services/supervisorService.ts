@@ -118,7 +118,7 @@ export class SupervisorService {
         "crystallize": { "content": "The rule/fact", "type": "architectural_decision|project_rule" } (OR null)
       }`;
 
-      const response = await groq.generateChatCompletion([
+      const response = await groq.complete([
         { role: 'system', content: 'You are the Solvent Knowledge Graph Manager. Your job is to keep the project knowledge graph accurate, surface crystallizable architectural insights, and identify when new stable rules emerge from user notes. Respond in strict JSON only — no prose outside the JSON object.' },
         { role: 'user', content: prompt }
       ], { model: 'llama-3.3-70b-versatile', temperature: 0.1 });
@@ -389,7 +389,7 @@ RESPONSE FORMAT (strict JSON):
       
       Format: Just the nudge text or "NO_ACTION".`;
 
-      const nudge = await groq.generateChatCompletion([
+      const nudge = await groq.complete([
         { role: 'system', content: 'You are a helpful, non-intrusive assistant.' },
         { role: 'user', content: prompt }
       ], { model: 'llama-3.3-70b-versatile', temperature: 0 });

@@ -56,8 +56,8 @@ export const ModelPlaygroundArea = () => {
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 md:p-12 lg:p-20 pt-0 md:pt-0 lg:pt-0 bg-transparent relative z-10 scrollbar-thin">
-      <div className="max-w-[1400px] mx-auto space-y-16 md:space-y-24 relative pl-4 md:pl-12 lg:pl-16">
+    <div className="flex-1 overflow-y-auto p-6 md:p-8 lg:p-12 pt-0 md:pt-0 lg:pt-0 bg-transparent relative z-10 scrollbar-thin">
+      <div className="max-w-[1400px] mx-auto space-y-12 md:space-y-16 relative pl-4 md:pl-12 lg:pl-16">
         
         {/* Background Decorative Element */}
         <div className="absolute -top-40 -right-40 w-[600px] h-[600px] opacity-[0.05] pointer-events-none blur-3xl overflow-hidden">
@@ -65,7 +65,7 @@ export const ModelPlaygroundArea = () => {
         </div>
 
         {/* Header Section */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between relative z-10 pt-12 md:pt-20 gap-8">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between relative z-10 pt-8 md:pt-12 gap-8">
            <div className="space-y-6 max-w-3xl">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -98,7 +98,7 @@ export const ModelPlaygroundArea = () => {
         </div>
 
         {/* Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 pt-4">
            {features.map((feature, idx) => (
              <BentoCard
                key={feature.id}

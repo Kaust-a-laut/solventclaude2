@@ -34,6 +34,12 @@ export interface WaterfallStageCardProps {
   isExpanded: boolean;
   onToggleExpand: () => void;
   timing?: number;
+  /** When true, card acts as a clickable selector — no inline expansion */
+  compact?: boolean;
+  /** Visual selection ring (used in split-layout mode) */
+  isSelected?: boolean;
+  /** Click handler for the whole card (split-layout mode) */
+  onSelect?: () => void;
 }
 
 // ─── Stage Configs ─────────────────────────────────────────────────────────────
@@ -234,6 +240,9 @@ export const WaterfallStageCard = ({
   isExpanded,
   onToggleExpand,
   timing,
+  compact = false,
+  isSelected = false,
+  onSelect,
 }: WaterfallStageCardProps) => {
   const Icon = config.icon;
 
@@ -267,7 +276,7 @@ export const WaterfallStageCard = ({
     return {};
   };
 
-  const canExpand = status === 'completed' || status === 'error';
+  const canExpand = !compact && (status === 'completed' || status === 'error');
 
   return (
     <motion.div
@@ -275,8 +284,13 @@ export const WaterfallStageCard = ({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: status === 'idle' ? 0.45 : 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="relative glass-panel rounded-[1.5rem] overflow-hidden transition-all duration-500"
+      className={cn(
+        'relative glass-panel rounded-[1.5rem] overflow-hidden transition-all duration-500',
+        compact && 'cursor-pointer',
+        isSelected && 'ring-1 ring-white/20',
+      )}
       style={cardStyle()}
+      onClick={compact ? onSelect : undefined}
     >
       {/* Left status bar */}
       <div
@@ -384,20 +398,22 @@ export const WaterfallStageCard = ({
           )}
         </AnimatePresence>
 
-        {/* Expanded output */}
-        <AnimatePresence>
-          {isExpanded && (status === 'completed' || status === 'error') && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ type: 'spring', damping: 28, stiffness: 200 }}
-              className="overflow-hidden"
-            >
-              <StageOutput stageKey={config.key} data={data} textColor={config.textColor} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Expanded output (hidden in compact/split-layout mode) */}
+        {!compact && (
+          <AnimatePresence>
+            {isExpanded && (status === 'completed' || status === 'error') && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ type: 'spring', damping: 28, stiffness: 200 }}
+                className="overflow-hidden"
+              >
+                <StageOutput stageKey={config.key} data={data} textColor={config.textColor} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
       </div>
     </motion.div>
   );

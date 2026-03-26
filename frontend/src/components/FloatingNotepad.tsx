@@ -16,8 +16,8 @@ export const FloatingNotepad = () => {
   const pipWindowRef = useRef<Window | null>(null);
 
   const [position, setPosition] = useState({
-    x: typeof window !== 'undefined' ? window.innerWidth  - 440 : 100,
-    y: typeof window !== 'undefined' ? window.innerHeight - 670 : 100,
+    x: typeof window !== 'undefined' ? Math.max(0, window.innerWidth - 440) : 100,
+    y: typeof window !== 'undefined' ? Math.max(0, Math.round((window.innerHeight - 56 - 650) / 2)) : 50,
   });
   const [size, setSize] = useState({ width: 420, height: 650 });
 
@@ -88,24 +88,26 @@ export const FloatingNotepad = () => {
   if (!isOpen) return null;
 
   return (
-    <Rnd
-      size={{ width: size.width, height: size.height }}
-      position={{ x: position.x, y: position.y }}
-      onDragStop={(_, d) => setPosition({ x: d.x, y: d.y })}
-      onResizeStop={(_, _dir, ref, _delta, pos) => {
-        setSize({ width: ref.offsetWidth, height: ref.offsetHeight });
-        setPosition(pos);
-      }}
-      minWidth={320}
-      minHeight={400}
-      dragHandleClassName="drag-handle"
-      bounds="window"
-      className="z-50"
-    >
-      <NotepadPiP
-        onClose={() => setIsOpen(false)}
-        onDetach={openDocumentPiP}
-      />
-    </Rnd>
+    <div className="fixed inset-0 top-14 z-50 pointer-events-none">
+      <Rnd
+        size={{ width: size.width, height: size.height }}
+        position={{ x: position.x, y: position.y }}
+        onDragStop={(_, d) => setPosition({ x: d.x, y: Math.max(0, d.y) })}
+        onResizeStop={(_, _dir, ref, _delta, pos) => {
+          setSize({ width: ref.offsetWidth, height: ref.offsetHeight });
+          setPosition({ x: pos.x, y: Math.max(0, pos.y) });
+        }}
+        minWidth={320}
+        minHeight={400}
+        dragHandleClassName="drag-handle"
+        bounds="parent"
+        style={{ pointerEvents: 'auto' }}
+      >
+        <NotepadPiP
+          onClose={() => setIsOpen(false)}
+          onDetach={openDocumentPiP}
+        />
+      </Rnd>
+    </div>
   );
 };

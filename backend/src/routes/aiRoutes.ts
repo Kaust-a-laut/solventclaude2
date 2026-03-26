@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { AIController } from '../controllers/aiController';
+import { BrowseController } from '../controllers/browseController';
+import { CollaborateController } from '../controllers/collaborateController';
 import { aiService } from '../services/aiService';
 import { debateService } from '../services/debateService';
 import { supervisorService } from '../services/supervisorService';
@@ -39,6 +41,10 @@ router.post('/generate-image', AIController.generateImage);
 // ── Web Search ────────────────────────────────────────────────────────────
 router.post('/search', AIController.search);
 
+// ── Browse (Page Extraction + Summarization) ─────────────────────────────
+router.post('/browse', BrowseController.extractContent);
+router.post('/browse/summarize', BrowseController.summarize);
+
 // ── Model / Health Discovery ──────────────────────────────────────────────
 router.get('/models', AIController.listModels);
 router.get('/health/services', AIController.checkHealth);
@@ -46,10 +52,10 @@ router.get('/local-image-status', AIController.checkLocalImageStatus);
 
 // ── Adversarial Debate ─────────────────────────────────────────────────────
 router.post('/debate', async (req, res) => {
-  const { topic, proponentModel, criticModel } = req.body;
+  const { topic, proponentModel, proponentProvider, criticModel, criticProvider } = req.body;
   if (!topic) return res.status(400).json({ error: 'topic is required' });
   try {
-    const result = await debateService.conductDebate(topic, proponentModel, criticModel);
+    const result = await debateService.conductDebate(topic, proponentModel, criticModel, proponentProvider, criticProvider);
     res.json(result);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -59,7 +65,13 @@ router.post('/debate', async (req, res) => {
 // ── Agentic Compare ───────────────────────────────────────────────────────
 router.post('/compare', AIController.compare);
 
-// ── Multi-Agent Collaborate ───────────────────────────────────────────────
+// ── Multi-Agent Collaborate (Conversational Roundtable — SSE) ────────────
+router.post('/collaborate/stream', CollaborateController.streamConversation);
+router.post('/collaborate/inject', CollaborateController.injectMessage);
+router.get('/collaborate/session/:id', CollaborateController.getSessionState);
+router.post('/collaborate/synthesize', CollaborateController.synthesizeNow);
+
+// ── Multi-Agent Collaborate (Legacy parallel mode) ───────────────────────
 router.post('/collaborate', async (req, res) => {
   const { goal, missionType = 'consultation', async: isAsync, provider, model } = req.body;
   if (!goal) return res.status(400).json({ error: 'Goal is required' });

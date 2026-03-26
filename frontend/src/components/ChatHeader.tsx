@@ -4,53 +4,11 @@ import { cn } from '../lib/utils';
 import { History, ChevronDown, Check, Cloud, Cpu, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SessionHistory } from './SessionHistory';
+import { PROVIDER_GROUPS } from '../lib/allModels';
 
 interface ChatHeaderProps {
   compact?: boolean;
 }
-
-const PROVIDER_GROUPS = [
-  {
-    id: 'groq',
-    label: 'Groq',
-    models: [
-      // Production
-      { label: 'Llama 3.3 70B', value: 'llama-3.3-70b-versatile' },
-      { label: 'Llama 3.1 8B', value: 'llama-3.1-8b-instant' },
-      { label: 'GPT OSS 120B', value: 'openai/gpt-oss-120b' },
-      // Preview
-      { label: 'Llama 4 Scout 17B', value: 'meta-llama/llama-4-scout-17b-16e-instruct' },
-      { label: 'Qwen3 32B', value: 'qwen/qwen3-32b' },
-      { label: 'Kimi K2', value: 'moonshotai/kimi-k2-instruct-0905' },
-    ],
-  },
-  {
-    id: 'gemini',
-    label: 'Gemini',
-    models: [
-      // Gemini 3 series (latest)
-      { label: 'Gemini 3.1 Pro', value: 'gemini-3.1-pro-preview' },
-      { label: 'Gemini 3 Flash', value: 'gemini-3-flash-preview' },
-      // Gemini 2.5 series (stable)
-      { label: 'Gemini 2.5 Pro', value: 'gemini-2.5-pro' },
-      { label: 'Gemini 2.5 Flash', value: 'gemini-2.5-flash' },
-      { label: 'Gemini 2.5 Flash Lite', value: 'gemini-2.5-flash-lite' },
-    ],
-  },
-  {
-    id: 'openrouter',
-    label: 'OpenRouter',
-    models: [
-      // Top by usage (Mar 2026 rankings)
-      { label: 'Claude Sonnet 4', value: 'anthropic/claude-sonnet-4' },
-      { label: 'Claude Sonnet 4.5', value: 'anthropic/claude-sonnet-4.5' },
-      { label: 'Gemini 2.5 Flash', value: 'google/gemini-2.5-flash' },
-      { label: 'Gemini 2.5 Pro', value: 'google/gemini-2.5-pro' },
-      { label: 'DeepSeek V3', value: 'deepseek/deepseek-chat-v3-0324' },
-      { label: 'Llama 4 Scout', value: 'meta-llama/llama-4-scout-17b-16e-instruct' },
-    ],
-  },
-] as const;
 
 export const ChatHeader = ({ compact }: ChatHeaderProps) => {
   const {
@@ -64,13 +22,15 @@ export const ChatHeader = ({ compact }: ChatHeaderProps) => {
     setSelectedCloudProvider,
     thinkingModeEnabled,
     modeConfigs,
-    deviceInfo
+    deviceInfo,
+    imageProvider
   } = useAppStore();
 
   const isMobile = deviceInfo.isMobile;
   const [showHistory, setShowHistory] = useState(false);
   const [showModelDrop, setShowModelDrop] = useState(false);
   const [cloudProvider, setCloudProvider] = useState<'groq' | 'gemini' | 'openrouter'>('groq');
+  const [dropAlign, setDropAlign] = useState<'left' | 'right'>('left');
   const dropRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -85,13 +45,18 @@ export const ChatHeader = ({ compact }: ChatHeaderProps) => {
     return () => document.removeEventListener('mousedown', handler);
   }, [showModelDrop]);
 
+  useEffect(() => {
+    if (!showModelDrop || !dropRef.current) return;
+    const rect = dropRef.current.getBoundingClientRect();
+    setDropAlign(rect.left + 640 > window.innerWidth ? 'right' : 'left');
+  }, [showModelDrop]);
+
   // Resolve active provider and model for display
   const config = modeConfigs[currentMode] || { provider: 'auto', model: selectedCloudModel };
   let displayProvider = selectedCloudProvider;
   let displayModel = selectedCloudModel;
 
   if (currentMode === 'vision') {
-    const { imageProvider } = useAppStore.getState();
     displayProvider = imageProvider as any;
     displayModel = imageProvider === 'huggingface' ? 'Stable Diffusion' :
                    imageProvider === 'local' ? 'Juggernaut XL' :
@@ -177,7 +142,7 @@ export const ChatHeader = ({ compact }: ChatHeaderProps) => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -8, scale: 0.97 }}
                   transition={{ type: 'spring', damping: 28, stiffness: 400 }}
-                  className="absolute top-full mt-2 left-0 z-[300] w-[280px] bg-[#0a0a0f] border border-white/10 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.7)] overflow-hidden"
+                  className={`absolute top-full mt-2 ${dropAlign}-0 z-[300] w-[640px] bg-[#0a0a0f] border border-white/10 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.7)] overflow-hidden`}
                 >
                   {/* Provider Toggle */}
                   <div className="p-3 border-b border-white/5">
@@ -232,22 +197,28 @@ export const ChatHeader = ({ compact }: ChatHeaderProps) => {
                             </button>
                           ))}
                         </div>
-                        {/* Models for selected provider */}
-                        {PROVIDER_GROUPS.find(g => g.id === cloudProvider)?.models.map(m => (
-                          <button
-                            key={m.value}
-                            onClick={() => handleSelectCloudModel(m.value, cloudProvider)}
-                            className={cn(
-                              "w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-all",
-                              selectedCloudModel === m.value && selectedCloudProvider === cloudProvider
-                                ? "bg-jb-accent/10 border border-jb-accent/20"
-                                : "hover:bg-white/[0.04]"
-                            )}
-                          >
-                            <p className={cn("text-[10px] font-bold", selectedCloudModel === m.value && selectedCloudProvider === cloudProvider ? "text-jb-accent" : "text-slate-300")}>{m.label}</p>
-                            {selectedCloudModel === m.value && selectedCloudProvider === cloudProvider && <Check size={10} className="text-jb-accent flex-shrink-0" />}
-                          </button>
-                        ))}
+                        {/* Models for selected provider — 3-column grid */}
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {PROVIDER_GROUPS.find(g => g.id === cloudProvider)?.models.map(m => {
+                            const isSelected = selectedCloudModel === m.value && selectedCloudProvider === cloudProvider;
+                            return (
+                              <button
+                                key={m.value}
+                                onClick={() => handleSelectCloudModel(m.value, cloudProvider)}
+                                className={cn(
+                                  "flex flex-col items-start gap-0.5 p-2.5 rounded-xl border transition-all text-left",
+                                  isSelected
+                                    ? "bg-jb-accent/10 border-jb-accent/30"
+                                    : "bg-white/[0.02] border-white/[0.05] hover:bg-white/[0.05] hover:border-white/10"
+                                )}
+                              >
+                                <span className="text-[7px] font-black uppercase tracking-wider text-slate-600">{cloudProvider}</span>
+                                <span className={cn("text-[9px] font-bold leading-tight", isSelected ? "text-jb-accent" : "text-slate-300")}>{m.label}</span>
+                                {isSelected && <Check size={8} className="text-jb-accent mt-0.5" />}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </>
                     )}
                   </div>

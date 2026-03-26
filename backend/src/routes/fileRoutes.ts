@@ -168,6 +168,34 @@ async function getSecurePath(userPath: string, root: string): Promise<string> {
   throw new Error('Access denied: Path outside permitted directories.');
 }
 
+const MIME_TYPES: Record<string, string> = {
+  '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif', '.svg': 'image/svg+xml', '.webp': 'image/webp',
+  '.ico': 'image/x-icon', '.bmp': 'image/bmp', '.avif': 'image/avif',
+  '.pdf': 'application/pdf', '.mp4': 'video/mp4', '.mp3': 'audio/mpeg',
+};
+
+router.get('/raw', async (req, res) => {
+  const { path: filePath } = req.query;
+  if (!filePath) return res.status(400).json({ error: 'Path required' });
+  try {
+    const fullPath = await getSecurePath(filePath as string, permittedRoots[0]);
+    const data = await fs.readFile(fullPath);
+    const ext = path.extname(fullPath).toLowerCase();
+    res.setHeader('Content-Type', MIME_TYPES[ext] || 'application/octet-stream');
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    res.send(data);
+  } catch (error: any) {
+    if (error.message.includes('Access denied')) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    res.status(500).json({ error: 'Failed to read file' });
+  }
+});
+
 router.get('/read', async (req, res) => {
   const { path: filePath } = req.query;
   if (!filePath) return res.status(400).json({ error: 'Path required' });

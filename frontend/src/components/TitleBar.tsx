@@ -6,6 +6,7 @@ import {
 import { cn } from '../lib/utils';
 import { useAppStore } from '../store/useAppStore';
 import { motion } from 'framer-motion';
+import { Logo } from './Logo';
 
 export const TitleBar = () => {
   const {
@@ -14,7 +15,6 @@ export const TitleBar = () => {
     setCurrentMode
   } = useAppStore();
   const [isElectron, setIsElectron] = useState(false);
-  const [isMaximized, setIsMaximized] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.electron) {
@@ -28,7 +28,7 @@ export const TitleBar = () => {
       deviceInfo.isMobile ? "h-14 px-4" : "h-14 px-4"
     )}>
       {/* 1. Brand & System Status */}
-      <div className="flex items-center gap-6 min-w-[300px] h-full app-drag-region">
+      <div className="flex items-center gap-6 min-w-[180px] h-full app-drag-region">
         <div className="flex items-center gap-3">
           <div className="relative group">
             <div className="absolute inset-0 bg-jb-orange/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -36,31 +36,7 @@ export const TitleBar = () => {
               className="w-8 h-8 relative flex items-center justify-center cursor-pointer shrink-0 group-hover:rotate-12 transition-transform"
               onClick={() => setCurrentMode('home')}
             >
-               <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_15px_rgba(251,146,60,0.5)]">
-                  <defs>
-                     <linearGradient id="beakerFluidTitle" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="#FB923C" />
-                        <stop offset="50%" stopColor="#F43F5E" />
-                        <stop offset="100%" stopColor="#9D5BD2" />
-                     </linearGradient>
-                     <filter id="glowTitle">
-                        <feGaussianBlur stdDeviation="2" result="blur" />
-                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                     </filter>
-                  </defs>
-                  <path d="M38 20 L38 45 L18 82 Q15 88 22 88 L78 88 Q85 88 82 82 L62 45 L62 20 Z" fill="none" stroke="white" strokeWidth="2" strokeOpacity="0.15" />
-                  <motion.path
-                     animate={{
-                       d: [
-                         "M40 48 L25 80 Q23 83 27 83 L73 83 Q77 83 75 80 L60 48 Q58 45 50 45 Q42 45 40 48 Z",
-                         "M40 50 L25 82 Q23 85 27 85 L73 85 Q77 85 75 82 L60 50 Q58 47 50 47 Q42 47 40 50 Z",
-                         "M40 48 L25 80 Q23 83 27 83 L73 83 Q77 83 75 80 L60 48 Q58 45 50 45 Q42 45 40 48 Z"
-                       ]
-                     }}
-                     transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                     fill="url(#beakerFluidTitle)" fillOpacity="0.9" filter="url(#glowTitle)" />
-                  <path d="M32 20 L68 20" stroke="white" strokeWidth="2" strokeOpacity="0.4" strokeLinecap="round" />
-               </svg>
+              <Logo size="sm" variant="beaker" animated={true} ariaLabel="Solvent AI Home" />
             </div>
           </div>
           <div className="flex flex-col">
@@ -81,21 +57,24 @@ export const TitleBar = () => {
           title="Command Center"
         >
            <Brain size={14} className={cn(isProcessing && "animate-pulse")} />
-           <span className="text-[9px] font-black uppercase tracking-[0.2em]">Command Center</span>
+           <span className="text-[9px] font-black uppercase tracking-[0.2em] hidden xl:inline">Command Center</span>
            {isProcessing && <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-jb-orange rounded-full animate-pulse" />}
         </button>
       </div>
 
       {/* 2. Global Command Center (Omni-search) */}
       {!deviceInfo.isMobile && (
-        <div className="absolute left-1/2 -translate-x-1/2 w-full max-w-[450px] app-no-drag">
+        <div className="absolute left-1/2 -translate-x-1/2 w-full max-w-[350px] xl:max-w-[450px] app-no-drag hidden lg:block">
            <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-jb-accent/10 via-jb-purple/10 to-jb-orange/10 rounded-xl blur-md opacity-0 group-focus-within:opacity-100 transition-opacity" />
               <div className="relative flex items-center bg-white/[0.03] border border-white/10 rounded-xl px-5 py-2 backdrop-blur-xl group-focus-within:border-white/20 transition-all">
                  <Search size={14} className="text-slate-500 mr-3" />
             <input
+              id="solvent-command-search"
+              name="solvent-command-search"
               type="text"
               placeholder="Search // Command Solvent..."
+              autoComplete="off"
               className="flex-1 bg-transparent border-none outline-none text-xs font-bold text-white placeholder:text-slate-600"
             />
                  <div className="flex items-center gap-2">
@@ -109,7 +88,7 @@ export const TitleBar = () => {
       )}
 
       {/* 3. Utilities & Window Controls */}
-      <div className="flex items-center gap-1 h-full min-w-[300px] justify-end app-no-drag">
+      <div className="flex items-center gap-1 h-full min-w-[180px] justify-end app-no-drag">
         {/* Global Utilities */}
         <div className="flex items-center gap-1 pr-4">
            <button
@@ -132,10 +111,7 @@ export const TitleBar = () => {
             </button>
 
             <button
-              onClick={() => {
-                window.electron?.maximize();
-                setIsMaximized(!isMaximized);
-              }}
+              onClick={() => window.electron?.maximize()}
               className="h-full w-12 flex items-center justify-center hover:bg-white/5 text-slate-500 hover:text-white transition-colors"
             >
               <Square size={14} />

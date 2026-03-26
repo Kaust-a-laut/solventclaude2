@@ -2,12 +2,16 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Trash2, Sparkles, ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAppStore } from '../../store/useAppStore';
-import type { AgentMessage, CodeSuggestion } from '../../store/codingSlice';
-import { fetchWithRetry } from '../../lib/api-client';
-import { API_BASE_URL } from '../../lib/config';
+import type { AgentMessage, CodeSuggestion, ToolEvent } from '../../store/codingSlice';
+import { getSecret } from '../../lib/api-client';
+import { API_BASE_URL, BASE_URL } from '../../lib/config';
 import { AgentCodeBlock } from './AgentCodeBlock';
 import { ChatImportButton } from './ChatImportButton';
-import { MODEL_OPTIONS } from '../ModelSelector';
+import { ToolActivityFeed } from './ToolActivityFeed';
+import { AGENT_MODEL_OPTIONS } from '../ModelSelector';
+import { toolResultToIDEActions } from '../../lib/toolToIDEAction';
+import { runInSandbox, getWebContainerInstance } from '../../lib/webContainerBridge';
+import { fetchWithRetry } from '../../lib/api-client';
 import {
   SLASH_COMMANDS,
   parseSlashCommand,
@@ -28,9 +32,11 @@ function extractCodeBlocks(text: string): { cleanText: string; blocks: CodeSugge
 
 export const AgentChatPanel: React.FC = () => {
   const {
-    addAgentMessage, clearAgentMessages, updateAgentMessage,
+    addAgentMessage, clearAgentMessages, updateAgentMessage, appendToolEvent,
     activeFile, openFiles, selectedCloudModel, selectedCloudProvider, apiKeys,
     setPendingDiff, setSelectedCloudModel, setSelectedCloudProvider,
+    setOpenFiles, setActiveFile, addTerminalLine, setTerminalVisible,
+    triggerFileTreeRefresh,
   } = useAppStore();
 
   // Read agentMessages from store for rendering (not for closure capture)
@@ -42,14 +48,14 @@ export const AgentChatPanel: React.FC = () => {
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashMenuIndex, setSlashMenuIndex] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const activeFileContent = openFiles.find((f) => f.path === activeFile)?.content ?? null;
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [agentMessages]);
 
   // Cleanup: abort any in-flight request on unmount
@@ -63,6 +69,91 @@ export const AgentChatPanel: React.FC = () => {
     setInput((prev) => (prev ? `${block}\n${prev}` : block));
     inputRef.current?.focus();
   }, []);
+
+  /**
+   * Dispatch IDE side-effects from a tool_result event.
+   */
+  const dispatchIDEActions = useCallback(async (event: ToolEvent) => {
+    const actions = toolResultToIDEActions(event);
+
+    for (const action of actions) {
+      switch (action.type) {
+        case 'open_file': {
+          // If content is empty (deferred), fetch it
+          let content = action.content;
+          if (!content) {
+            try {
+              const data = await fetchWithRetry(`${BASE_URL}/api/files/read?path=${encodeURIComponent(action.path)}`) as Record<string, string>;
+              content = data.content ?? '';
+            } catch {
+              addTerminalLine(`[ERROR]: Could not open ${action.path}`);
+              break;
+            }
+          }
+          const currentFiles = useAppStore.getState().openFiles;
+          const existing = currentFiles.find((f) => f.path === action.path);
+          if (existing) {
+            setActiveFile(action.path);
+          } else {
+            setOpenFiles([...currentFiles, { path: action.path, content }]);
+            setActiveFile(action.path);
+          }
+          break;
+        }
+        case 'show_diff': {
+          // Try to get original content from open files
+          const currentFiles = useAppStore.getState().openFiles;
+          const existing = currentFiles.find((f) => f.path === action.filePath);
+          setPendingDiff({
+            original: existing?.content ?? action.original,
+            modified: action.modified,
+            filePath: action.filePath,
+            description: action.description,
+          });
+          break;
+        }
+        case 'terminal_output': {
+          for (const line of action.lines) {
+            addTerminalLine(line);
+          }
+          break;
+        }
+        case 'show_terminal': {
+          setTerminalVisible(true);
+          break;
+        }
+        case 'refresh_file_tree': {
+          triggerFileTreeRefresh();
+          break;
+        }
+      }
+    }
+  }, [setOpenFiles, setActiveFile, setPendingDiff, addTerminalLine, setTerminalVisible, triggerFileTreeRefresh]);
+
+  /**
+   * Handle a deferred frontend tool (ide_run_in_sandbox).
+   * Runs the command in the WebContainer and pushes output to terminal.
+   */
+  const handleDeferredSandboxTool = useCallback(async (event: ToolEvent) => {
+    const command = event.args?.command as string;
+    if (!command) return;
+
+    const wc = getWebContainerInstance();
+    if (!wc) {
+      addTerminalLine('[ERROR]: WebContainer sandbox not booted. Boot the sandbox first.');
+      return;
+    }
+
+    setTerminalVisible(true);
+    addTerminalLine(`$ ${command}`);
+    try {
+      const { stdout, exitCode } = await runInSandbox(command);
+      if (stdout) addTerminalLine(stdout);
+      if (exitCode !== 0) addTerminalLine(`[EXIT]: Process exited with code ${exitCode}`);
+    } catch (err) {
+      addTerminalLine(`[ERROR]: ${err instanceof Error ? err.message : 'Sandbox execution failed'}`);
+    }
+  }, [addTerminalLine, setTerminalVisible]);
 
   const handleSend = useCallback(async () => {
     const text = input.trim();
@@ -86,6 +177,17 @@ export const AgentChatPanel: React.FC = () => {
     };
     addAgentMessage(userMsg);
 
+    // Create a placeholder assistant message for streaming
+    const assistantId = `assistant-${Date.now()}`;
+    const assistantMsg: AgentMessage = {
+      id: assistantId,
+      role: 'assistant',
+      content: '',
+      toolEvents: [],
+      isStreaming: true,
+    };
+    addAgentMessage(assistantMsg);
+
     setIsGenerating(true);
     try {
       const systemPrompt = buildSystemPrompt(
@@ -94,18 +196,24 @@ export const AgentChatPanel: React.FC = () => {
         null
       );
 
-      // Read current messages from store at call time to avoid stale closure
       const currentMessages = useAppStore.getState().agentMessages;
 
       const messages = [
         { role: 'system', content: slashCmd ? slashCmd.systemInstruction + '\n\n' + systemPrompt : systemPrompt },
-        ...currentMessages.map((m) => ({ role: m.role, content: m.content })),
+        ...currentMessages
+          .filter((m) => m.id !== assistantId) // exclude the placeholder
+          .map((m) => ({ role: m.role, content: m.content })),
         { role: 'user', content: parsed?.rest || text },
       ];
 
-      const data = await fetchWithRetry(`${API_BASE_URL}/chat`, {
+      const secret = await getSecret();
+
+      const response = await fetch(`${API_BASE_URL}/agent/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Solvent-Secret': secret,
+        },
         signal: controller.signal,
         body: JSON.stringify({
           provider: selectedCloudProvider || 'groq',
@@ -113,27 +221,108 @@ export const AgentChatPanel: React.FC = () => {
           messages,
           apiKeys,
         }),
-      }) as Record<string, unknown>;
+      });
 
-      const rawResponse: string = (data.response as string) ?? '';
-      const { cleanText, blocks } = extractCodeBlocks(rawResponse);
+      if (!response.ok) {
+        throw new Error(`Agent API returned ${response.status}`);
+      }
 
-      const assistantMsg: AgentMessage = {
-        id: `assistant-${Date.now()}`,
-        role: 'assistant',
-        content: cleanText,
-        codeBlocks: blocks,
-      };
-      addAgentMessage(assistantMsg);
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No response body');
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? ''; // keep partial line in buffer
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const jsonStr = line.slice(6).trim();
+          if (!jsonStr) continue;
+
+          let event: any;
+          try {
+            event = JSON.parse(jsonStr);
+          } catch {
+            continue;
+          }
+
+          switch (event.type) {
+            case 'tool_start':
+            case 'tool_result':
+            case 'tool_error': {
+              const toolEvent: ToolEvent = {
+                type: event.type,
+                tool: event.tool,
+                args: event.args,
+                result: event.result,
+                error: event.error,
+                iteration: event.iteration,
+                callId: event.callId,
+              };
+              appendToolEvent(assistantId, toolEvent);
+
+              // Dispatch IDE actions for completed tool calls
+              if (event.type === 'tool_result') {
+                dispatchIDEActions(toolEvent);
+
+                // Handle deferred sandbox tool
+                if (event.tool === 'ide_run_in_sandbox' && event.result?.status === 'deferred_to_frontend') {
+                  handleDeferredSandboxTool(toolEvent);
+                }
+              }
+              break;
+            }
+
+            case 'text_complete': {
+              const rawResponse = event.content ?? '';
+              const { cleanText, blocks } = extractCodeBlocks(rawResponse);
+              updateAgentMessage(assistantId, {
+                content: cleanText,
+                codeBlocks: blocks,
+                isStreaming: false,
+              });
+              break;
+            }
+
+            case 'error': {
+              updateAgentMessage(assistantId, {
+                content: `Error: ${event.message}`,
+                isStreaming: false,
+              });
+              break;
+            }
+
+            case 'done': {
+              updateAgentMessage(assistantId, { isStreaming: false });
+              break;
+            }
+          }
+        }
+      }
+
+      // Finalize: ensure streaming flag is off
+      updateAgentMessage(assistantId, { isStreaming: false });
+
     } catch (err: unknown) {
-      if (err instanceof Error && err.name === 'AbortError') return;
+      if (err instanceof Error && err.name === 'AbortError') {
+        updateAgentMessage(assistantId, { content: '(cancelled)', isStreaming: false });
+        return;
+      }
       const message = err instanceof Error ? err.message : 'Unknown error';
-      addAgentMessage({ id: `err-${Date.now()}`, role: 'assistant', content: `⚠️ Error: ${message}` });
+      updateAgentMessage(assistantId, { content: `Error: ${message}`, isStreaming: false });
     } finally {
       setIsGenerating(false);
     }
   }, [input, isGenerating, activeFile, activeFileContent, fileContextActive,
-      addAgentMessage, selectedCloudModel, selectedCloudProvider, apiKeys, setPendingDiff]);
+      addAgentMessage, updateAgentMessage, appendToolEvent, selectedCloudModel,
+      selectedCloudProvider, apiKeys, setPendingDiff, dispatchIDEActions, handleDeferredSandboxTool]);
 
   const handleApply = (msgId: string, blockId: string) => {
     const msg = agentMessages.find((m) => m.id === msgId);
@@ -204,6 +393,11 @@ export const AgentChatPanel: React.FC = () => {
     const parts = msg.content.split(/(\[\[CODE_BLOCK:[^\]]+\]\])/);
     return (
       <>
+        {/* Tool activity feed */}
+        {msg.toolEvents && msg.toolEvents.length > 0 && (
+          <ToolActivityFeed events={msg.toolEvents} />
+        )}
+
         {parts.map((part, i) => {
           const blockMatch = part.match(/\[\[CODE_BLOCK:([^\]]+)\]\]/);
           if (blockMatch) {
@@ -243,7 +437,7 @@ export const AgentChatPanel: React.FC = () => {
               aria-label="Select model"
             >
               <span className="truncate max-w-[100px]">
-                {MODEL_OPTIONS.find((m) => m.model === selectedCloudModel)?.displayName ?? selectedCloudModel ?? 'auto'}
+                {AGENT_MODEL_OPTIONS.find((m) => m.model === selectedCloudModel)?.displayName ?? selectedCloudModel ?? 'auto'}
               </span>
               <ChevronDown size={10} />
             </button>
@@ -251,7 +445,7 @@ export const AgentChatPanel: React.FC = () => {
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowModelMenu(false)} aria-hidden="true" />
                 <div className="absolute top-full left-0 mt-1 w-52 rounded-xl border border-white/[0.07] bg-[#0a0a14] overflow-hidden z-50 shadow-xl">
-                  {MODEL_OPTIONS.map((m) => {
+                  {AGENT_MODEL_OPTIONS.map((m) => {
                     const Icon = m.icon;
                     return (
                       <button
@@ -292,7 +486,7 @@ export const AgentChatPanel: React.FC = () => {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin">
         {agentMessages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full opacity-20 gap-3">
             <Sparkles size={28} strokeWidth={1} />
@@ -312,27 +506,26 @@ export const AgentChatPanel: React.FC = () => {
             {msg.fileContext && (
               <div className="flex items-center gap-1 mb-1.5">
                 <span className="text-[9px] bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-white/40 font-mono">
-                  📄 {msg.fileContext.split('/').pop()}
+                  {msg.fileContext.split('/').pop()}
                 </span>
               </div>
             )}
             {renderMessageContent(msg)}
+            {msg.isStreaming && !msg.content && (!msg.toolEvents || msg.toolEvents.length === 0) && (
+              <div className="flex items-center gap-2 py-1">
+                <div className="flex gap-1">
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="w-1.5 h-1.5 rounded-full bg-jb-accent/60 animate-bounce"
+                      style={{ animationDelay: `${i * 0.15}s` }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ))}
-        {isGenerating && (
-          <div className="flex items-center gap-2 px-3 py-2">
-            <div className="flex gap-1">
-              {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="w-1.5 h-1.5 rounded-full bg-jb-accent/60 animate-bounce"
-                  style={{ animationDelay: `${i * 0.15}s` }}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-        <div ref={bottomRef} />
       </div>
 
       {/* Slash command menu */}
@@ -372,7 +565,7 @@ export const AgentChatPanel: React.FC = () => {
                   : 'bg-white/5 border-white/10 text-white/30 line-through'
               )}
             >
-              📄 {activeFile.split('/').pop()}
+              {activeFile.split('/').pop()}
             </button>
           </div>
         )}

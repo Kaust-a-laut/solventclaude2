@@ -2,9 +2,9 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Cpu, Sliders, Key, Database, Globe,
-  Eye, EyeOff, ArrowUpRight, ChevronDown,
+  Eye, EyeOff, ArrowUpRight, ChevronDown, ChevronUp,
   CheckCircle2, AlertCircle, Loader2, RefreshCw,
-  Search, Trash2
+  Search, Trash2, Pencil, Check, Tag, Filter, Star, Hash
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { API_BASE_URL, BASE_URL } from '../lib/config';
@@ -53,6 +53,13 @@ export const SettingsModal = () => {
   const [memoryEntries, setMemoryEntries] = useState<any[]>([]);
   const [memorySearch, setMemorySearch] = useState('');
   const [memoryLoading, setMemoryLoading] = useState(false);
+  const [memoryTierFilter, setMemoryTierFilter] = useState<string | null>(null);
+  const [memoryTypeFilter, setMemoryTypeFilter] = useState<string | null>(null);
+  const [expandedEntryId, setExpandedEntryId] = useState<string | null>(null);
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+  const [showTypeBreakdown, setShowTypeBreakdown] = useState(false);
 
   const logError = useCallback((msg: string) => {
     console.error(`[Settings] ${msg}`);
@@ -62,9 +69,12 @@ export const SettingsModal = () => {
   const fetchMemoryData = useCallback(async () => {
     setMemoryLoading(true);
     try {
+      const params = new URLSearchParams({ limit: '50' });
+      if (memoryTierFilter) params.set('tier', memoryTierFilter);
+      if (memoryTypeFilter) params.set('type', memoryTypeFilter);
       const [statsData, entriesData] = await Promise.all([
         fetchWithRetry(`${API_BASE_URL}/memory/stats`) as Promise<any>,
-        fetchWithRetry(`${API_BASE_URL}/memory/entries?limit=50`) as Promise<any>,
+        fetchWithRetry(`${API_BASE_URL}/memory/entries?${params}`) as Promise<any>,
       ]);
       setMemoryStats(statsData);
       setMemoryEntries((entriesData as any).entries || []);
@@ -73,7 +83,7 @@ export const SettingsModal = () => {
     } finally {
       setMemoryLoading(false);
     }
-  }, []);
+  }, [memoryTierFilter, memoryTypeFilter]);
 
   useEffect(() => {
     if (settingsOpen && activeTab === 'memory') {
@@ -104,6 +114,17 @@ export const SettingsModal = () => {
     }, 300);
     return () => clearTimeout(timer);
   }, [memorySearch, activeTab, fetchMemoryData]);
+
+  // Reset memory UI state when leaving memory tab
+  useEffect(() => {
+    if (activeTab !== 'memory') {
+      setMemoryTierFilter(null);
+      setMemoryTypeFilter(null);
+      setExpandedEntryId(null);
+      setEditingEntryId(null);
+      setShowTypeBreakdown(false);
+    }
+  }, [activeTab]);
 
   const [serviceHealth, setServiceHealth] = useState<{ ollama: 'connected' | 'disconnected'; timestamp?: string }>({ ollama: 'disconnected' });
 
@@ -229,6 +250,8 @@ export const SettingsModal = () => {
     { id: 'groq',        label: 'Groq',            description: 'Llama 3.3 70B, Mixtral — ultra-fast LPU inference',                placeholder: 'gsk_...',       docsUrl: 'https://console.groq.com/keys' },
     { id: 'deepseek',    label: 'DeepSeek',        description: 'deepseek-chat and deepseek-reasoner models',                        placeholder: 'sk-...',        docsUrl: 'https://platform.deepseek.com/api_keys' },
     { id: 'openrouter',  label: 'OpenRouter',      description: 'Access hundreds of models through a single API endpoint',           placeholder: 'sk-or-v1-...', docsUrl: 'https://openrouter.ai/keys' },
+    { id: 'dashscope',   label: 'DashScope (Qwen)', description: 'Qwen3-Coder, Qwen3.5, Qwen-Max — Alibaba Cloud native API',       placeholder: 'sk-...',        docsUrl: 'https://dashscope.console.aliyun.com/apiKey' },
+    { id: 'cerebras',    label: 'Cerebras',         description: 'Ultra-fast wafer-scale inference — Llama, GPT-OSS, Qwen3, GLM-4.7', placeholder: 'csk-...',       docsUrl: 'https://cloud.cerebras.ai/' },
     { id: 'huggingface', label: 'Hugging Face',    description: 'Free SDXL image generation via the Hugging Face Inference API',     placeholder: 'hf_...',        docsUrl: 'https://huggingface.co/settings/tokens' },
     { id: 'serper',      label: 'Serper (Search)', description: 'Enables web search — required for Browse and Waterfall tools',      placeholder: 'your-key...',   docsUrl: 'https://serper.dev/api-key' },
   ];
@@ -286,7 +309,7 @@ export const SettingsModal = () => {
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        className="w-full max-w-5xl h-[80vh] bg-[#050508] border border-white/5 rounded-[40px] shadow-2xl relative overflow-hidden flex"
+        className="w-full max-w-7xl h-[92vh] bg-[#050508] border border-white/5 rounded-[40px] shadow-2xl relative overflow-hidden flex"
       >
         {/* ── Left Sidebar ───────────────────────────────────────────────── */}
         <div className="w-64 border-r border-white/5 bg-white/[0.01] p-8 flex flex-col gap-8">
@@ -355,7 +378,7 @@ export const SettingsModal = () => {
             </button>
           </header>
 
-          <div className="flex-1 overflow-y-auto p-10 scrollbar-thin scroll-smooth focusable-container" tabIndex={0}>
+          <div className="flex-1 overflow-y-auto p-10 scrollbar-thin">
 
             {/* ── MODELS TAB ─────────────────────────────────────────────── */}
             {activeTab === 'models' && (
@@ -715,20 +738,74 @@ export const SettingsModal = () => {
             {activeTab === 'memory' && (
               <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
 
-                {/* Stats Bar */}
+                {/* Stats Bar — clickable tier filter cards */}
                 <div className="grid grid-cols-4 gap-2">
                   {[
-                    { label: 'Total', value: memoryStats?.total ?? '—', color: 'text-white' },
-                    { label: 'Crystallized', value: memoryStats?.byTier?.crystallized ?? 0, color: 'text-jb-purple' },
-                    { label: 'Episodic', value: memoryStats?.byTier?.episodic ?? 0, color: 'text-jb-accent' },
-                    { label: 'Summaries', value: memoryStats?.byTier?.['meta-summary'] ?? 0, color: 'text-slate-400' },
-                  ].map(stat => (
-                    <div key={stat.label} className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-3 flex flex-col gap-1">
-                      <span className={cn('text-lg font-black', stat.color)}>{memoryLoading ? '—' : stat.value}</span>
-                      <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">{stat.label}</span>
-                    </div>
-                  ))}
+                    { label: 'Total', value: memoryStats?.total ?? '—', color: 'text-white', tier: null },
+                    { label: 'Crystallized', value: memoryStats?.byTier?.crystallized ?? 0, color: 'text-jb-purple', tier: 'crystallized' },
+                    { label: 'Episodic', value: memoryStats?.byTier?.episodic ?? 0, color: 'text-jb-accent', tier: 'episodic' },
+                    { label: 'Summaries', value: memoryStats?.byTier?.['meta-summary'] ?? 0, color: 'text-slate-400', tier: 'meta-summary' },
+                  ].map(stat => {
+                    const isActive = memoryTierFilter === stat.tier || (stat.tier === null && memoryTierFilter === null);
+                    return (
+                      <button
+                        key={stat.label}
+                        onClick={() => setMemoryTierFilter(stat.tier === memoryTierFilter ? null : stat.tier)}
+                        className={cn(
+                          'bg-white/[0.03] border rounded-2xl p-3 flex flex-col gap-1 text-left transition-all cursor-pointer',
+                          isActive && stat.tier !== null
+                            ? 'border-white/20 ring-1 ring-white/10'
+                            : 'border-white/[0.06] hover:border-white/10'
+                        )}
+                      >
+                        <span className={cn('text-lg font-black', stat.color)}>{memoryLoading ? '—' : stat.value}</span>
+                        <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">{stat.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
+
+                {/* Type Distribution — collapsible */}
+                {memoryStats && Object.keys(memoryStats.byType).length > 0 && (
+                  <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl overflow-hidden">
+                    <button
+                      onClick={() => setShowTypeBreakdown(v => !v)}
+                      className="w-full flex items-center justify-between px-4 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-400 transition-colors"
+                    >
+                      <span className="flex items-center gap-1.5"><Hash size={10} /> Type Distribution</span>
+                      {showTypeBreakdown ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                    </button>
+                    <AnimatePresence>
+                      {showTypeBreakdown && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="flex flex-wrap gap-1.5 px-4 pb-3">
+                            {Object.entries(memoryStats.byType)
+                              .sort(([, a], [, b]) => b - a)
+                              .map(([type, count]) => (
+                                <button
+                                  key={type}
+                                  onClick={() => setMemoryTypeFilter(memoryTypeFilter === type ? null : type)}
+                                  className={cn(
+                                    'px-2.5 py-1 rounded-full text-[9px] font-bold border transition-all',
+                                    memoryTypeFilter === type
+                                      ? 'bg-jb-accent/20 text-jb-accent border-jb-accent/40'
+                                      : 'bg-white/[0.03] text-slate-500 border-white/[0.08] hover:border-white/20 hover:text-slate-400'
+                                  )}
+                                >
+                                  {type.replace(/_/g, ' ')} <span className="text-slate-700 ml-0.5">{count}</span>
+                                </button>
+                              ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
 
                 {/* Search */}
                 <div className="relative">
@@ -741,9 +818,28 @@ export const SettingsModal = () => {
                   />
                 </div>
 
+                {/* Active Filter Indicator */}
+                {(memoryTierFilter || memoryTypeFilter) && (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <Filter size={10} className="text-slate-600" />
+                    {memoryTierFilter && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/[0.1] text-[9px] font-bold text-slate-400">
+                        tier: {memoryTierFilter}
+                        <button onClick={() => setMemoryTierFilter(null)} className="hover:text-white transition-colors"><X size={8} /></button>
+                      </span>
+                    )}
+                    {memoryTypeFilter && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/[0.1] text-[9px] font-bold text-slate-400">
+                        type: {memoryTypeFilter.replace(/_/g, ' ')}
+                        <button onClick={() => setMemoryTypeFilter(null)} className="hover:text-white transition-colors"><X size={8} /></button>
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 {/* Entry List */}
                 <div className="bg-white/[0.01] border border-white/[0.06] rounded-[28px] overflow-hidden">
-                  <div className="max-h-[320px] overflow-y-auto divide-y divide-white/[0.04]">
+                  <div className="max-h-[380px] overflow-y-auto divide-y divide-white/[0.04]">
                     {memoryLoading && memoryEntries.length === 0 ? (
                       <div className="flex items-center justify-center gap-2 py-10 text-slate-600 text-[11px]">
                         <Loader2 size={14} className="animate-spin" /> Loading memories...
@@ -776,40 +872,146 @@ export const SettingsModal = () => {
                             return `${Math.round(diff / 86400000)}d ago`;
                           })()
                         : null;
+                      const isExpanded = expandedEntryId === entry.id;
+                      const isEditing = editingEntryId === entry.id;
                       return (
-                        <div key={entry.id} className="flex items-start gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors group">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              {entry.tier && (
-                                <span className={cn('px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border', tierClass)}>
-                                  {entry.tier}
-                                </span>
-                              )}
-                              {confidence && (
-                                <span className={cn('px-1.5 py-0.5 rounded text-[8px] font-bold',
-                                  confidence === 'HIGH' ? 'text-emerald-400' : confidence === 'MED' ? 'text-yellow-500' : 'text-rose-400'
-                                )}>
-                                  {confidence}
-                                </span>
-                              )}
-                              {relTime && <span className="text-[8px] text-slate-700">{relTime}</span>}
-                            </div>
-                            <p className="text-[10px] text-slate-400 leading-relaxed line-clamp-2 font-medium">{entry.content}</p>
-                          </div>
-                          <button
-                            onClick={async () => {
-                              setMemoryEntries(prev => prev.filter(e => e.id !== entry.id));
-                              try {
-                                await fetchWithRetry(`${API_BASE_URL}/memory/entries/${entry.id}`, { method: 'DELETE' });
-                              } catch {
-                                setMemoryEntries(prev => [...prev, entry]);
-                              }
+                        <div key={entry.id} className="hover:bg-white/[0.02] transition-colors group">
+                          <div
+                            className="flex items-start gap-3 px-4 py-3 cursor-pointer"
+                            onClick={() => {
+                              setExpandedEntryId(isExpanded ? null : entry.id);
+                              if (isEditing) { setEditingEntryId(null); }
                             }}
-                            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-rose-500/20 text-slate-700 hover:text-rose-400 transition-all flex-shrink-0 mt-0.5"
-                            title="Delete this memory"
                           >
-                            <Trash2 size={12} />
-                          </button>
+                            {/* Expand chevron */}
+                            <div className="mt-0.5 text-slate-700 flex-shrink-0">
+                              {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                {entry.tier && (
+                                  <span className={cn('px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border', tierClass)}>
+                                    {entry.tier}
+                                  </span>
+                                )}
+                                {entry.type && (
+                                  <span className="px-2 py-0.5 rounded-full text-[8px] font-bold bg-white/[0.05] text-slate-500 border border-white/[0.08]">
+                                    {entry.type.replace(/_/g, ' ')}
+                                  </span>
+                                )}
+                                {confidence && (
+                                  <span className={cn('px-1.5 py-0.5 rounded text-[8px] font-bold',
+                                    confidence === 'HIGH' ? 'text-emerald-400' : confidence === 'MED' ? 'text-yellow-500' : 'text-rose-400'
+                                  )}>
+                                    {confidence}
+                                  </span>
+                                )}
+                                {entry.importance != null && (
+                                  <span className="flex items-center gap-0.5 text-[8px] font-bold text-amber-400/80">
+                                    <Star size={8} className="fill-amber-400/80" /> {entry.importance}
+                                  </span>
+                                )}
+                                {relTime && <span className="text-[8px] text-slate-700">{relTime}</span>}
+                              </div>
+                              <p className={cn('text-[10px] text-slate-400 leading-relaxed font-medium', !isExpanded && 'line-clamp-2')}>
+                                {entry.content}
+                              </p>
+                            </div>
+                            {/* Action buttons */}
+                            <div className="flex items-center gap-0.5 flex-shrink-0 mt-0.5">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setExpandedEntryId(entry.id);
+                                  setEditingEntryId(entry.id);
+                                  setEditContent(entry.content || '');
+                                }}
+                                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-jb-accent/20 text-slate-700 hover:text-jb-accent transition-all"
+                                title="Edit this memory"
+                              >
+                                <Pencil size={11} />
+                              </button>
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  setMemoryEntries(prev => prev.filter(el => el.id !== entry.id));
+                                  try {
+                                    await fetchWithRetry(`${API_BASE_URL}/memory/entries/${entry.id}`, { method: 'DELETE' });
+                                  } catch {
+                                    setMemoryEntries(prev => [...prev, entry]);
+                                  }
+                                }}
+                                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-rose-500/20 text-slate-700 hover:text-rose-400 transition-all"
+                                title="Delete this memory"
+                              >
+                                <Trash2 size={11} />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Expanded area: tags + inline edit */}
+                          {isExpanded && (
+                            <div className="px-4 pb-3 pl-[40px] space-y-2">
+                              {/* Tags */}
+                              {entry.tags && entry.tags.length > 0 && (
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  <Tag size={9} className="text-slate-700" />
+                                  {entry.tags.map((tag: string) => (
+                                    <span key={tag} className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-white/[0.04] text-slate-600 border border-white/[0.06]">
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              {/* Inline edit */}
+                              {isEditing && (
+                                <div className="space-y-2">
+                                  <textarea
+                                    value={editContent}
+                                    onChange={e => setEditContent(e.target.value)}
+                                    rows={4}
+                                    className="w-full bg-white/[0.03] border border-white/[0.1] rounded-xl p-3 text-[10px] text-slate-300 font-medium focus:outline-none focus:border-jb-purple/40 resize-none"
+                                  />
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      disabled={editSaving || !editContent.trim()}
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        setEditSaving(true);
+                                        // Optimistic update
+                                        const prevContent = entry.content;
+                                        setMemoryEntries(prev => prev.map(el => el.id === entry.id ? { ...el, content: editContent.trim() } : el));
+                                        try {
+                                          await fetchWithRetry(`${API_BASE_URL}/memory/entries/${entry.id}`, {
+                                            method: 'PATCH',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ content: editContent.trim() }),
+                                          });
+                                          setEditingEntryId(null);
+                                        } catch {
+                                          setMemoryEntries(prev => prev.map(el => el.id === entry.id ? { ...el, content: prevContent } : el));
+                                        } finally {
+                                          setEditSaving(false);
+                                        }
+                                      }}
+                                      className="flex items-center gap-1 px-3 py-1.5 bg-jb-purple/20 hover:bg-jb-purple/30 border border-jb-purple/30 rounded-lg text-[9px] font-bold text-jb-purple transition-all disabled:opacity-50"
+                                    >
+                                      {editSaving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Save
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditingEntryId(null);
+                                      }}
+                                      className="px-3 py-1.5 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] rounded-lg text-[9px] font-bold text-slate-500 transition-all"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })}

@@ -6,12 +6,25 @@ import { useSpeechToText } from '../hooks/useSpeechToText';
 import { cn } from '../lib/utils';
 import { fetchWithRetry } from '../lib/api-client';
 
+const MODE_PLACEHOLDERS: Record<string, string> = {
+  chat: 'Ask anything...',
+  coding: 'Describe what to build or fix...',
+  browser: 'Search or enter a URL...',
+  vision: 'Describe an image to generate...',
+  waterfall: 'Describe your pipeline goal...',
+  debate: 'Set the debate topic...',
+  compare: 'Enter a prompt to compare models...',
+  collaborate: 'Direct the team...',
+  model_playground: 'Test a prompt...',
+  home: 'Ask anything...',
+};
+
 interface ChatInputProps {
   compact?: boolean;
 }
 
 export const ChatInput = ({ compact = false }: ChatInputProps) => {
-  const { sendMessage, generateImageAction, isProcessing, addMessage, deviceInfo, thinkingModeEnabled, setThinkingModeEnabled } = useAppStore();
+  const { sendMessage, generateImageAction, isProcessing, addMessage, deviceInfo, thinkingModeEnabled, setThinkingModeEnabled, currentMode } = useAppStore();
   const [input, setInput] = useState('');
   const [showMenu, setShowMenu] = useState(false);
   const [uploadMode, setUploadMode] = useState<'image' | 'file'>('image');
@@ -99,11 +112,11 @@ export const ChatInput = ({ compact = false }: ChatInputProps) => {
 
     try {
       const { BASE_URL } = await import('../lib/config');
-      const data = await fetchWithRetry(`${BASE_URL}/api/files/upload`, {
+      const data = await fetchWithRetry<{ filename?: string; content?: string }>(`${BASE_URL}/api/files/upload`, {
         method: 'POST',
         body: formData,
       });
-      
+
       if (data.filename) {
         setAttachedFile({
           name: data.filename,
@@ -238,7 +251,7 @@ export const ChatInput = ({ compact = false }: ChatInputProps) => {
                 value={input}
                 onChange={(e) => { setInput(e.target.value); adjustHeight(); }}
                 onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
-                placeholder="Message Solvent..."
+                placeholder={MODE_PLACEHOLDERS[currentMode] || 'Send a message...'}
                 className={cn(
                   "w-full bg-transparent border-none outline-none font-sans font-bold text-white placeholder:text-slate-800 resize-none scrollbar-hide overflow-y-auto",
                   compact ? "text-xs py-2 min-h-[34px] max-h-[120px]" : (deviceInfo.isMobile ? "text-xs py-3 min-h-[42px] max-h-[120px]" : "text-[14px] py-3 min-h-[42px] max-h-[160px]")

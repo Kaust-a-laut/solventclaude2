@@ -60,7 +60,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </button>
           </div>
 
-          {process.env.NODE_ENV === 'development' && (
+          {import.meta.env.DEV && (
             <div className="mt-12 p-6 bg-rose-500/5 border border-rose-500/10 rounded-2xl text-left max-w-2xl overflow-auto max-h-48 scrollbar-hide">
               <p className="text-rose-400 font-mono text-xs">{this.state.error?.stack}</p>
             </div>

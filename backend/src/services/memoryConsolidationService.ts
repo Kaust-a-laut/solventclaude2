@@ -28,7 +28,7 @@ export class MemoryConsolidationService {
       Focus on WHAT was done and WHY. 
       Format: [MODE: ${mode}] Summary of key insights.`;
 
-      const summary = await groq.generateChatCompletion([
+      const summary = await groq.complete([
         { role: 'system', content: 'You are a technical archivist.' },
         { role: 'user', content: prompt }
       ], { model: 'llama-3.3-70b-versatile', temperature: 0.1 });
@@ -86,7 +86,7 @@ export class MemoryConsolidationService {
         }
       }`;
 
-      const res = await groq.generateChatCompletion([
+      const res = await groq.complete([
         { role: 'system', content: 'You are the Memory Architect. You detect new knowledge, links, AND contradictions.' },
         { role: 'user', content: prompt }
       ], { model: 'llama-3.3-70b-versatile', temperature: 0, jsonMode: true });
@@ -167,7 +167,7 @@ export class MemoryConsolidationService {
       
       Output ONLY the concise summary.`;
 
-      const summary = await groq.generateChatCompletion([
+      const summary = await groq.complete([
         { role: 'system', content: 'You are a technical archivist.' },
         { role: 'user', content: prompt }
       ], { model: 'llama-3.3-70b-versatile', temperature: 0.1 });
@@ -244,7 +244,7 @@ export class MemoryConsolidationService {
           const provider = await AIProviderFactory.getProvider(providerInfo.name);
           logger.info(`[Memory] Attempting Amnesia Cycle with ${providerInfo.name} (Attempt ${attempts + 1})...`);
           
-          const res = await provider.generateChatCompletion([
+          const res = await provider.complete([
             { role: 'system', content: 'You are a technical archivist. You perform retrospectives and extract abstract patterns. You MUST respond in valid JSON. Do not use any tools.' },
             { role: 'user', content: promptText }
           ], { 

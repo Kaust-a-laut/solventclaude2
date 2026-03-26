@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
 import type { editor as MonacoEditor } from 'monaco-editor';
 import { Sparkles, Wrench, BookOpen, TestTube, RefreshCw } from 'lucide-react';
 
@@ -42,10 +43,9 @@ export const InlineAIToolbar: React.FC<Props> = ({ editorRef, containerRef, onCo
       if (!coords) return;
       const container = containerRef.current;
       if (!container) return;
-      const rect = container.getBoundingClientRect();
       setPos({
-        top: coords.top + rect.top - 40,
-        left: Math.min(coords.left + rect.left, rect.right - 200),
+        top: coords.top - 40,
+        left: Math.min(coords.left, (container.clientWidth || 600) - 200),
       });
     });
 
@@ -64,7 +64,8 @@ export const InlineAIToolbar: React.FC<Props> = ({ editorRef, containerRef, onCo
       disposable.dispose();
       action.dispose();
     };
-  }, [editorRef.current]); // re-run when Monaco instance changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- editorRef is stable; re-mount triggers re-run
+  }, []);
 
   const handleToolClick = (toolId: string) => {
     const editor = editorRef.current;
@@ -91,7 +92,7 @@ export const InlineAIToolbar: React.FC<Props> = ({ editorRef, containerRef, onCo
       {/* Selection toolbar — appears above selected code */}
       {pos && (
         <div
-          className="fixed z-50 flex items-center gap-1 px-2 py-1 rounded-xl bg-[#0a0a18] border border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.6)]"
+          className="absolute z-50 flex items-center gap-1 px-2 py-1 rounded-xl bg-[#0a0a18] border border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.6)]"
           style={{ top: pos.top, left: pos.left }}
         >
           <Sparkles size={11} className="text-jb-accent mr-1 shrink-0" />
@@ -110,10 +111,11 @@ export const InlineAIToolbar: React.FC<Props> = ({ editorRef, containerRef, onCo
         </div>
       )}
 
-      {/* ⌘K inline prompt overlay */}
-      {showInlinePrompt && (
+      {/* ⌘K inline prompt overlay — portaled to body so it covers both #root and #editor-portal */}
+      {showInlinePrompt && ReactDOM.createPortal(
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ pointerEvents: 'auto' }}
           onClick={() => setShowInlinePrompt(false)}
         >
           <form
@@ -134,7 +136,8 @@ export const InlineAIToolbar: React.FC<Props> = ({ editorRef, containerRef, onCo
               <Sparkles size={13} />
             </button>
           </form>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

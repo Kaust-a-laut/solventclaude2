@@ -66,11 +66,12 @@ export class OllamaProviderPlugin implements IProviderPlugin {
       throw new Error('Ollama provider not initialized');
     }
 
-    const { model, temperature = 0.7, maxTokens = 2048 } = options;
+    const { model, temperature = 0.7, maxTokens = 2048, jsonMode } = options;
 
     const response = await this.client.chat({
       model: model || this.defaultModel,
       messages: messages.map(msg => ({ role: msg.role, content: msg.content })),
+      ...(jsonMode ? { format: 'json' } : {}),
       options: {
         temperature,
         num_predict: maxTokens,
@@ -85,11 +86,12 @@ export class OllamaProviderPlugin implements IProviderPlugin {
       throw new Error('Ollama provider not initialized');
     }
 
-    const { model, temperature = 0.7, maxTokens = 2048 } = options;
+    const { model, temperature = 0.7, maxTokens = 2048, jsonMode } = options;
 
     const response = await this.client.chat({
       model: model || this.defaultModel,
       messages: messages.map(msg => ({ role: msg.role, content: msg.content })),
+      ...(jsonMode ? { format: 'json' } : {}),
       options: {
         temperature,
         num_predict: maxTokens,

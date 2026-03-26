@@ -152,6 +152,42 @@ export const TOOL_DEFINITIONS = [
       },
       required: ["memoryId", "reason"]
     }
+  },
+  // --- Frontend-deferred tools (executed in the browser, not on the server) ---
+  {
+    name: "ide_open_file",
+    description: "Open a file in the IDE editor tab. Use this to show the user a specific file.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        path: { type: "STRING", description: "Relative path to the file to open in the editor" }
+      },
+      required: ["path"]
+    }
+  },
+  {
+    name: "ide_show_diff",
+    description: "Present a side-by-side diff in the IDE for user approval before applying changes.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        path: { type: "STRING", description: "Relative path to the file being modified" },
+        content: { type: "STRING", description: "The proposed new content for the file" },
+        description: { type: "STRING", description: "Brief description of the changes" }
+      },
+      required: ["path", "content"]
+    }
+  },
+  {
+    name: "ide_run_in_sandbox",
+    description: "Run a command in the browser's WebContainer sandbox (Node.js environment). Use this for safe execution in an isolated environment.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        command: { type: "STRING", description: "The command to run in the sandbox (e.g. 'node index.js', 'npm test')" }
+      },
+      required: ["command"]
+    }
   }
 ];
 
@@ -186,7 +222,8 @@ export function getOpenAITools() {
           acc[key] = {
             type: prop.type.toLowerCase(),
             description: prop.description,
-            ...(prop.enum ? { enum: prop.enum } : {})
+            ...(prop.enum ? { enum: prop.enum } : {}),
+            ...(prop.items ? { items: { type: prop.items.type.toLowerCase() } } : {})
           };
           return acc;
         }, {}),

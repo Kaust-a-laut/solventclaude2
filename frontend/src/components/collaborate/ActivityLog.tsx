@@ -34,15 +34,15 @@ function fmtTime(ts: number): string {
 // ─── Component ──────────────────────────────────────────────────────────────────
 
 export const ActivityLog: React.FC<ActivityLogProps> = ({ entries }) => {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to latest entry
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [entries.length]);
 
   return (
-    <div className="glass-panel rounded-2xl p-3 max-h-32 overflow-y-auto no-scrollbar">
+    <div ref={scrollRef} className="glass-panel rounded-2xl p-3 max-h-32 overflow-y-auto no-scrollbar">
       <div className="flex flex-col gap-1">
         <AnimatePresence initial={false}>
           {entries.map((entry) => {
@@ -66,7 +66,6 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ entries }) => {
             );
           })}
         </AnimatePresence>
-        <div ref={bottomRef} />
       </div>
     </div>
   );

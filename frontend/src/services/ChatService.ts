@@ -2,6 +2,9 @@ import { fetchWithRetry } from '../lib/api-client';
 import { API_BASE_URL, BASE_URL } from '../lib/config';
 import { parseGraphData } from '../lib/graph-parser';
 
+const THINKING_MODEL_LOCAL = 'deepseek-r1:8b';
+const THINKING_MODEL_CLOUD = 'deepseek-r1-distill-llama-70b';
+
 export interface ChatParams {
   messages: any[];
   currentMode: string;
@@ -23,16 +26,17 @@ export interface ChatParams {
   apiKeys: Record<string, string>;
   thinkingModeEnabled?: boolean;
   imageProvider?: string;
+  activeFile?: string | null;
 }
 
 export class ChatService {
   static async sendMessage(params: ChatParams, content: string, image: string | null = null) {
-    const { 
-      messages, currentMode, modeConfigs, selectedCloudModel, 
-      selectedLocalModel, selectedCloudProvider, globalProvider, 
+    const {
+      messages, currentMode, modeConfigs, selectedCloudModel,
+      selectedLocalModel, selectedCloudProvider, globalProvider,
       temperature, maxTokens, deviceInfo, notepadContent, apiKeys,
       thinkingModeEnabled, openFiles, browserContext, imageProvider,
-      codingHistory
+      codingHistory, activeFile
     } = params;
 
     // 1. Resolve Provider and Model
@@ -44,10 +48,10 @@ export class ChatService {
       // Force reasoning-capable models when thinking mode is active
       if (globalProvider === 'local') {
         provider = 'ollama';
-        model = 'deepseek-r1:8b';
+        model = THINKING_MODEL_LOCAL;
       } else {
         provider = 'groq';
-        model = 'deepseek-r1-distill-llama-70b';
+        model = THINKING_MODEL_CLOUD;
       }
     } else if (provider === 'auto') {
       if (globalProvider === 'local') {
@@ -113,7 +117,8 @@ export class ChatService {
         browserContext,
         apiKeys,
         thinkingModeEnabled,
-        imageProvider
+        imageProvider,
+        activeFile: activeFile || undefined
       }),
       retries: 3
     }) as any;
@@ -172,12 +177,34 @@ export class ChatService {
     return fullImageUrl;
   }
 
-  static async search(query: string) {
+  static async search(query: string, page?: number) {
     const data = await fetchWithRetry(`${API_BASE_URL}/search`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query }),
+      body: JSON.stringify({ query, page }),
       retries: 2
+    }) as any;
+
+    return data;
+  }
+
+  static async browse(url: string) {
+    const data = await fetchWithRetry(`${API_BASE_URL}/browse`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+      retries: 1
+    }) as any;
+
+    return data;
+  }
+
+  static async summarizePage(content: string, instruction?: string) {
+    const data = await fetchWithRetry(`${API_BASE_URL}/browse/summarize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content, instruction }),
+      retries: 1
     }) as any;
 
     return data;

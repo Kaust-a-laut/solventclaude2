@@ -24,7 +24,8 @@ export const createChatSlice: StateCreator<AppState, [], [], ChatSlice> = (set, 
   addMessage: (message, target) => set((state) => {
     const activeMode = target || state.currentMode;
     const currentMessages = state.sessions[activeMode] || [];
-    const newMessages = [...currentMessages, message];
+    const msgWithId = message.id ? message : { ...message, id: crypto.randomUUID() };
+    const newMessages = [...currentMessages, msgWithId];
     
     return { 
       sessions: { ...state.sessions, [activeMode]: newMessages },

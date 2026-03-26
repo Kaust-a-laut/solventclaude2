@@ -19,7 +19,7 @@ interface Props {
 }
 
 export const FileTreePanel: React.FC<Props> = ({ onFileSelect }) => {
-  const { openFiles, activeFile } = useAppStore();
+  const { openFiles, activeFile, fileTreeRefreshTrigger } = useAppStore();
   const [nodes, setNodes] = useState<FileNode[]>([]);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -37,6 +37,11 @@ export const FileTreePanel: React.FC<Props> = ({ onFileSelect }) => {
   }, []);
 
   useEffect(() => { fetchFiles(); }, [fetchFiles]);
+
+  // Re-fetch when agent triggers a file tree refresh
+  useEffect(() => {
+    if (fileTreeRefreshTrigger > 0) fetchFiles();
+  }, [fileTreeRefreshTrigger, fetchFiles]);
 
   const toggle = (path: string) =>
     setExpanded((prev) => ({ ...prev, [path]: !prev[path] }));
@@ -103,8 +108,10 @@ export const FileTreePanel: React.FC<Props> = ({ onFileSelect }) => {
         <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/20">Files</span>
       </div>
       {/* Tree */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin py-1">
-        {nodes.map((n) => renderNode(n))}
+      <div className="flex-1 min-h-0 relative">
+        <div className="absolute inset-0 overflow-y-auto scrollbar-thin py-1">
+          {nodes.map((n) => renderNode(n))}
+        </div>
       </div>
     </div>
   );

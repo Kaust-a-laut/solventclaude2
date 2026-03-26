@@ -30,7 +30,7 @@ describe('WaterfallService Integration (Mocked AI)', () => {
 
     // Create a mock provider that handles JSON responses
     mockProvider = {
-      generateChatCompletion: vi.fn().mockImplementation(async (messages, options) => {
+      complete: vi.fn().mockImplementation(async (messages, options) => {
         // Route based on the new context-aware prompt content
         const content = messages[0].content || "";
 
@@ -100,13 +100,13 @@ describe('WaterfallService Integration (Mocked AI)', () => {
     expect(result.reviewer.score).toBe(95);
 
     // Verify interactions
-    expect(mockProvider.generateChatCompletion).toHaveBeenCalledTimes(4); // Arch, Reason, Exec, Review
+    expect(mockProvider.complete).toHaveBeenCalledTimes(4); // Arch, Reason, Exec, Review
   });
 
   it('should retry when review score is low', async () => {
     // Override mock to fail the first review
     let reviewCount = 0;
-    mockProvider.generateChatCompletion = vi.fn().mockImplementation(async (messages) => {
+    mockProvider.complete = vi.fn().mockImplementation(async (messages) => {
         const content = messages[0].content || "";
         if (content.includes("Principal Engineer") || content.includes("RUBRIC (100 pts")) {
             reviewCount++;

@@ -6,7 +6,7 @@ const AuraBackground: React.FC<{ children: React.ReactNode }> = ({ children }) =
   const { auraMode } = useAppStore();
 
   return (
-    <div className="relative min-h-screen w-full bg-[#020205] overflow-hidden text-jb-text">
+    <div className="relative h-full w-full flex flex-col bg-[#020205] overflow-hidden text-jb-text">
       <style>{`
         @keyframes aura-organic-pulse {
           0%, 100% { opacity: 0.4; transform: scale(1); }
@@ -91,7 +91,7 @@ const AuraBackground: React.FC<{ children: React.ReactNode }> = ({ children }) =
         <div className="absolute inset-0 bg-[#020205]" />
       )}
 
-      <div className="relative z-10 w-full h-[100dvh] flex flex-col">
+      <div className="relative z-10 w-full flex-1 min-h-0 flex flex-col">
         {children}
       </div>
     </div>

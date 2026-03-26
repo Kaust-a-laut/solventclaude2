@@ -12,7 +12,7 @@ import { SystemStatus } from './SystemStatus';
 export const Navigation = () => {
   const { currentMode, setCurrentMode, setSettingsOpen, deviceInfo } = useAppStore();
   const [isOpen, setIsOpen] = useState(false); // Mobile drawer state
-  const [isCollapsed, setIsCollapsed] = useState(false); // Desktop sidebar collapse state
+  const [isCollapsed, setIsCollapsed] = useState(true); // Desktop sidebar collapse state
 
   const isMobile = deviceInfo.isMobile;
 

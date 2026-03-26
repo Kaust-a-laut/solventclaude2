@@ -47,7 +47,7 @@ export class MetaMemoryService {
          
         Keep it concise and high-density.`;
 
-        const summary = await groq.generateChatCompletion([
+        const summary = await groq.complete([
             { role: 'system', content: 'You are the Meta-Memory subsystem.' },
             { role: 'user', content: prompt }
         ], { 

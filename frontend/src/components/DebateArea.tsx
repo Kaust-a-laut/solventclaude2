@@ -3,8 +3,10 @@ import { useAppStore } from '../store/useAppStore';
 import { API_BASE_URL } from '../lib/config';
 import { getSecret } from '../lib/api-client';
 import { Swords, Sparkles, RefreshCw, AlertCircle, GitMerge } from 'lucide-react';
+import { ModelPickerDropdown } from './ModelPickerDropdown';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ALL_MODELS, toKey, fromKey } from '../lib/allModels';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -127,10 +129,15 @@ const DebatePanel = ({ role, content, agentName, isLoading }: DebatePanelProps) 
 
 export const DebateArea = () => {
   const { deviceInfo } = useAppStore();
-  const [isDebating, setIsDebating] = useState(false);
-  const [debate, setDebate]         = useState<DebateState>(EMPTY_DEBATE);
-  const [topic, setTopic]           = useState('The future of Artificial Intelligence');
-  const [error, setError]           = useState<string | null>(null);
+  const [isDebating, setIsDebating]         = useState(false);
+  const [debate, setDebate]                 = useState<DebateState>(EMPTY_DEBATE);
+  const [topic, setTopic]                   = useState('The future of Artificial Intelligence');
+  const [proponentKey, setProponentKey]     = useState(toKey('gemini', 'gemini-3.1-pro-preview'));
+  const [criticKey, setCriticKey]           = useState(toKey('ollama', 'qwen2.5-coder:7b'));
+  const [error, setError]                   = useState<string | null>(null);
+
+  const proponentLabel = ALL_MODELS.find(m => toKey(m.provider, m.model) === proponentKey)?.label ?? proponentKey;
+  const criticLabel    = ALL_MODELS.find(m => toKey(m.provider, m.model) === criticKey)?.label ?? criticKey;
 
   const handleStartDebate = async () => {
     if (!topic.trim() || isDebating) return;
@@ -143,7 +150,13 @@ export const DebateArea = () => {
       const response = await fetch(`${API_BASE_URL}/debate`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', 'X-Solvent-Secret': secret },
-        body:    JSON.stringify({ topic }),
+        body:    JSON.stringify({
+          topic,
+          proponentModel: fromKey(proponentKey).model,
+          proponentProvider: fromKey(proponentKey).provider,
+          criticModel: fromKey(criticKey).model,
+          criticProvider: fromKey(criticKey).provider,
+        }),
       });
 
       if (!response.ok) {
@@ -221,6 +234,25 @@ export const DebateArea = () => {
             </div>
 
             <div className="flex items-center gap-3 shrink-0">
+              {/* Proponent model selector */}
+              <ModelPickerDropdown
+                value={proponentKey}
+                onChange={setProponentKey}
+                models={ALL_MODELS}
+                accent="blue"
+                label="Proponent"
+                disabled={isDebating}
+              />
+
+              {/* Critic model selector */}
+              <ModelPickerDropdown
+                value={criticKey}
+                onChange={setCriticKey}
+                models={ALL_MODELS}
+                accent="orange"
+                label="Critic"
+                disabled={isDebating}
+              />
               {/* Reset */}
               <AnimatePresence>
                 {hasContent && !isDebating && (
@@ -275,8 +307,8 @@ export const DebateArea = () => {
           'grid gap-5',
           deviceInfo.isMobile ? 'grid-cols-1' : 'grid-cols-2',
         )}>
-          <DebatePanel role="proponent" content={debate.proponent} agentName="Gemini Pro" isLoading={isDebating} />
-          <DebatePanel role="critic"    content={debate.critic}    agentName="Qwen 2.5"   isLoading={isDebating} />
+          <DebatePanel role="proponent" content={debate.proponent} agentName={proponentLabel} isLoading={isDebating} />
+          <DebatePanel role="critic"    content={debate.critic}    agentName={criticLabel}   isLoading={isDebating} />
         </div>
 
         {/* ── Synthesis (full-width, purple) ─────────────────────────────── */}

@@ -5,16 +5,62 @@
 @tailwind utilities;
 
 @layer base {
+  /* Prevent all document-level scrolling — the 133% DPI hack makes the root
+     physically larger than the viewport, so any scroll-chain or focus-scroll
+     shifts the entire app up and it stays stuck. */
+  html, body {
+    overflow: hidden;
+    height: 100%;
+    overscroll-behavior: none;
+  }
+
+  /* DPI scaling hack: render at 133% then scale to 75% for sharper text on
+     Electron's default zoom. position:fixed prevents focus-induced scrolling
+     of the oversized root (e.g. Monaco editor mount in the Coding Suite). */
+  #root {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 133.33333vw;
+    height: 133.33333vh;
+    transform: scale(0.75);
+    transform-origin: top left;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  /* Prevent scroll-chaining on ALL scrollable containers — stops the
+     133vh oversized root from shifting when inner panels hit a boundary. */
+  .overflow-y-auto,
+  .overflow-y-scroll,
+  .overflow-auto {
+    overscroll-behavior-y: contain;
+  }
+
+  /* Monaco editor creates its own scroll containers outside Tailwind */
+  .monaco-scrollable-element,
+  .monaco-editor,
+  .monaco-editor-background,
+  .monaco-editor-scrollable,
+  .monaco-editor .scrollbar,
+  .monaco-editor .slider,
+  .monaco-workbench,
+  .monaco-workbench .part,
+  .monaco-editor .view-overlays,
+  .monaco-editor .margin {
+    overscroll-behavior: contain;
+  }
+
+
   .app-drag-region {
     -webkit-app-region: drag;
   }
   .app-no-drag {
     -webkit-app-region: no-drag;
   }
-  
+
   body {
     @apply bg-[#020205] text-slate-200 antialiased font-sans;
-    overflow: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -90,6 +136,18 @@
   @keyframes scan {
     0% { transform: translateY(-100%); }
     100% { transform: translateY(100%); }
+  }
+
+  /* Reduced Motion Preferences - Accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 
   .button-glow-hover {
@@ -335,5 +393,10 @@
   @keyframes pulse-color-orange {
     0%, 100% { opacity: 0.4; box-shadow: 0 0 4px rgba(251, 146, 60, 0.4); }
     50%       { opacity: 1;   box-shadow: 0 0 12px rgba(251, 146, 60, 0.8); }
+  }
+
+  @keyframes ambient-breathe {
+    0%, 100% { opacity: 0.04; }
+    50% { opacity: 0.08; }
   }
 }

@@ -26,10 +26,10 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, code }) => {
     setSaving(true);
     try {
       const { BASE_URL } = await import('../lib/config');
-      const data = await fetchWithRetry(`${BASE_URL}/api/files/upload`, {
+      const data = await fetchWithRetry<{ filename?: string }>(`${BASE_URL}/api/files/upload`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           content: code,
           filename: `generated-code-${Date.now()}.${language === 'typescript' ? 'ts' : language === 'javascript' ? 'js' : language || 'txt'}`
         }),

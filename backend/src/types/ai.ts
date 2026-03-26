@@ -50,6 +50,16 @@ export interface IAIProvider {
 // Deprecated alias for backward compatibility until refactor is complete
 export type AIProvider = IAIProvider;
 
+export interface PageContent {
+  title: string;
+  content: string;
+  excerpt?: string;
+  siteName?: string;
+  author?: string;
+  publishedDate?: string;
+  url: string;
+}
+
 export interface ChatRequestData {
   provider: string;
   model: string;
@@ -63,6 +73,7 @@ export interface ChatRequestData {
   maxTokens?: number;
   apiKeys?: Record<string, string>;
   thinkingModeEnabled?: boolean;
+  activeFile?: string;
   deviceInfo?: {
     isMobile: boolean;
     isTablet: boolean;
@@ -76,4 +87,5 @@ export interface ChatRequestData {
     history: string[];
     lastSearchResults?: SearchResult[];
   };
+  signal?: AbortSignal;
 }

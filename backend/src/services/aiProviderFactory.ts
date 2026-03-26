@@ -1,6 +1,5 @@
-import { AIProvider, ChatMessage, CompletionOptions } from '../types/ai';
 import { pluginManager } from './pluginManager';
-import { logger } from '../utils/logger';
+import { IProviderPlugin } from '../types/plugins';
 
 /**
  * Provider configuration for OpenAI-compatible providers.
@@ -35,22 +34,24 @@ export const OPENAI_COMPATIBLE_PROVIDERS: Record<string, ProviderConfig> = {
     baseUrl: 'https://openrouter.ai/api/v1',
     apiKeyEnvVar: 'OPENROUTER_API_KEY',
     defaultModel: 'google/gemini-2.0-flash-001:free'
+  },
+  dashscope: {
+    name: 'dashscope',
+    baseUrl: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
+    apiKeyEnvVar: 'DASHSCOPE_API_KEY',
+    defaultModel: 'qwen3-coder-plus'
+  },
+  cerebras: {
+    name: 'cerebras',
+    baseUrl: 'https://api.cerebras.ai/v1',
+    apiKeyEnvVar: 'CEREBRAS_API_KEY',
+    defaultModel: 'llama3.1-8b'
   }
 };
 
 export class AIProviderFactory {
-  static async getProvider(name: string): Promise<any> {
-    const provider = await pluginManager.getProvider(name);
-    if (!provider) {
-      throw new Error(`Unsupported AI provider: ${name}. No plugin found.`);
-    }
-
-    if (!provider.isReady()) {
-      logger.warn(`[AIProviderFactory] Provider ${name} is not ready`);
-      throw new Error(`AI provider ${name} is not ready`);
-    }
-
-    return provider;
+  static async getProvider(name: string): Promise<IProviderPlugin> {
+    return pluginManager.resolveProvider(name);
   }
 
   static async getAllProviders() {

@@ -10,8 +10,8 @@ export class SearchService {
     this.rootDir = path.resolve(__dirname, '../../../');
   }
 
-  async webSearch(query: string) {
-    console.log(`[SearchService] Executing search for: "${query}"`);
+  async webSearch(query: string, page: number = 1) {
+    console.log(`[SearchService] Executing search for: "${query}" (page ${page})`);
     if (!config.SERPER_API_KEY) {
       console.error('[SearchService] Error: SERPER_API_KEY missing');
       throw new Error('SERPER_API_KEY is not configured for web search.');
@@ -25,7 +25,8 @@ export class SearchService {
         q: query,
         gl: 'us',
         hl: 'en',
-        num: 20, // Increase result count for better relevance
+        num: 20,
+        page,
         autocorrect: true
       }, {
         headers: {

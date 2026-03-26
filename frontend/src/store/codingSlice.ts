@@ -1,12 +1,26 @@
 import { StateCreator } from 'zustand';
 import { AppState } from './types';
 
+// --- Tool Event Types (mirror backend AgentEvent types) ---
+
+export interface ToolEvent {
+  type: 'tool_start' | 'tool_result' | 'tool_error';
+  tool: string;
+  args?: Record<string, unknown>;
+  result?: unknown;
+  error?: string;
+  iteration: number;
+  callId: string;
+}
+
 export interface AgentMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   fileContext?: string;
   codeBlocks?: CodeSuggestion[];
+  toolEvents?: ToolEvent[];
+  isStreaming?: boolean;
 }
 
 export interface CodeSuggestion {
@@ -32,10 +46,20 @@ export interface CodingSlice {
   chatPanelVisible: boolean;
   terminalVisible: boolean;
 
+  // Terminal lines (shared across CodingArea + agent)
+  terminalLines: string[];
+  addTerminalLine: (line: string) => void;
+  clearTerminalLines: () => void;
+
+  // File tree refresh trigger (incremented to signal a refresh)
+  fileTreeRefreshTrigger: number;
+  triggerFileTreeRefresh: () => void;
+
   setPendingDiff: (diff: PendingDiff) => void;
   clearPendingDiff: () => void;
   addAgentMessage: (msg: AgentMessage) => void;
   updateAgentMessage: (id: string, updates: Partial<AgentMessage>) => void;
+  appendToolEvent: (msgId: string, event: ToolEvent) => void;
   clearAgentMessages: () => void;
   setPanelWidths: (widths: { fileTree: number; chat: number }) => void;
   setFileTreeVisible: (v: boolean) => void;
@@ -51,12 +75,25 @@ export const createCodingSlice: StateCreator<AppState, [], [], CodingSlice> = (s
   chatPanelVisible: true,
   terminalVisible: false,
 
+  terminalLines: ['[SYSTEM]: Agentic IDE Core Initialized.'],
+  addTerminalLine: (line) => set((state) => ({ terminalLines: [...state.terminalLines, line] })),
+  clearTerminalLines: () => set({ terminalLines: [] }),
+
+  fileTreeRefreshTrigger: 0,
+  triggerFileTreeRefresh: () => set((state) => ({ fileTreeRefreshTrigger: state.fileTreeRefreshTrigger + 1 })),
+
   setPendingDiff: (diff) => set({ pendingDiff: diff }),
   clearPendingDiff: () => set({ pendingDiff: null }),
   addAgentMessage: (msg) => set((state) => ({ agentMessages: [...state.agentMessages, msg] })),
   updateAgentMessage: (id, updates) =>
     set((state) => ({
       agentMessages: state.agentMessages.map((m) => (m.id === id ? { ...m, ...updates } : m)),
+    })),
+  appendToolEvent: (msgId, event) =>
+    set((state) => ({
+      agentMessages: state.agentMessages.map((m) =>
+        m.id === msgId ? { ...m, toolEvents: [...(m.toolEvents ?? []), event] } : m
+      ),
     })),
   clearAgentMessages: () => set({ agentMessages: [] }),
   setPanelWidths: (panelWidths) => set({ panelWidths }),

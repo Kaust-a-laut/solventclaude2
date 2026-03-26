@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="beakerFluidFavicon" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FB923C"/>
+      <stop offset="40%" stop-color="#F43F5E"/>
+      <stop offset="100%" stop-color="#9D5BD2"/>
+    </linearGradient>
+    <filter id="glowFavicon">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  
+  <!-- Beaker outline -->
+  <path d="M38 22 L38 45 L18 82 Q15 88 22 88 L78 88 Q85 88 82 82 L62 45 L62 22"
+    fill="none"
+    stroke="white"
+    stroke-width="1.2"
+    stroke-opacity="0.6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  
+  <!-- Fluid -->
+  <path d="M40 48 L25 80 Q23 83 27 83 L73 83 Q77 83 75 80 L60 48 Q58 45 50 45 Q42 45 40 48 Z"
+    fill="url(#beakerFluidFavicon)"
+    filter="url(#glowFavicon)"
+  />
+  
+  <!-- Surface line -->
+  <path d="M25 80 Q50 84 75 80"
+    fill="none"
+    stroke="white"
+    stroke-width="0.8"
+    stroke-opacity="0.7"
+    stroke-linecap="round"
+  />
+  
+  <!-- Rim -->
+  <ellipse cx="50" cy="20" rx="16" ry="2"
+    fill="none"
+    stroke="white"
+    stroke-width="1"
+    stroke-opacity="0.4"
+  />
+</svg>

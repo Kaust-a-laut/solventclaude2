@@ -8,10 +8,10 @@ interface Props {
 }
 
 export const CodingTerminal: React.FC<Props> = ({ lines, onClear }) => {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [lines]);
 
   const lineColor = (line: string) => {
@@ -34,11 +34,10 @@ export const CodingTerminal: React.FC<Props> = ({ lines, onClear }) => {
           <Trash2 size={11} />
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto p-3 font-mono text-[11px] leading-relaxed scrollbar-thin">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 font-mono text-[11px] leading-relaxed scrollbar-thin">
         {lines.map((line, i) => (
           <div key={i} className={cn('mb-0.5', lineColor(line))}>{line}</div>
         ))}
-        <div ref={bottomRef} />
       </div>
     </div>
   );
