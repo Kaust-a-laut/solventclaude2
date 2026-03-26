@@ -109,16 +109,16 @@ export const GlobalSearch: React.FC = () => {
       }
 
       // Format memory results
-      if (memoriesRes.data.entries) {
-        for (const memory of memoriesRes.data.entries) {
+      if (memoriesRes.data.results) {
+        for (const memory of memoriesRes.data.results) {
           formattedResults.push({
             type: 'memory',
             id: memory.id,
-            title: memory.type || 'Memory',
-            excerpt: memory.content?.slice(0, 150) || '',
+            title: memory.metadata?.type || 'Memory',
+            excerpt: memory.text?.slice(0, 150) || '',
             score: memory.score,
             metadata: {
-              memoryType: memory.type
+              memoryType: memory.metadata?.type
             }
           });
         }
