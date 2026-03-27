@@ -946,7 +946,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
             >
               {/* Mission Launcher */}
               {(() => {
-                const tmpl = MISSION_TEMPLATES.find(t => t.id === missionTemplate) ?? MISSION_TEMPLATES[0];
+                const tmpl = MISSION_TEMPLATES.find(t => t.id === missionTemplate) ?? MISSION_TEMPLATES[0]!;
                 return (
                   <div className={cn('rounded-xl p-3 space-y-3 flex-shrink-0 border', tmpl.cardCls)}>
                     <div className="flex items-center gap-2">

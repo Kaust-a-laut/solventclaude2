@@ -86,16 +86,16 @@ router.patch('/memory/entries/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const { content } = req.body as { content?: string };
   if (!content?.trim()) return res.status(400).json({ error: 'content is required' });
-  const ok = await vectorService.updateEntry(id, { content: content.trim(), lastUpdated: new Date().toISOString() });
-  if (ok === false) return res.status(404).json({ error: 'Entry not found' });
+  const ok = await vectorService.updateEntry(id!, { content: content!.trim(), lastUpdated: new Date().toISOString() });
+  if (!ok) return res.status(404).json({ error: 'Entry not found' });
   res.json({ success: true });
 });
 
 // DELETE /api/v1/memory/entries/:id — soft-delete one entry
 router.delete('/memory/entries/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
-  const ok = await vectorService.deprecateEntry(id, 'Deleted by user');
-  if (ok === false) return res.status(404).json({ error: 'Entry not found' });
+  const ok = await vectorService.deprecateEntry(id!, 'Deleted by user');
+  if (!ok) return res.status(404).json({ error: 'Entry not found' });
   res.json({ success: true });
 });
 

@@ -42,6 +42,6 @@ describe('ConversationStorageService', () => {
     // Verify newer version persisted
     const loaded = await service.loadSession('test-1');
     expect(loaded?.messages).toHaveLength(1);
-    expect(loaded?.messages[0].content).toBe('new');
+    expect(loaded?.messages[0]!.content).toBe('new');
   });
 });

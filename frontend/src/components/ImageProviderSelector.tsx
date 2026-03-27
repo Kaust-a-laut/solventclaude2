@@ -74,7 +74,7 @@ export const ImageProviderSelector: React.FC<ImageProviderSelectorProps> = ({ lo
   const { imageProvider, setImageProvider, apiKeys } = useAppStore();
   const [expanded, setExpanded] = useState(false);
 
-  const activeProvider = IMAGE_PROVIDERS.find((p) => p.id === imageProvider) ?? IMAGE_PROVIDERS[0];
+  const activeProvider = IMAGE_PROVIDERS.find((p) => p.id === imageProvider) ?? IMAGE_PROVIDERS[0]!;
   const ActiveIcon = activeProvider.icon;
 
   // Whether a paid provider has its key configured

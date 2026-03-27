@@ -92,7 +92,7 @@ export const WaterfallArea = () => {
     // Find last completed stage
     const completedStages = STAGE_ORDER.filter((s) => waterfall.steps[s].status === 'completed');
     if (completedStages.length > 0) {
-      setSelectedStage(completedStages[completedStages.length - 1]);
+      setSelectedStage(completedStages[completedStages.length - 1] ?? null);
     }
   }, [
     waterfall.steps.architect.status,

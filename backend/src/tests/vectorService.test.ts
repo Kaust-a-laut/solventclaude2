@@ -165,7 +165,7 @@ describe('VectorService', () => {
       
       expect(embeddings.length).toBe(3);
       expect(Array.isArray(embeddings[0])).toBe(true);
-      expect(embeddings[0].length).toBeGreaterThan(0);
+      expect(embeddings[0]!.length).toBeGreaterThan(0);
     });
   });
 
@@ -215,7 +215,7 @@ describe('VectorService', () => {
       
       const results = await vectorService.search('archived', 10, { tier: 'archived' });
       expect(results.length).toBeGreaterThanOrEqual(1);
-      expect(results[0].metadata.tier).toBe('archived');
+      expect(results[0]!.metadata.tier).toBe('archived');
     });
   });
 

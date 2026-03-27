@@ -77,6 +77,7 @@ export const MessageList = ({ compact }: MessageListProps) => {
         <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
           {virtualizer.getVirtualItems().map((virtualItem: { key: React.Key; index: number; start: number }) => {
             const m = messages[virtualItem.index];
+            if (!m) return null;
             const isNew = virtualItem.index >= messages.length - 2;
             return (
               <div

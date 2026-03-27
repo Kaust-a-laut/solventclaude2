@@ -25,7 +25,7 @@ export function normalizeMessagesForOllama(messages: ChatMessage[]): Array<{ rol
     if (m.image) {
       const matches = m.image.match(/^data:(.+);base64,(.+)$/);
       if (matches) {
-        msg.images = [matches[2]];
+        msg.images = [matches[2]!];
       }
     }
     
@@ -52,7 +52,7 @@ export function extractImageFromDataUrl(dataUrl: string): { data: string; mimeTy
   const matches = dataUrl.match(/^data:(.+);base64,(.+)$/);
   if (!matches) return null;
   return {
-    data: matches[2],
-    mimeType: matches[1]
+    data: matches[2]!,
+    mimeType: matches[1]!
   };
 }

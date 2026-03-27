@@ -61,9 +61,11 @@ export const createChatSlice: StateCreator<AppState, [], [], ChatSlice> = (set, 
     if (targetMessages.length > 0) {
       const updatedMessages = [...targetMessages];
       const lastIndex = updatedMessages.length - 1;
+      const lastMsg = updatedMessages[lastIndex];
+      if (!lastMsg) return state;
       updatedMessages[lastIndex] = {
-        ...updatedMessages[lastIndex],
-        content: updatedMessages[lastIndex].content + content
+        ...lastMsg,
+        content: lastMsg.content + content
       };
 
       return {

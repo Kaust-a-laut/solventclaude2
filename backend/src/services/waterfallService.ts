@@ -262,7 +262,7 @@ ${fullPrompt}`;
   }
 
   private async runArchitectWithContext(userPrompt: string, globalProvider: string, signal?: AbortSignal, modelSelection: WaterfallModelSelection = WATERFALL_DEFAULT_SELECTION) {
-    const phase = this.resolvePhase(WATERFALL_CONFIG.PHASE_1_ARCHITECT, modelSelection.architect);
+    const phase = this.resolvePhase(WATERFALL_CONFIG.PHASE_1_ARCHITECT!, modelSelection.architect);
     const providerName = globalProvider === 'local' ? 'ollama' : phase.primary.provider;
     const provider = await AIProviderFactory.getProvider(providerName);
 
@@ -332,7 +332,7 @@ Output a JSON object with this exact shape:
   }
 
   private async runReasonerWithContext(logicData: any, sessionContext: WaterfallSessionContext, signal?: AbortSignal, modelSelection: WaterfallModelSelection = WATERFALL_DEFAULT_SELECTION) {
-    const phase = this.resolvePhase(WATERFALL_CONFIG.PHASE_2_REASONER, modelSelection.reasoner);
+    const phase = this.resolvePhase(WATERFALL_CONFIG.PHASE_2_REASONER!, modelSelection.reasoner);
     console.log(`[Waterfall] Reasoner resolved: primary=${phase.primary.model} (${phase.primary.provider}), fallback=${phase.fallback.model} (${phase.fallback.provider})`);
     const primaryProvider = await AIProviderFactory.getProvider(phase.primary.provider);
     const logicStr = typeof logicData === 'string' ? logicData : JSON.stringify(logicData);
@@ -402,7 +402,7 @@ Output JSON:
   }
 
   private async runExecutorWithContext(planData: any, sessionContext: WaterfallSessionContext, feedback?: string, signal?: AbortSignal, modelSelection: WaterfallModelSelection = WATERFALL_DEFAULT_SELECTION) {
-    const phase = this.resolvePhase(WATERFALL_CONFIG.PHASE_3_EXECUTOR, modelSelection.executor);
+    const phase = this.resolvePhase(WATERFALL_CONFIG.PHASE_3_EXECUTOR!, modelSelection.executor);
     const planStr = typeof planData === 'string' ? planData : JSON.stringify(planData);
 
     let prompt = `You are the Senior Developer on a senior engineering team. You are Step 3 of a 4-step pipeline: Architect → Reasoner → [YOU: Executor] → Reviewer.
@@ -482,7 +482,7 @@ IMPORTANT: The "code" field must contain COMPLETE source code. Do NOT truncate w
   }
 
   private async runReviewWithContext(plan: any, executorData: any, sessionContext: WaterfallSessionContext, signal?: AbortSignal, modelSelection: WaterfallModelSelection = WATERFALL_DEFAULT_SELECTION) {
-    const phase = this.resolvePhase(WATERFALL_CONFIG.PHASE_4_REVIEWER, modelSelection.reviewer);
+    const phase = this.resolvePhase(WATERFALL_CONFIG.PHASE_4_REVIEWER!, modelSelection.reviewer);
 
     let compilationStatus = 'Not tested';
     if (executorData.code) {

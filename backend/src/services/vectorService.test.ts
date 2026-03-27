@@ -79,7 +79,7 @@ describe('VectorService Enhancements', () => {
 
     const results = await vectorService.search('Type test', 5, { type });
     expect(results).toHaveLength(1);
-    expect(results[0].metadata.type).toBe(type);
+    expect(results[0]!.metadata.type).toBe(type);
   });
 });
 

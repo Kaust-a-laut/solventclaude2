@@ -59,12 +59,13 @@ function determineNextSpeaker(
     const agentLastSpoke = new Map<string, number>();
     for (let i = transcript.length - 1; i >= 0; i--) {
       const msg = transcript[i];
+      if (!msg) continue;
       if (msg.agentId !== 'user' && !agentLastSpoke.has(msg.agentId)) {
         agentLastSpoke.set(msg.agentId, i);
       }
     }
     // Agent who spoke least recently
-    let leastRecent: MissionAgent = agents[0];
+    let leastRecent: MissionAgent = agents[0]!;
     let leastRecentIdx = Infinity;
     for (const agent of agents) {
       const idx = agentLastSpoke.get(agent.id) ?? -1;
@@ -80,8 +81,8 @@ function determineNextSpeaker(
   const spokenThisRound = new Set<string>();
   for (let i = transcript.length - 1; i >= 0; i--) {
     const msg = transcript[i];
+    if (!msg) continue;
     if (msg.agentId === 'user') continue;
-    // Count backwards until we've seen enough turns for this round
     if (spokenThisRound.size >= agents.length) break;
     spokenThisRound.add(msg.agentId);
   }
@@ -92,7 +93,7 @@ function determineNextSpeaker(
   }
 
   // Everyone spoke — start new round, first agent goes
-  return agents[0];
+  return agents[0]!;
 }
 
 // ─── Delegation / addressing detection ────────────────────────────────────────

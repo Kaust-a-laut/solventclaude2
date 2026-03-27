@@ -457,32 +457,43 @@ export class ToolService {
     // This avoids shell interpolation vulnerabilities
     const parts = command.trim().split(/\s+/);
     const executable = parts[0];
+    if (!executable) return Promise.reject(new Error('Empty command'));
     const args = parts.slice(1);
 
     return new Promise((resolve, reject) => {
-      const child = spawn(executable, args, {
-        cwd: PROJECT_ROOT,
-        env: { ...process.env, NO_COLOR: '1' },
-        shell: false, // Security: Never use shell when spawning
+      const proc = spawn(executable, args, {
+        cwd: PROJECT_ROOT as string,
+        env: { ...process.env as NodeJS.ProcessEnv, NO_COLOR: '1' },
+        shell: false,
         stdio: ['pipe', 'pipe', 'pipe']
       });
+
+      if (!proc.stdout || !proc.stderr) {
+        return reject(new Error('Failed to open stdio streams'));
+      }
+
+      const child = {
+        stdout: proc.stdout,
+        stderr: proc.stderr,
+        on: proc.on.bind(proc)
+      };
 
       let stdout = '';
       let stderr = '';
 
-      child.stdout.on('data', (data) => {
+      child.stdout.on('data', (data: Buffer) => {
         stdout += data.toString();
       });
 
-      child.stderr.on('data', (data) => {
+      child.stderr.on('data', (data: Buffer) => {
         stderr += data.toString();
       });
 
-      child.on('error', (err) => {
+      child.on('error', (err: Error) => {
         reject(new Error(`Command execution failed: ${err.message}`));
       });
 
-      child.on('close', (code) => {
+      child.on('close', (code: number | null) => {
         if (code === 0) {
           resolve({ stdout, stderr });
         } else {

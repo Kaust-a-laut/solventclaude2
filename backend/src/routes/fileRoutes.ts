@@ -110,7 +110,11 @@ async function getFileTree(dir: string, base: string = ''): Promise<any[]> {
 router.get('/list', async (req, res) => {
   try {
     // Use the primary permitted root (project root)
-    const tree = await getFileTree(permittedRoots[0]);
+    const root = permittedRoots[0];
+    if (!root) {
+      return res.status(500).json({ error: 'No permitted roots configured' });
+    }
+    const tree = await getFileTree(root);
     res.json(tree);
   } catch (error) {
     res.status(500).json({ error: 'Failed to list files' });
@@ -178,8 +182,10 @@ const MIME_TYPES: Record<string, string> = {
 router.get('/raw', async (req, res) => {
   const { path: filePath } = req.query;
   if (!filePath) return res.status(400).json({ error: 'Path required' });
+  const root = permittedRoots[0];
+  if (!root) return res.status(500).json({ error: 'No permitted roots configured' });
   try {
-    const fullPath = await getSecurePath(filePath as string, permittedRoots[0]);
+    const fullPath = await getSecurePath(filePath as string, root);
     const data = await fs.readFile(fullPath);
     const ext = path.extname(fullPath).toLowerCase();
     res.setHeader('Content-Type', MIME_TYPES[ext] || 'application/octet-stream');
@@ -199,8 +205,10 @@ router.get('/raw', async (req, res) => {
 router.get('/read', async (req, res) => {
   const { path: filePath } = req.query;
   if (!filePath) return res.status(400).json({ error: 'Path required' });
+  const root = permittedRoots[0];
+  if (!root) return res.status(500).json({ error: 'No permitted roots configured' });
   try {
-    const fullPath = await getSecurePath(filePath as string, permittedRoots[0]);
+    const fullPath = await getSecurePath(filePath as string, root);
     const content = await fs.readFile(fullPath, 'utf-8');
     res.json({ content });
   } catch (error: any) {
@@ -217,8 +225,10 @@ router.get('/read', async (req, res) => {
 router.post('/write', async (req, res) => {
   const { path: filePath, content } = req.body;
   if (!filePath) return res.status(400).json({ error: 'Path required' });
+  const root = permittedRoots[0];
+  if (!root) return res.status(500).json({ error: 'No permitted roots configured' });
   try {
-    const fullPath = await getSecurePath(filePath, permittedRoots[0]);
+    const fullPath = await getSecurePath(filePath, root);
     await fs.mkdir(path.dirname(fullPath), { recursive: true });
     await fs.writeFile(fullPath, content);
     res.json({ status: 'success' });

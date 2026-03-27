@@ -44,7 +44,7 @@ export async function runInSandbox(command: string): Promise<{ stdout: string; e
   if (!wc) throw new Error('WebContainer not booted');
 
   const parts = command.trim().split(/\s+/);
-  const executable = parts[0];
+  const executable = parts[0] ?? '';
   const args = parts.slice(1);
 
   const proc = await wc.spawn(executable, args);

@@ -155,7 +155,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                     const match = /language-(\w+)/.exec(className || '');
                     return match ? (
                        <CodeBlock 
-                          language={match[1]} 
+                          language={match[1] ?? ''}
                           code={String(children).replace(/\n$/, '')} 
                        />
                     ) : (

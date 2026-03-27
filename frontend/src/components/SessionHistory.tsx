@@ -22,11 +22,14 @@ export const SessionHistory = ({ isOpen, onClose }: SessionHistoryModalProps) =>
 
   useEffect(() => { if (!isOpen) setSearchTerm(''); }, [isOpen]);
 
-  const allSessions = Object.keys(sessions).map(id => ({
-    id,
-    title: sessions[id][0]?.content.slice(0, 50) || 'New Conversation',
-    count: sessions[id].length,
-  }));
+  const allSessions = Object.keys(sessions).map(id => {
+    const msgs = sessions[id] ?? [];
+    return {
+      id,
+      title: msgs[0]?.content.slice(0, 50) || 'New Conversation',
+      count: msgs.length,
+    };
+  });
 
   const sessionList = searchTerm.trim()
     ? allSessions.filter(s => s.title.toLowerCase().includes(searchTerm.toLowerCase()))

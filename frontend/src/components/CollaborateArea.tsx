@@ -149,7 +149,7 @@ export const CollaborateArea = () => {
     error,
   } = collaborate;
 
-  const agentConfigs = AGENT_CONFIGS[missionType] ?? AGENT_CONFIGS.consultation;
+  const agentConfigs = AGENT_CONFIGS[missionType] ?? AGENT_CONFIGS['consultation'] ?? [];
   const isIdle = status === 'idle';
   const isActive = status === 'active' || status === 'converging';
   const isSynthesizing = status === 'synthesizing';

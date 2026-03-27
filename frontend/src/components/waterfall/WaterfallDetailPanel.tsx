@@ -435,15 +435,18 @@ function splitCodeByFiles(code: string | undefined | null): CodeBlock[] {
 
   const blocks: CodeBlock[] = [];
   for (let i = 0; i < matches.length; i++) {
-    const filename = matches[i][1].trim();
-    const start = matches[i].index! + matches[i][0].length;
-    const end = i < matches.length - 1 ? matches[i + 1].index! : code.length;
+    const m = matches[i];
+    if (!m) continue;
+    const filename = (m[1] ?? '').trim();
+    const start = m.index! + m[0].length;
+    const nextMatch = matches[i + 1];
+    const end = nextMatch ? nextMatch.index! : code.length;
     blocks.push({ filename, code: code.slice(start, end) });
   }
 
-  // If there's content before the first separator
-  if (matches[0].index! > 0) {
-    const prefix = code.slice(0, matches[0].index!).trim();
+  const firstMatch = matches[0];
+  if (firstMatch && firstMatch.index! > 0) {
+    const prefix = code.slice(0, firstMatch.index!).trim();
     if (prefix) blocks.unshift({ filename: null, code: prefix });
   }
 
@@ -545,7 +548,7 @@ export const WaterfallDetailPanel = ({ selectedStage, steps }: WaterfallDetailPa
     }
 
     setOpenFiles(merged);
-    setActiveFile(newFiles[0].path);
+    if (newFiles[0]) setActiveFile(newFiles[0].path);
     setCurrentMode('coding');
   }, [selectedStage, steps.executor.data, openFiles, setOpenFiles, setActiveFile, setCurrentMode]);
 

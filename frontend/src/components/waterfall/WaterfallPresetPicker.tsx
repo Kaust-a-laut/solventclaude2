@@ -187,7 +187,7 @@ const CustomStageRow = ({
       <select
         value={currentKey}
         onChange={(e) => {
-          const [provider, ...modelParts] = e.target.value.split(':');
+          const [provider = '', ...modelParts] = e.target.value.split(':');
           const model = modelParts.join(':');
           onChange(model, provider);
         }}

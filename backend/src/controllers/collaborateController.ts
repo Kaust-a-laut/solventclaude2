@@ -79,7 +79,7 @@ export class CollaborateController {
   static async getSessionState(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const session = getSession(id);
+      const session = getSession(id!)!;
 
       if (!session) {
         return res.status(404).json({ error: 'Session not found' });

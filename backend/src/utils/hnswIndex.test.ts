@@ -30,7 +30,7 @@ describe('HNSWIndex', () => {
     const results = index.search(query, 2);
 
     expect(results.length).toBe(2);
-    expect(results[0].id).toBe('id3'); // Closest match
+    expect(results[0]!.id).toBe('id3'); // Closest match
   });
 
   it('should persist and reload index', async () => {
@@ -46,7 +46,7 @@ describe('HNSWIndex', () => {
     const results = newIndex.search(query, 1);
 
     expect(results.length).toBe(1);
-    expect(results[0].id).toBe('persist_test');
+    expect(results[0]!.id).toBe('persist_test');
   });
 
   it('should handle removal of vectors', () => {

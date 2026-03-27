@@ -34,7 +34,7 @@ export class ProviderSelector {
       }
       // Implement 'performance' or 'reliability' sorting here later
       return 0;
-    })[0];
+    })[0]!;
   }
 
   private meetsRequirements(p: IProviderPlugin, reqs: any): boolean {

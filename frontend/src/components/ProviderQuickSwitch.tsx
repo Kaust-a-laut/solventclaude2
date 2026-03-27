@@ -20,7 +20,7 @@ export const ProviderQuickSwitch: React.FC<ProviderQuickSwitchProps> = ({ compac
   const [isOpen, setIsOpen] = useState(false);
   const { selectedCloudProvider, setSelectedCloudProvider, isProcessing } = useAppStore();
 
-  const current = providers.find(p => p.id === selectedCloudProvider) || providers[0];
+  const current = providers.find(p => p.id === selectedCloudProvider) ?? providers[0]!;
   const Icon = current.icon;
 
   return (

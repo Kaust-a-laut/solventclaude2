@@ -169,12 +169,17 @@ export const CodingArea = () => {
       const parts = file.path.split('/');
       let cur = tree;
       for (let i = 0; i < parts.length - 1; i++) {
-        if (!(cur[parts[i]] as Record<string, unknown>)) {
-          cur[parts[i]] = { directory: {} };
+        const part = parts[i];
+        if (part === undefined) continue;
+        if (!(cur[part] as Record<string, unknown>)) {
+          cur[part] = { directory: {} };
         }
-        cur = (cur[parts[i]] as { directory: Record<string, unknown> }).directory;
+        cur = (cur[part] as { directory: Record<string, unknown> }).directory;
       }
-      cur[parts[parts.length - 1]] = { file: { contents: file.content } };
+      const lastPart = parts[parts.length - 1];
+      if (lastPart !== undefined) {
+        cur[lastPart] = { file: { contents: file.content } };
+      }
     }
     webContainer.mount(tree as Parameters<typeof webContainer.mount>[0]);
   }, [webContainer, openFiles]);
@@ -209,7 +214,7 @@ export const CodingArea = () => {
     }
     try {
       const data = await fetchWithRetry(`${BASE_URL}/api/files/read?path=${encodeURIComponent(path)}`) as Record<string, string>;
-      setOpenFiles([...openFiles, { path, content: data.content }]);
+      setOpenFiles([...openFiles, { path, content: data.content ?? '' }]);
       setActiveFile(path);
     } catch { addLog(`[ERROR]: Could not open ${path}`); }
   }, [openFiles, setOpenFiles, setActiveFile, addLog]);
@@ -221,7 +226,7 @@ export const CodingArea = () => {
     }
     const next = openFiles.filter((f) => f.path !== path);
     setOpenFiles(next);
-    if (activeFile === path) setActiveFile(next.length > 0 ? next[next.length - 1].path : null);
+    if (activeFile === path) setActiveFile(next.length > 0 ? (next[next.length - 1]?.path ?? null) : null);
   }, [openFiles, activeFile, setOpenFiles, setActiveFile]);
 
   const handleSave = useCallback(async () => {

@@ -111,7 +111,7 @@ export const CustomSelect = ({
       case 'Enter':
         e.preventDefault();
         if (highlightIndex >= 0 && highlightIndex < flatFiltered.length) {
-          onChange(flatFiltered[highlightIndex].value);
+          onChange(flatFiltered[highlightIndex]?.value ?? '');
           setOpen(false);
           setSearch('');
         }

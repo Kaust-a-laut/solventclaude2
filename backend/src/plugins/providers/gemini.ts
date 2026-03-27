@@ -92,8 +92,11 @@ export class GeminiProviderPlugin implements IProviderPlugin {
     }));
 
     const chat = modelInstance.startChat({ history });
-    const lastMessage = messages[messages.length - 1].content;
-    const result = await chat.sendMessage(lastMessage);
+    const lastMessage = messages[messages.length - 1];
+    if (!lastMessage) {
+      throw new Error('No messages provided');
+    }
+    const result = await chat.sendMessage(lastMessage.content);
     const response = await result.response;
     const text = response.text();
     if (!text || text.length === 0) {
@@ -123,8 +126,11 @@ export class GeminiProviderPlugin implements IProviderPlugin {
     }));
 
     const chat = modelInstance.startChat({ history });
-    const lastMessage = messages[messages.length - 1].content;
-    const result = await chat.sendMessageStream(lastMessage);
+    const lastMessage = messages[messages.length - 1];
+    if (!lastMessage) {
+      throw new Error('No messages provided');
+    }
+    const result = await chat.sendMessageStream(lastMessage.content);
 
     for await (const chunk of result.stream) {
       yield chunk.text();

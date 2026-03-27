@@ -185,7 +185,7 @@ export const createSettingsSlice: StateCreator<AppState, [], [], SettingsSlice> 
     if (state.browserTabs.length <= 1) return {};
     const filtered = state.browserTabs.filter(t => t.id !== tabId);
     const newActiveId = state.activeBrowserTabId === tabId
-      ? filtered[filtered.length - 1].id
+      ? (filtered[filtered.length - 1]?.id ?? '')
       : state.activeBrowserTabId;
     return { browserTabs: filtered, activeBrowserTabId: newActiveId };
   }),
@@ -204,13 +204,21 @@ export const createSettingsSlice: StateCreator<AppState, [], [], SettingsSlice> 
   })),
   setAvailableProviders: (availableProviders) => set({ availableProviders }),
   setProviderConfigs: (providerConfigs) => set({ providerConfigs }),
-  updateProviderConfig: (providerId, config) => set((state) => ({
-    providerConfigs: {
-      ...state.providerConfigs,
-      [providerId]: {
-        ...(state.providerConfigs[providerId] || {}),
-        ...config
-      }
-    }
-  })),
+  updateProviderConfig: (providerId, config) => set((state) => {
+    const existing = state.providerConfigs[providerId];
+    const merged: ProviderConfig = {
+      enabled: existing?.enabled ?? false,
+      apiKey: existing?.apiKey,
+      baseUrl: existing?.baseUrl,
+      defaultModel: existing?.defaultModel,
+      priority: existing?.priority,
+      ...config,
+    };
+    return {
+      providerConfigs: {
+        ...state.providerConfigs,
+        [providerId]: merged,
+      },
+    };
+  }),
 });
