@@ -24,6 +24,9 @@ import { BaseOpenAIService } from './baseOpenAIService';
 import { normalizeMessages } from '../utils/messageUtils';
 import { fitConversation } from '../utils/conversationWindow';
 import { getContextBudget } from '../utils/tokenEstimator';
+import { ProviderSemaphore } from './providerSemaphore';
+
+const providerSemaphore = new ProviderSemaphore(parseInt(process.env.MAX_CONCURRENT_PROVIDER_CALLS || '5', 10));
 
 // --- Named Constants ---
 
@@ -211,12 +214,12 @@ export class AIService {
     }
 
     // Fallback: provider doesn't support events (e.g., Gemini) — use normal completion
-    const response = await selectedProvider.complete(finalMessages, {
+    const response = await providerSemaphore.run(() => selectedProvider.complete(finalMessages, {
       model,
       temperature,
       maxTokens,
       apiKey: apiKeys?.[provider],
-    });
+    }));
     onEvent({ type: 'text_complete', content: response });
     return response;
   }
@@ -339,13 +342,13 @@ After </thinking>, deliver the answer cleanly without restating the reasoning.`
 
       for (const currentModel of modelChain) {
         try {
-          const response = await gemini.complete(messages, {
+          const response = await providerSemaphore.run(() => gemini.complete(messages, {
             model: currentModel,
             shouldSearch,
             temperature: temp,
             maxTokens,
             apiKey: apiKeys?.gemini
-          });
+          }));
           return { response, model: currentModel };
         } catch (err: unknown) {
           logger.warn(`Gemini ${currentModel} failed, trying next...`);
@@ -374,12 +377,12 @@ After </thinking>, deliver the answer cleanly without restating the reasoning.`
   ): Promise<CompletionResponse> {
     try {
       const selectedProvider = await AIProviderFactory.getProvider(provider);
-      const response = await selectedProvider.complete(messages, {
+      const response = await providerSemaphore.run(() => selectedProvider.complete(messages, {
         model,
         temperature: temp,
         maxTokens,
         apiKey: apiKeys?.[provider]
-      });
+      }));
       return { response, model };
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -421,12 +424,12 @@ After </thinking>, deliver the answer cleanly without restating the reasoning.`
       const matches = targetImage.match(/^data:(.+);base64,(.+)$/);
       if (!matches) throw SolventError.validation('Invalid image format.');
 
-      const lastMessage = messages[messages.length - 1].content;
+      const lastMessage = messages[messages.length - 1]!.content;
       const isCodeRequest = CODE_REQUEST_REGEX.test(lastMessage);
 
       const response = await gemini.vision!(
         lastMessage,
-        [{ data: matches[2], mimeType: matches[1] }],
+        [{ data: matches[2]!, mimeType: matches[1]! }],
         {
           model,
           temperature: temp,
@@ -463,7 +466,7 @@ After </thinking>, deliver the answer cleanly without restating the reasoning.`
     if (failedProvider !== 'groq') {
       try {
         const groq = await AIProviderFactory.getProvider('groq');
-        const res = await groq.complete(normalizedMessages, { model: 'llama-3.3-70b-versatile', temperature: temp, maxTokens, apiKey: apiKeys?.groq });
+        const res = await providerSemaphore.run(() => groq.complete(normalizedMessages, { model: 'llama-3.3-70b-versatile', temperature: temp, maxTokens, apiKey: apiKeys?.groq }));
         return { response: res, model: 'llama-3.3-70b-versatile', info: 'Groq fallback' };
       } catch (e: unknown) {
         logger.warn('[Fallback] Groq failed', e instanceof Error ? e.message : e);
@@ -473,7 +476,7 @@ After </thinking>, deliver the answer cleanly without restating the reasoning.`
     if (failedProvider !== 'openrouter') {
       try {
         const openRouter = await AIProviderFactory.getProvider('openrouter');
-        const res = await openRouter.complete(normalizedMessages, { model: 'google/gemini-2.0-flash-001:free', temperature: temp, maxTokens, apiKey: apiKeys?.openrouter });
+        const res = await providerSemaphore.run(() => openRouter.complete(normalizedMessages, { model: 'google/gemini-2.0-flash-001:free', temperature: temp, maxTokens, apiKey: apiKeys?.openrouter }));
         return { response: res, model: 'openrouter/gemini', info: 'OpenRouter fallback' };
       } catch (e: unknown) {
         logger.warn('[Fallback] OpenRouter failed', e instanceof Error ? e.message : e);
@@ -482,7 +485,7 @@ After </thinking>, deliver the answer cleanly without restating the reasoning.`
 
     try {
       const ollama = await AIProviderFactory.getProvider('ollama');
-      const res = await ollama.complete(normalizedMessages, { model: 'qwen2.5-coder:7b', temperature: temp, maxTokens, apiKey: apiKeys?.ollama });
+      const res = await providerSemaphore.run(() => ollama.complete(normalizedMessages, { model: 'qwen2.5-coder:7b', temperature: temp, maxTokens, apiKey: apiKeys?.ollama }));
       return { response: res, model: 'local/ollama', info: 'Local fallback' };
     } catch (e: unknown) {
        const msg = e instanceof Error ? e.message : String(e);
@@ -568,7 +571,7 @@ After </thinking>, deliver the answer cleanly without restating the reasoning.`
     const runOne = async (providerName: string, modelOverride: string | undefined): Promise<string> => {
       const provider = await AIProviderFactory.getProvider(providerName);
       const model = modelOverride || provider.defaultModel || 'default';
-      return provider.complete(messages, { model });
+      return providerSemaphore.run(() => provider.complete(messages, { model }));
     };
 
     const [r1, r2] = await Promise.allSettled([
