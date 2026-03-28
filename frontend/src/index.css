@@ -117,7 +117,7 @@
   }
 
   .glass-panel {
-    @apply bg-black/20 backdrop-blur-3xl border border-white/[0.03] shadow-2xl relative overflow-hidden;
+    @apply bg-black/20 backdrop-blur-3xl border border-white/[0.06] shadow-2xl relative overflow-hidden;
   }
 
   /* Add a rim-light effect to glass panels */
@@ -128,7 +128,7 @@
   }
 
   .glass-card {
-    @apply bg-white/[0.01] backdrop-blur-2xl border border-white/[0.03] rounded-2xl;
+    @apply bg-white/[0.01] backdrop-blur-2xl border border-white/[0.06] rounded-2xl;
   }
 
   .text-vibrant {
@@ -182,12 +182,12 @@
   }
 
   .chat-bubble-ai {
-    @apply bg-white/[0.02] backdrop-blur-md border border-white/[0.05] text-[15.5px] leading-[1.6];
+    @apply bg-white/[0.02] backdrop-blur-md border border-white/[0.05] text-[15px] leading-[1.6];
   }
 
   /* Technical Metadata */
   .technical-meta {
-    @apply font-mono text-[10px] uppercase tracking-widest text-white/30;
+    @apply font-mono text-[11px] uppercase tracking-widest text-white/30;
   }
 
   @keyframes border-flow {
