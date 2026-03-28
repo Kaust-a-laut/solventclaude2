@@ -307,6 +307,67 @@
     animation: liquid-flow 8s ease infinite;
   }
 
+  /* Fluid Shimmer - Flowing gradient shimmer for loading skeletons */
+  @keyframes fluid-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .fluid-shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(157, 91, 210, 0.06) 20%,
+      rgba(60, 113, 247, 0.08) 40%,
+      rgba(6, 182, 212, 0.06) 60%,
+      rgba(251, 146, 60, 0.04) 80%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: fluid-shimmer 2.5s ease-in-out infinite;
+  }
+
+  /* Fluid Divider - Hair-thin horizontal gradient line */
+  .fluid-divider {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(60, 113, 247, 0.15) 20%,
+      rgba(157, 91, 210, 0.2) 50%,
+      rgba(251, 146, 60, 0.15) 80%,
+      transparent 100%
+    );
+  }
+
+  /* Fluid Scrollbar - Gradient scrollbar thumb */
+  .fluid-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .fluid-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .fluid-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(
+      180deg,
+      rgba(60, 113, 247, 0.2),
+      rgba(157, 91, 210, 0.25),
+      rgba(251, 146, 60, 0.2)
+    );
+    border-radius: 4px;
+  }
+
+  .fluid-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(
+      180deg,
+      rgba(60, 113, 247, 0.35),
+      rgba(157, 91, 210, 0.4),
+      rgba(251, 146, 60, 0.35)
+    );
+  }
+
   /* Frosted Glass Depth Layers */
   .glass-layer-1 {
     @apply bg-black/40 backdrop-blur-xl border border-white/5;
