@@ -69,7 +69,7 @@ const PresetCard = ({
 
         {/* Description + speed */}
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[11px] text-slate-400 leading-tight line-clamp-1 flex-1">
+          <span className="text-[12px] text-slate-300 leading-tight line-clamp-1 flex-1">
             {preset.description}
           </span>
           <div className="flex items-center gap-1 shrink-0">
