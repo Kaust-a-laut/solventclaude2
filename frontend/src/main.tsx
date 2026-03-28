@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { Toaster } from 'sonner';
 import { ChatArea } from './components/ChatArea';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useAppStore } from './store/useAppStore';
@@ -14,6 +15,18 @@ const App = () => {
       <div className="h-full w-full bg-[#020205] text-white flex flex-col relative overflow-hidden">
          <ChatArea />
       </div>
+      <Toaster
+        theme="dark"
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: 'rgba(23, 23, 23, 0.95)',
+            border: '1px solid rgba(255, 255, 255, 0.06)',
+            color: '#e5e5e5',
+            backdropFilter: 'blur(12px)',
+          },
+        }}
+      />
     </ErrorBoundary>
   );
 };
