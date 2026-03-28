@@ -209,7 +209,7 @@ export const WaterfallArea = () => {
 
         {/* ─── Left Column ─────────────────────────────────────────────────── */}
         <div className={cn(
-          'flex flex-col gap-6 overflow-y-scroll scrollbar-thin transition-all duration-500',
+          'flex flex-col gap-6 overflow-y-scroll scrollbar-thin fluid-scrollbar transition-all duration-500',
           isActive
             ? 'w-[440px] shrink-0 p-6 border-r border-white/[0.04]'
             : 'flex-1 p-12',

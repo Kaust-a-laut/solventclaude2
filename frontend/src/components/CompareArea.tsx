@@ -56,7 +56,7 @@ export const CompareArea = () => {
 
   return (
     <div className={cn(
-      "flex flex-col h-full bg-black/20 backdrop-blur-3xl overflow-y-auto scrollbar-thin transition-all duration-500",
+      "flex flex-col h-full bg-black/20 backdrop-blur-3xl overflow-y-auto scrollbar-thin fluid-scrollbar transition-all duration-500",
       deviceInfo.isMobile ? "p-4 pt-28 pb-32" : "p-12"
     )}>
       

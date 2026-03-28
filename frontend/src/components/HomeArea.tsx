@@ -420,7 +420,7 @@ export const HomeArea = () => {
 
   return (
     <div className="flex-1 min-h-0 relative bg-transparent z-10">
-      <div className="absolute inset-0 overflow-y-scroll scrollbar-thin p-6 md:p-10 lg:p-12 pt-2 md:pt-4 lg:pt-6">
+      <div className="absolute inset-0 overflow-y-scroll scrollbar-thin fluid-scrollbar p-6 md:p-10 lg:p-12 pt-2 md:pt-4 lg:pt-6">
       <div className="max-w-[1400px] mx-auto space-y-4 md:space-y-6 relative">
         
         {/* Massive Background Beaker Logo - Using new Logo component */}
