@@ -92,7 +92,7 @@ export const MemoryTab = () => {
               )}
             >
               <span className={cn('text-lg font-black', stat.color)}>{memoryLoading ? '—' : stat.value}</span>
-              <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">{stat.label}</span>
+              <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">{stat.label}</span>
             </button>
           );
         })}
@@ -103,7 +103,7 @@ export const MemoryTab = () => {
         <motion.div variants={staggerItem} className="bg-white/[0.02] border border-white/[0.06] rounded-2xl overflow-hidden">
           <button
             onClick={() => setShowTypeBreakdown(v => !v)}
-            className="w-full flex items-center justify-between px-4 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-400 transition-colors"
+            className="w-full flex items-center justify-between px-4 py-2.5 text-[11px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-400 transition-colors"
           >
             <span className="flex items-center gap-1.5"><Hash size={10} /> Type Distribution</span>
             {showTypeBreakdown ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
@@ -124,7 +124,7 @@ export const MemoryTab = () => {
                         key={type}
                         onClick={() => setMemoryTypeFilter(memoryTypeFilter === type ? null : type)}
                         className={cn(
-                          'px-2.5 py-1 rounded-full text-[9px] font-bold border transition-all',
+                          'px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all',
                           memoryTypeFilter === type
                             ? 'bg-jb-accent/20 text-jb-accent border-jb-accent/40'
                             : 'bg-white/[0.03] text-slate-500 border-white/[0.08] hover:border-white/20 hover:text-slate-400'
@@ -156,13 +156,13 @@ export const MemoryTab = () => {
         <div className="flex items-center gap-1.5 flex-wrap">
           <Filter size={10} className="text-slate-600" />
           {memoryTierFilter && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/[0.1] text-[9px] font-bold text-slate-400">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/[0.1] text-[11px] font-bold text-slate-400">
               tier: {memoryTierFilter}
               <button onClick={() => setMemoryTierFilter(null)} className="hover:text-white transition-colors"><X size={8} /></button>
             </span>
           )}
           {memoryTypeFilter && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/[0.1] text-[9px] font-bold text-slate-400">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/[0.1] text-[11px] font-bold text-slate-400">
               type: {memoryTypeFilter.replace(/_/g, ' ')}
               <button onClick={() => setMemoryTypeFilter(null)} className="hover:text-white transition-colors"><X size={8} /></button>
             </span>
@@ -222,30 +222,30 @@ export const MemoryTab = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       {entry.tier && (
-                        <span className={cn('px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border', tierClass)}>
+                        <span className={cn('px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider border', tierClass)}>
                           {entry.tier}
                         </span>
                       )}
                       {entry.type && (
-                        <span className="px-2 py-0.5 rounded-full text-[8px] font-bold bg-white/[0.05] text-slate-500 border border-white/[0.08]">
+                        <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-white/[0.05] text-slate-500 border border-white/[0.08]">
                           {entry.type.replace(/_/g, ' ')}
                         </span>
                       )}
                       {confidence && (
-                        <span className={cn('px-1.5 py-0.5 rounded text-[8px] font-bold',
+                        <span className={cn('px-1.5 py-0.5 rounded text-[11px] font-bold',
                           confidence === 'HIGH' ? 'text-emerald-400' : confidence === 'MED' ? 'text-yellow-500' : 'text-rose-400'
                         )}>
                           {confidence}
                         </span>
                       )}
                       {entry.importance != null && (
-                        <span className="flex items-center gap-0.5 text-[8px] font-bold text-amber-400/80">
+                        <span className="flex items-center gap-0.5 text-[11px] font-bold text-amber-400/80">
                           <Star size={8} className="fill-amber-400/80" /> {entry.importance}
                         </span>
                       )}
-                      {relTime && <span className="text-[8px] text-slate-700">{relTime}</span>}
+                      {relTime && <span className="text-[11px] text-slate-700">{relTime}</span>}
                     </div>
-                    <p className={cn('text-[10px] text-slate-400 leading-relaxed font-medium', !isExpanded && 'line-clamp-2')}>
+                    <p className={cn('text-[11px] text-slate-400 leading-relaxed font-medium', !isExpanded && 'line-clamp-2')}>
                       {entry.content}
                     </p>
                   </div>
@@ -287,7 +287,7 @@ export const MemoryTab = () => {
                       <div className="flex items-center gap-1 flex-wrap">
                         <Tag size={9} className="text-slate-700" />
                         {entry.tags.map((tag: string) => (
-                          <span key={tag} className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-white/[0.04] text-slate-600 border border-white/[0.06]">
+                          <span key={tag} className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-white/[0.04] text-slate-600 border border-white/[0.06]">
                             {tag}
                           </span>
                         ))}
@@ -299,7 +299,7 @@ export const MemoryTab = () => {
                           value={editContent}
                           onChange={e => setEditContent(e.target.value)}
                           rows={4}
-                          className="w-full bg-white/[0.03] border border-white/[0.1] rounded-xl p-3 text-[10px] text-slate-300 font-medium focus:outline-none focus:border-jb-purple/40 resize-none"
+                          className="w-full bg-white/[0.03] border border-white/[0.1] rounded-xl p-3 text-[11px] text-slate-300 font-medium focus:outline-none focus:border-jb-purple/40 resize-none"
                         />
                         <div className="flex items-center gap-2">
                           <button
@@ -322,7 +322,7 @@ export const MemoryTab = () => {
                                 setEditSaving(false);
                               }
                             }}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-jb-purple/20 hover:bg-jb-purple/30 border border-jb-purple/30 rounded-lg text-[9px] font-bold text-jb-purple transition-all disabled:opacity-50"
+                            className="flex items-center gap-1 px-3 py-1.5 bg-jb-purple/20 hover:bg-jb-purple/30 border border-jb-purple/30 rounded-lg text-[11px] font-bold text-jb-purple transition-all disabled:opacity-50"
                           >
                             {editSaving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Save
                           </button>
@@ -331,7 +331,7 @@ export const MemoryTab = () => {
                               e.stopPropagation();
                               setEditingEntryId(null);
                             }}
-                            className="px-3 py-1.5 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] rounded-lg text-[9px] font-bold text-slate-500 transition-all"
+                            className="px-3 py-1.5 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] rounded-lg text-[11px] font-bold text-slate-500 transition-all"
                           >
                             Cancel
                           </button>
@@ -360,7 +360,7 @@ export const MemoryTab = () => {
               setMemoryStatus('error');
             }
           }}
-          className="flex-1 flex items-center justify-center gap-2 py-3 bg-jb-purple/10 hover:bg-jb-purple/20 border border-jb-purple/20 hover:border-jb-purple/40 rounded-2xl text-[10px] font-black uppercase tracking-widest text-jb-purple transition-all disabled:opacity-50"
+          className="flex-1 flex items-center justify-center gap-2 py-3 bg-jb-purple/10 hover:bg-jb-purple/20 border border-jb-purple/20 hover:border-jb-purple/40 rounded-2xl text-[11px] font-black uppercase tracking-widest text-jb-purple transition-all disabled:opacity-50"
         >
           {memoryStatus === 'loading'
             ? <><Loader2 size={12} className="animate-spin" /> Indexing...</>
@@ -379,7 +379,7 @@ export const MemoryTab = () => {
               console.error('[Settings] Failed to clear memory');
             }
           }}
-          className="flex-1 flex items-center justify-center gap-2 py-3 bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/20 hover:border-rose-500/40 rounded-2xl text-[10px] font-black uppercase tracking-widest text-rose-500 transition-all"
+          className="flex-1 flex items-center justify-center gap-2 py-3 bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/20 hover:border-rose-500/40 rounded-2xl text-[11px] font-black uppercase tracking-widest text-rose-500 transition-all"
         >
           <Trash2 size={12} /> Clear All
         </button>

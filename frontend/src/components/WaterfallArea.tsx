@@ -154,7 +154,7 @@ export const WaterfallArea = () => {
             <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-jb-purple shadow-[0_0_10px_rgba(157,91,210,0.9)] animate-pulse" />
           </div>
           <div>
-            <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.45em] block mb-1.5">
+            <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.45em] block mb-1.5">
               Tiered Orchestration Pipeline
             </span>
             <h2 className="text-2xl md:text-3xl font-black tracking-tighter leading-none">
@@ -175,7 +175,7 @@ export const WaterfallArea = () => {
               {isStreaming && (
                 <button
                   onClick={cancelWaterfall}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[9px] font-black uppercase tracking-widest hover:bg-rose-500/20 transition-all"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] font-black uppercase tracking-widest hover:bg-rose-500/20 transition-all"
                 >
                   <X size={12} />
                   Cancel
@@ -184,7 +184,7 @@ export const WaterfallArea = () => {
               {allCompleted && !isStreaming && (
                 <button
                   onClick={handleExportAll}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-jb-purple/10 border border-jb-purple/20 text-jb-purple text-[9px] font-black uppercase tracking-widest hover:bg-jb-purple/20 transition-all"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-jb-purple/10 border border-jb-purple/20 text-jb-purple text-[11px] font-black uppercase tracking-widest hover:bg-jb-purple/20 transition-all"
                 >
                   <Download size={11} />
                   Export All
@@ -192,7 +192,7 @@ export const WaterfallArea = () => {
               )}
               <button
                 onClick={() => { resetWaterfall(); setSelectedStage(null); }}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-slate-400 text-[9px] font-black uppercase tracking-widest hover:bg-white/[0.08] transition-all"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-slate-400 text-[11px] font-black uppercase tracking-widest hover:bg-white/[0.08] transition-all"
               >
                 <RotateCcw size={11} />
                 Reset
@@ -219,7 +219,7 @@ export const WaterfallArea = () => {
             <div className={cn('rounded-[2rem]', isStreaming && 'vibrant-border')}>
               <div className="glass-panel rounded-[2rem] overflow-hidden">
                 <div className="flex flex-col gap-4 p-5">
-                  <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">
+                  <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest">
                     Mission Directive
                   </span>
                   <textarea
@@ -237,11 +237,11 @@ export const WaterfallArea = () => {
                     className="w-full bg-transparent text-[14px] font-medium text-white placeholder:text-slate-800 resize-none outline-none leading-relaxed input-focus-ring disabled:opacity-50 transition-opacity"
                   />
                   <div className="flex items-center justify-between pt-1 border-t border-white/[0.04]">
-                    <span className="text-[8px] text-slate-700 font-mono">⌘↩ to submit</span>
+                    <span className="text-[11px] text-slate-700 font-mono">⌘↩ to submit</span>
                     <button
                       onClick={handleSubmit}
                       disabled={!input.trim() || isStreaming}
-                      className="flex items-center gap-2 px-5 py-2 rounded-full bg-jb-purple/15 border border-jb-purple/25 text-jb-purple text-[10px] font-black uppercase tracking-widest hover:bg-jb-purple/25 disabled:opacity-30 transition-all shadow-lg"
+                      className="flex items-center gap-2 px-5 py-2 rounded-full bg-jb-purple/15 border border-jb-purple/25 text-jb-purple text-[11px] font-black uppercase tracking-widest hover:bg-jb-purple/25 disabled:opacity-30 transition-all shadow-lg"
                     >
                       <Sparkles size={13} className={isStreaming ? 'animate-pulse' : ''} />
                       {isStreaming ? 'Processing...' : 'Initiate'}
@@ -305,7 +305,7 @@ export const WaterfallArea = () => {
                       />
                     ))}
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-[0.6em] text-slate-600 animate-pulse">
+                  <span className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-600 animate-pulse">
                     Initializing Pipeline...
                   </span>
                 </motion.div>

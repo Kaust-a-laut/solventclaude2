@@ -16,7 +16,7 @@ export const InlineToggle = ({ label, description, checked, onChange }: InlineTo
   <div className="flex items-center justify-between py-4 border-b border-white/5 last:border-b-0">
     <div className="flex flex-col gap-0.5 pr-8">
       <span className="text-xs font-bold text-white">{label}</span>
-      <span className="text-[10px] text-slate-500 font-medium leading-snug">{description}</span>
+      <span className="text-[11px] text-slate-500 font-medium leading-snug">{description}</span>
     </div>
     <button
       onClick={() => onChange(!checked)}
@@ -56,7 +56,7 @@ export const TabButton = ({ id, label, icon: Icon, isActive, onClick, shortcut }
     <Icon size={16} className={cn(isActive ? "text-jb-accent" : "text-slate-600")} />
     <span className="text-[11px] font-black uppercase tracking-widest">{label}</span>
     {shortcut && (
-      <span className="text-[8px] text-slate-700 font-mono ml-auto mr-1">{shortcut}</span>
+      <span className="text-[11px] text-slate-700 font-mono ml-auto mr-1">{shortcut}</span>
     )}
     {isActive && (
       <motion.div layoutId="tabGlow" className="ml-auto w-1 h-1 rounded-full bg-jb-accent shadow-[0_0_10px_rgba(60,113,247,1)]" />

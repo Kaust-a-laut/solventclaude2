@@ -82,8 +82,8 @@ export interface SliderRowProps {
 export const SliderRow = ({ label, value, min, max, unit = '%', onChange, disabled }: SliderRowProps) => (
   <div className="space-y-1.5">
     <div className="flex items-center justify-between">
-      <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{label}</span>
-      <span className="text-[9px] font-mono text-slate-400">{value}{unit}</span>
+      <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">{label}</span>
+      <span className="text-[11px] font-mono text-slate-400">{value}{unit}</span>
     </div>
     <div className="relative">
       <input
@@ -166,13 +166,13 @@ export const ManualEditTools: React.FC<ManualEditToolsProps> = ({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="w-1.5 h-1.5 rounded-full bg-jb-accent animate-pulse shadow-[0_0_8px_rgba(60,113,247,0.8)]" />
-          <span className="text-[9px] font-black text-white uppercase tracking-widest">Edit Tools</span>
+          <span className="text-[11px] font-black text-white uppercase tracking-widest">Edit Tools</span>
         </div>
         {hasChanges && (
           <button
             onClick={reset}
             disabled={disabled}
-            className="flex items-center gap-1.5 text-[8px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors"
+            className="flex items-center gap-1.5 text-[11px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors"
           >
             <RefreshCw size={10} /> Reset
           </button>
@@ -227,7 +227,7 @@ export const ManualEditTools: React.FC<ManualEditToolsProps> = ({
                   >
                     <div className="absolute inset-0" style={{ filter: preset.filter, background: 'inherit' }} />
                   </div>
-                  <span className={cn('text-[8px] font-black uppercase tracking-wider', isActive ? 'text-jb-accent' : 'text-slate-500')}>
+                  <span className={cn('text-[11px] font-black uppercase tracking-wider', isActive ? 'text-jb-accent' : 'text-slate-500')}>
                     {preset.name}
                   </span>
                 </button>
@@ -246,15 +246,15 @@ export const ManualEditTools: React.FC<ManualEditToolsProps> = ({
             className="space-y-3"
           >
             <div>
-              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Rotate</span>
+              <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-2">Rotate</span>
               <div className="grid grid-cols-2 gap-2">
                 <button onClick={rotateCCW} disabled={disabled}
-                  className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-[9px] font-black uppercase text-slate-400 hover:text-white hover:border-white/10 transition-all disabled:opacity-40"
+                  className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-[11px] font-black uppercase text-slate-400 hover:text-white hover:border-white/10 transition-all disabled:opacity-40"
                 >
                   <RotateCcw size={13} /> 90° CCW
                 </button>
                 <button onClick={rotateCW} disabled={disabled}
-                  className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-[9px] font-black uppercase text-slate-400 hover:text-white hover:border-white/10 transition-all disabled:opacity-40"
+                  className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-[11px] font-black uppercase text-slate-400 hover:text-white hover:border-white/10 transition-all disabled:opacity-40"
                 >
                   <RotateCw size={13} /> 90° CW
                 </button>
@@ -262,16 +262,16 @@ export const ManualEditTools: React.FC<ManualEditToolsProps> = ({
             </div>
 
             <div>
-              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Flip</span>
+              <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-2">Flip</span>
               <div className="grid grid-cols-2 gap-2">
                 <button onClick={flipH} disabled={disabled}
-                  className={cn('flex items-center justify-center gap-2 py-2.5 rounded-xl border text-[9px] font-black uppercase transition-all disabled:opacity-40',
+                  className={cn('flex items-center justify-center gap-2 py-2.5 rounded-xl border text-[11px] font-black uppercase transition-all disabled:opacity-40',
                     state.flipH ? 'bg-jb-accent/10 border-jb-accent/30 text-jb-accent' : 'bg-white/[0.03] border-white/5 text-slate-400 hover:text-white hover:border-white/10')}
                 >
                   <FlipHorizontal size={13} /> Horizontal
                 </button>
                 <button onClick={flipV} disabled={disabled}
-                  className={cn('flex items-center justify-center gap-2 py-2.5 rounded-xl border text-[9px] font-black uppercase transition-all disabled:opacity-40',
+                  className={cn('flex items-center justify-center gap-2 py-2.5 rounded-xl border text-[11px] font-black uppercase transition-all disabled:opacity-40',
                     state.flipV ? 'bg-jb-accent/10 border-jb-accent/30 text-jb-accent' : 'bg-white/[0.03] border-white/5 text-slate-400 hover:text-white hover:border-white/10')}
                 >
                   <FlipVertical size={13} /> Vertical
@@ -283,7 +283,7 @@ export const ManualEditTools: React.FC<ManualEditToolsProps> = ({
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
-                className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 text-[8px] font-mono text-slate-600"
+                className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 text-[11px] font-mono text-slate-600"
               >
                 {state.rotation !== 0 && <div>rot: {state.rotation}°</div>}
                 {state.flipH            && <div>flip-h: on</div>}
@@ -301,7 +301,7 @@ export const ManualEditTools: React.FC<ManualEditToolsProps> = ({
           animate={{ opacity: 1, y: 0 }}
           onClick={apply}
           disabled={disabled}
-          className="mt-4 w-full flex items-center justify-center gap-2 py-3 bg-jb-accent/10 border border-jb-accent/20 text-jb-accent rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-jb-accent hover:text-white transition-all shadow-lg disabled:opacity-40"
+          className="mt-4 w-full flex items-center justify-center gap-2 py-3 bg-jb-accent/10 border border-jb-accent/20 text-jb-accent rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-jb-accent hover:text-white transition-all shadow-lg disabled:opacity-40"
         >
           Apply Changes
         </motion.button>

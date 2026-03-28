@@ -39,7 +39,7 @@ export const ProviderQuickSwitch: React.FC<ProviderQuickSwitchProps> = ({ compac
           <Icon size={compact ? 12 : 14} className={current.color} />
         </div>
         {!compact && (
-          <span className="text-[10px] font-bold text-white uppercase tracking-wider">
+          <span className="text-[11px] font-bold text-white uppercase tracking-wider">
             {current.label}
           </span>
         )}
@@ -78,7 +78,7 @@ export const ProviderQuickSwitch: React.FC<ProviderQuickSwitchProps> = ({ compac
               className="absolute top-full mt-2 right-0 bg-black/95 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.8)] z-[70] min-w-[200px]"
             >
               <div className="p-2">
-                <p className="px-3 py-2 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">
+                <p className="px-3 py-2 text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">
                   Select Provider
                 </p>
 
@@ -105,7 +105,7 @@ export const ProviderQuickSwitch: React.FC<ProviderQuickSwitchProps> = ({ compac
                       </div>
                       <div className="flex-1 text-left">
                         <span className="text-xs font-bold text-white block">{provider.label}</span>
-                        <span className="text-[9px] text-slate-500">{provider.sublabel}</span>
+                        <span className="text-[11px] text-slate-500">{provider.sublabel}</span>
                       </div>
                       {isActive && (
                         <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
@@ -117,7 +117,7 @@ export const ProviderQuickSwitch: React.FC<ProviderQuickSwitchProps> = ({ compac
 
               {/* Footer hint */}
               <div className="px-4 py-2 border-t border-white/5 bg-white/[0.02]">
-                <p className="text-[8px] text-slate-600 text-center">
+                <p className="text-[11px] text-slate-600 text-center">
                   Provider affects all new requests
                 </p>
               </div>

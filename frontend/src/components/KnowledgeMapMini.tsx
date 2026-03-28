@@ -103,7 +103,7 @@ export const KnowledgeMapMini = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-2">
             <div className="flex items-center gap-1.5">
               <Expand size={10} className="text-white" />
-              <span className="text-[8px] font-black text-white uppercase tracking-wider">
+              <span className="text-[11px] font-black text-white uppercase tracking-wider">
                 Expand
               </span>
             </div>
@@ -113,7 +113,7 @@ export const KnowledgeMapMini = () => {
         {/* Node count badge */}
         <div className="absolute -top-2 -right-2 flex items-center gap-1 px-2 py-1 bg-jb-purple rounded-full shadow-lg">
           <Network size={10} className="text-white" />
-          <span className="text-[9px] font-black text-white">
+          <span className="text-[11px] font-black text-white">
             {graphNodes.length}
           </span>
         </div>
@@ -127,7 +127,7 @@ export const KnowledgeMapMini = () => {
               className="absolute -top-8 right-0 flex items-center gap-1 px-2 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full"
             >
               <Sparkles size={10} className="text-emerald-400" />
-              <span className="text-[8px] font-bold text-emerald-400">Live</span>
+              <span className="text-[11px] font-bold text-emerald-400">Live</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -135,8 +135,8 @@ export const KnowledgeMapMini = () => {
 
       {/* Tooltip on hover */}
       <div className="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-black/90 border border-white/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-        <p className="text-[9px] font-bold text-white">Knowledge Map</p>
-        <p className="text-[8px] text-slate-500">
+        <p className="text-[11px] font-bold text-white">Knowledge Map</p>
+        <p className="text-[11px] text-slate-500">
           {graphNodes.length} nodes • {graphEdges.length} connections
         </p>
       </div>

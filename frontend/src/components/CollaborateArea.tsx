@@ -261,7 +261,7 @@ export const CollaborateArea = () => {
                 />
               </div>
             </div>
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">
+            <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">
               Multi-Agent Orchestration Engine
             </p>
             <h2 className="text-3xl font-black text-white tracking-tight">
@@ -287,14 +287,14 @@ export const CollaborateArea = () => {
               }}
             />
             <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-white/5">
-              <span className="text-[9px] text-slate-600 uppercase tracking-widest font-black">Template:</span>
+              <span className="text-[11px] text-slate-600 uppercase tracking-widest font-black">Template:</span>
               {MISSION_TEMPLATES.map((t) => (
                 <button
                   key={t.id}
                   onClick={() => setMissionType(t.id)}
                   title={t.description}
                   className={cn(
-                    'px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border transition-all',
+                    'px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider border transition-all',
                     missionType === t.id
                       ? t.activeCls
                       : 'bg-white/5 border-white/10 text-slate-500 hover:text-slate-300',
@@ -335,14 +335,14 @@ export const CollaborateArea = () => {
           <div className="flex-shrink-0 relative z-10 px-6 pt-6">
             <div className="max-w-5xl mx-auto w-full">
               <div className="glass-panel rounded-2xl px-4 py-2.5 flex items-center gap-3">
-                <span className="text-[9px] text-slate-600 uppercase tracking-widest font-black">Goal:</span>
+                <span className="text-[11px] text-slate-600 uppercase tracking-widest font-black">Goal:</span>
                 <span className="text-sm text-slate-300 flex-1 truncate">{goal || goalInput}</span>
                 <div className="flex items-center gap-1.5">
                   {isComplete && <CheckCircle2 size={12} className="text-emerald-400" />}
                   {isFailed && <XCircle size={12} className="text-rose-400" />}
                   {isRunning && <Loader2 size={12} className="animate-spin text-jb-purple" />}
                   <span className={cn(
-                    'text-[9px] font-black uppercase tracking-wider',
+                    'text-[11px] font-black uppercase tracking-wider',
                     isComplete ? 'text-emerald-400'
                       : isFailed ? 'text-rose-400'
                       : isSynthesizing ? 'text-jb-purple'
@@ -357,7 +357,7 @@ export const CollaborateArea = () => {
                   {(isComplete || isFailed) && (
                     <button
                       onClick={handleReset}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 hover:bg-white/10 text-slate-400 text-[10px] font-bold rounded-full transition-all uppercase tracking-wider"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 hover:bg-white/10 text-slate-400 text-[11px] font-bold rounded-full transition-all uppercase tracking-wider"
                     >
                       <RotateCcw size={11} /> New Mission
                     </button>
@@ -365,7 +365,7 @@ export const CollaborateArea = () => {
                   {isRunning && (
                     <button
                       onClick={cancelConversation}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 text-[10px] font-bold rounded-full transition-all uppercase tracking-wider"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 text-[11px] font-bold rounded-full transition-all uppercase tracking-wider"
                     >
                       <StopCircle size={11} /> Cancel
                     </button>
@@ -373,7 +373,7 @@ export const CollaborateArea = () => {
                   {isActive && messages.length >= agentConfigs.length && (
                     <button
                       onClick={triggerSynthesizeNow}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20 text-emerald-400 text-[10px] font-bold rounded-full transition-all uppercase tracking-wider"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20 text-emerald-400 text-[11px] font-bold rounded-full transition-all uppercase tracking-wider"
                     >
                       <GitMerge size={11} /> Synthesize Now
                     </button>
@@ -440,7 +440,7 @@ export const CollaborateArea = () => {
                       <div className="glass-panel rounded-[1.5rem] p-5 border-l-4 border-emerald-500/60">
                         <div className="flex items-center gap-2 mb-3">
                           <GitMerge size={14} className="text-emerald-400" />
-                          <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400">
+                          <span className="text-[11px] font-black uppercase tracking-widest text-emerald-400">
                             Consensus Synthesis
                           </span>
                         </div>

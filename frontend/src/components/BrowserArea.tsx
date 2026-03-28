@@ -63,7 +63,7 @@ const BrowserPiP = () => {
         {activeTab?.searchResults?.results?.map((result: any, idx: number) => (
           <a key={idx} href={result.link} target="_blank" rel="noopener noreferrer"
             className="block mb-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:border-jb-accent/20 transition-all">
-            <div className="text-[9px] text-jb-accent font-bold uppercase tracking-widest mb-1">
+            <div className="text-[11px] text-jb-accent font-bold uppercase tracking-widest mb-1">
               {(() => { try { return new URL(result.link).hostname; } catch { return ''; } })()}
             </div>
             <div className="text-[13px] font-bold text-white mb-1">{result.title}</div>
@@ -378,13 +378,13 @@ export const BrowserArea = () => {
 
         <div className="flex items-center gap-3">
           <div className="flex flex-col text-right hidden lg:flex">
-            <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest leading-none mb-1">Session Node</span>
-            <span className="text-[10px] font-mono text-jb-accent uppercase truncate max-w-[120px]">
+            <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest leading-none mb-1">Session Node</span>
+            <span className="text-[11px] font-mono text-jb-accent uppercase truncate max-w-[120px]">
               {activeTab?.type === 'search' ? 'QUERY_STREAM' : activeTab?.type === 'reader' ? 'READER' : safeHostname(displayUrl || 'https://google.com')}
             </span>
           </div>
           {supportsPiP && (
-            <button onClick={openBrowserPiP} className="px-5 py-2.5 bg-jb-accent/10 border border-jb-accent/20 text-jb-accent text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-jb-accent hover:text-white transition-all shadow-[0_0_20px_rgba(60,113,247,0.1)]">
+            <button onClick={openBrowserPiP} className="px-5 py-2.5 bg-jb-accent/10 border border-jb-accent/20 text-jb-accent text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-jb-accent hover:text-white transition-all shadow-[0_0_20px_rgba(60,113,247,0.1)]">
               <ExternalLink size={14} className="inline mr-2" /> Popout
             </button>
           )}
@@ -398,7 +398,7 @@ export const BrowserArea = () => {
             key={tab.id}
             onClick={() => handleSwitchTab(tab.id)}
             className={cn(
-              "flex items-center gap-2 px-4 py-1.5 rounded-t-lg text-[10px] font-bold uppercase tracking-widest transition-all min-w-0 max-w-[160px] group",
+              "flex items-center gap-2 px-4 py-1.5 rounded-t-lg text-[11px] font-bold uppercase tracking-widest transition-all min-w-0 max-w-[160px] group",
               tab.id === activeBrowserTabId
                 ? "bg-white/[0.06] text-white border-t border-x border-white/10"
                 : "text-slate-600 hover:text-slate-400 hover:bg-white/[0.02]"
@@ -426,12 +426,12 @@ export const BrowserArea = () => {
             <div className="space-y-4 border-b border-white/5 pb-8">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em]">Reader Mode</span>
+                <span className="text-[11px] font-black text-emerald-500 uppercase tracking-[0.3em]">Reader Mode</span>
               </div>
               <h1 className="text-3xl md:text-4xl font-[900] text-white tracking-tighter leading-tight">
                 {pageContent.title}
               </h1>
-              <div className="flex flex-wrap items-center gap-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+              <div className="flex flex-wrap items-center gap-4 text-[11px] font-black text-slate-500 uppercase tracking-widest">
                 {pageContent.siteName && (
                   <span className="text-jb-accent">{pageContent.siteName}</span>
                 )}
@@ -445,7 +445,7 @@ export const BrowserArea = () => {
                 <button
                   onClick={togglePinUrl}
                   className={cn(
-                    "flex items-center gap-2 px-4 py-2 border text-[9px] font-black uppercase tracking-widest rounded-xl transition-all",
+                    "flex items-center gap-2 px-4 py-2 border text-[11px] font-black uppercase tracking-widest rounded-xl transition-all",
                     isCurrentUrlPinned
                       ? "bg-jb-accent border-jb-accent text-white"
                       : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10"
@@ -456,19 +456,19 @@ export const BrowserArea = () => {
                 <button
                   onClick={() => handleSummarize()}
                   disabled={isSummarizing}
-                  className="flex items-center gap-2 px-4 py-2 bg-jb-accent/10 border border-jb-accent/20 text-jb-accent text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-jb-accent hover:text-white transition-all disabled:opacity-40"
+                  className="flex items-center gap-2 px-4 py-2 bg-jb-accent/10 border border-jb-accent/20 text-jb-accent text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-jb-accent hover:text-white transition-all disabled:opacity-40"
                 >
                   <Sparkles size={12} /> {isSummarizing ? 'Summarizing...' : 'Summarize'}
                 </button>
                 <button
                   onClick={() => setShowSummaryInput(!showSummaryInput)}
-                  className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-slate-400 text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-white/10 transition-all"
+                  className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-slate-400 text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-white/10 transition-all"
                 >
                   <FileText size={12} /> Focused Summary
                 </button>
                 <button
                   onClick={() => sendToChat(`Page: ${pageContent.title}\nURL: ${pageContent.url}\n\n${pageContent.content.slice(0, 3000)}`)}
-                  className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-slate-400 text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-white/10 transition-all"
+                  className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-slate-400 text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-white/10 transition-all"
                 >
                   <Send size={12} /> Send to Chat
                 </button>
@@ -489,7 +489,7 @@ export const BrowserArea = () => {
                       <button
                         onClick={() => handleSummarize(summaryInstruction)}
                         disabled={isSummarizing || !summaryInstruction.trim()}
-                        className="px-4 py-2 bg-jb-accent text-white text-[9px] font-black uppercase tracking-widest rounded-xl disabled:opacity-40"
+                        className="px-4 py-2 bg-jb-accent text-white text-[11px] font-black uppercase tracking-widest rounded-xl disabled:opacity-40"
                       >
                         Go
                       </button>
@@ -511,11 +511,11 @@ export const BrowserArea = () => {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <Sparkles size={14} className="text-jb-accent" />
-                      <span className="text-[10px] font-black text-jb-accent uppercase tracking-[0.3em]">AI Summary</span>
+                      <span className="text-[11px] font-black text-jb-accent uppercase tracking-[0.3em]">AI Summary</span>
                     </div>
                     <button
                       onClick={() => sendToChat(`AI Summary of "${pageContent.title}":\n\n${summary}`)}
-                      className="flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/10 text-slate-400 text-[8px] font-black uppercase tracking-widest rounded-lg hover:bg-white/10 transition-all"
+                      className="flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/10 text-slate-400 text-[11px] font-black uppercase tracking-widest rounded-lg hover:bg-white/10 transition-all"
                     >
                       <Send size={10} /> Send to Chat
                     </button>
@@ -556,10 +556,10 @@ export const BrowserArea = () => {
                     Web <span className="text-vibrant text-transparent bg-clip-text bg-gradient-to-r from-jb-accent to-jb-purple">Results</span>
                   </h2>
                 </div>
-                <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.4em]">Live Web Search // Results Synchronized</p>
+                <p className="text-[11px] text-slate-500 font-black uppercase tracking-[0.4em]">Live Web Search // Results Synchronized</p>
               </div>
               <div className="px-4 py-2 rounded-xl bg-white/[0.03] border border-white/5 text-right">
-                <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest block mb-1">Items Found</span>
+                <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest block mb-1">Items Found</span>
                 <span className="text-lg font-mono font-black text-white">0{searchResults.results?.length || 0}</span>
               </div>
             </div>
@@ -575,10 +575,10 @@ export const BrowserArea = () => {
                   <Cpu size={120} />
                 </div>
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-[10px] font-black text-jb-accent uppercase tracking-[0.3em]">Direct Answer</span>
+                  <span className="text-[11px] font-black text-jb-accent uppercase tracking-[0.3em]">Direct Answer</span>
                   <button
                     onClick={() => sendToChat(`Direct Answer: ${searchResults.answerBox.title}\n\n${searchResults.answerBox.answer || searchResults.answerBox.snippet}`)}
-                    className="flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/10 text-slate-400 text-[8px] font-black uppercase tracking-widest rounded-lg hover:bg-white/10 transition-all"
+                    className="flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/10 text-slate-400 text-[11px] font-black uppercase tracking-widest rounded-lg hover:bg-white/10 transition-all"
                   >
                     <Send size={10} /> Chat
                   </button>
@@ -600,17 +600,17 @@ export const BrowserArea = () => {
                 >
                   <div className="flex items-start gap-5 px-8 py-6">
                     <div className="flex-shrink-0 w-8 flex flex-col items-center gap-1.5 pt-0.5">
-                      <span className="text-[10px] font-mono font-black text-white/20">{String(idx + 1).padStart(2, '0')}</span>
+                      <span className="text-[11px] font-mono font-black text-white/20">{String(idx + 1).padStart(2, '0')}</span>
                       <div className="w-px flex-1 min-h-[24px] bg-white/5 group-hover:bg-jb-accent/20 transition-colors" />
                     </div>
 
                     <div className="flex-1 min-w-0 space-y-2 cursor-pointer" onClick={() => { setInputUrl(result.link); handleNavigate(result.link); }}>
                       <div className="flex items-center gap-2 min-w-0">
                         <Network size={10} className="text-jb-accent/70 flex-shrink-0" />
-                        <span className="text-[9px] font-black text-jb-accent uppercase tracking-widest flex-shrink-0">
+                        <span className="text-[11px] font-black text-jb-accent uppercase tracking-widest flex-shrink-0">
                           {(() => { try { return new URL(result.link).hostname; } catch { return ''; } })()}
                         </span>
-                        <span className="text-[9px] text-slate-700 truncate min-w-0">· {result.link}</span>
+                        <span className="text-[11px] text-slate-700 truncate min-w-0">· {result.link}</span>
                       </div>
                       <h3 className="text-[15px] font-black text-white group-hover:text-jb-accent/90 transition-colors tracking-tight leading-snug">
                         {result.title}
@@ -647,7 +647,7 @@ export const BrowserArea = () => {
                 <button
                   onClick={handleLoadMore}
                   disabled={isLoading}
-                  className="flex items-center gap-2 px-8 py-3 bg-white/[0.03] border border-white/10 text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-white/[0.06] hover:border-jb-accent/20 transition-all disabled:opacity-40"
+                  className="flex items-center gap-2 px-8 py-3 bg-white/[0.03] border border-white/10 text-slate-400 text-[11px] font-black uppercase tracking-widest rounded-2xl hover:bg-white/[0.06] hover:border-jb-accent/20 transition-all disabled:opacity-40"
                 >
                   <ChevronDown size={14} className={cn(isLoading && "animate-bounce")} />
                   {isLoading ? 'Loading...' : 'Load More Results'}
@@ -658,7 +658,7 @@ export const BrowserArea = () => {
             {/* Related Searches (Phase 1) */}
             {searchResults.relatedSearches && searchResults.relatedSearches.length > 0 && (
               <div className="space-y-4 pt-4 border-t border-white/5">
-                <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] block">Related Searches</span>
+                <span className="text-[11px] font-black text-slate-600 uppercase tracking-[0.3em] block">Related Searches</span>
                 <div className="flex flex-wrap gap-2">
                   {searchResults.relatedSearches.map((rs: any, i: number) => (
                     <button
@@ -703,7 +703,7 @@ export const BrowserArea = () => {
 
               <div className="space-y-4">
                 <p className="text-2xl font-[900] text-white tracking-tighter uppercase">Web Browser <span className="text-vibrant">Standby</span></p>
-                <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.4em] leading-relaxed">
+                <p className="text-[11px] text-slate-500 font-black uppercase tracking-[0.4em] leading-relaxed">
                   Enter a URL or search query to begin.
                 </p>
               </div>
@@ -712,7 +712,7 @@ export const BrowserArea = () => {
                 <div className="absolute top-0 right-0 p-4 opacity-5">
                   <Command size={32} />
                 </div>
-                <span className="text-[10px] font-black text-jb-accent uppercase tracking-widest block mb-3">Bridge Protocols</span>
+                <span className="text-[11px] font-black text-jb-accent uppercase tracking-widest block mb-3">Bridge Protocols</span>
                 <p className="text-[11px] text-slate-500 font-medium leading-relaxed italic">
                   Solvent AI will scan the open web, extract structural metadata, and provide real-time context for your current engineering mission.
                 </p>
@@ -727,8 +727,8 @@ export const BrowserArea = () => {
         <div className="absolute top-4 left-4 z-20 w-72 max-h-96 overflow-y-auto">
           <div className="bg-black/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
             <div className="p-3 border-b border-white/5 flex items-center gap-2">
-              <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">📌 Pinned Pages</span>
-              <span className="text-[7px] font-mono text-slate-600 bg-white/5 px-1 rounded">{browserPinnedUrls.length}</span>
+              <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">📌 Pinned Pages</span>
+              <span className="text-[11px] font-mono text-slate-600 bg-white/5 px-1 rounded">{browserPinnedUrls.length}</span>
             </div>
             <div className="p-2 space-y-1">
               {browserPinnedUrls.map((pinned: { url: string; title: string; summary?: string }) => (
@@ -738,10 +738,10 @@ export const BrowserArea = () => {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="text-[9px] font-bold text-white truncate">{pinned.title}</p>
-                      <p className="text-[7px] text-slate-500 truncate">{pinned.url}</p>
+                      <p className="text-[11px] font-bold text-white truncate">{pinned.title}</p>
+                      <p className="text-[11px] text-slate-500 truncate">{pinned.url}</p>
                       {pinned.summary && (
-                        <p className="text-[7px] text-slate-600 mt-1 line-clamp-2">{pinned.summary}</p>
+                        <p className="text-[11px] text-slate-600 mt-1 line-clamp-2">{pinned.summary}</p>
                       )}
                     </div>
                     <button
@@ -755,7 +755,7 @@ export const BrowserArea = () => {
                     onClick={() => {
                       handleNavigate(pinned.url);
                     }}
-                    className="w-full mt-1.5 py-1 bg-white/5 hover:bg-jb-accent/10 border border-white/5 hover:border-jb-accent/20 rounded text-[7px] font-black uppercase tracking-widest text-slate-500 hover:text-jb-accent transition-all"
+                    className="w-full mt-1.5 py-1 bg-white/5 hover:bg-jb-accent/10 border border-white/5 hover:border-jb-accent/20 rounded text-[11px] font-black uppercase tracking-widest text-slate-500 hover:text-jb-accent transition-all"
                   >
                     Open Page
                   </button>
@@ -768,7 +768,7 @@ export const BrowserArea = () => {
 
       {/* Status Bar */}
       <div className="h-12 px-8 bg-black border-t border-white/5 flex justify-between items-center relative z-30">
-        <div className="flex items-center gap-6 text-[9px] text-slate-600 font-black uppercase tracking-[0.2em]">
+        <div className="flex items-center gap-6 text-[11px] text-slate-600 font-black uppercase tracking-[0.2em]">
           <div className="flex items-center gap-2.5">
             <span className={cn("w-1.5 h-1.5 rounded-full", lastProvenance ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" : "bg-slate-700")} />
             CTX: <span className="text-white/40 font-mono ml-1">{lastProvenance ? `${lastProvenance.active.length} entries` : '—'}</span>
@@ -785,10 +785,10 @@ export const BrowserArea = () => {
           </div>
         </div>
         <div className="flex items-center gap-6">
-          <div className="text-[9px] text-slate-600 font-black uppercase tracking-[0.2em] hidden sm:block">
+          <div className="text-[11px] text-slate-600 font-black uppercase tracking-[0.2em] hidden sm:block">
             MODE: <span className="text-white/40 font-mono">{activeTab?.type?.toUpperCase() || 'IDLE'}</span>
           </div>
-          <div className="text-[9px] text-slate-600 font-black uppercase tracking-[0.2em]">
+          <div className="text-[11px] text-slate-600 font-black uppercase tracking-[0.2em]">
             {searchResults ? (
               <>HITS: <span className="text-jb-accent font-mono">{String(searchResults.results?.length || 0).padStart(2, '0')}</span></>
             ) : pageContent ? (

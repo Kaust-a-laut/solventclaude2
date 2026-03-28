@@ -47,13 +47,13 @@ export const ApiKeysTab = () => {
           <div className="flex items-start justify-between gap-4">
             <div className="flex flex-col gap-1">
               <span className="text-xs font-black text-slate-300">{label}</span>
-              <span className="text-[10px] text-slate-500 font-medium leading-snug">{description}</span>
+              <span className="text-[11px] text-slate-500 font-medium leading-snug">{description}</span>
             </div>
             <a
               href={docsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-[9px] font-black text-jb-accent hover:text-white transition-colors uppercase tracking-widest flex-shrink-0"
+              className="flex items-center gap-1 text-[11px] font-black text-jb-accent hover:text-white transition-colors uppercase tracking-widest flex-shrink-0"
             >
               Get key <ArrowUpRight size={10} />
             </a>
@@ -76,7 +76,7 @@ export const ApiKeysTab = () => {
             <button
               onClick={() => validateKey(id)}
               disabled={!apiKeys[id] || validationStatus[id] === 'loading'}
-              className="px-5 py-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
+              className="px-5 py-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
             >
               {validationStatus[id] === 'loading'
                 ? <><Loader2 size={12} className="animate-spin" /> Testing</>
@@ -87,7 +87,7 @@ export const ApiKeysTab = () => {
           {/* Row C: validation badge */}
           {(validationStatus[id] === 'success' || validationStatus[id] === 'error') && (
             <div className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-2xl text-[10px] font-bold",
+              "flex items-center gap-2 px-4 py-2 rounded-2xl text-[11px] font-bold",
               validationStatus[id] === 'success'
                 ? "bg-emerald-400/10 border border-emerald-400/20 text-emerald-400"
                 : "bg-rose-400/10 border border-rose-400/20 text-rose-400"

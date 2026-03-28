@@ -62,7 +62,7 @@ const PresetCard = ({
           )}>
             {preset.name}
           </span>
-          <div className={cn('px-1.5 py-0.5 rounded-md border text-[9px] font-black tabular-nums', badge.bg, badge.border, badge.text)}>
+          <div className={cn('px-1.5 py-0.5 rounded-md border text-[11px] font-black tabular-nums', badge.bg, badge.border, badge.text)}>
             {badge.label}
           </div>
         </div>
@@ -74,7 +74,7 @@ const PresetCard = ({
           </span>
           <div className="flex items-center gap-1 shrink-0">
             <SpdIcon size={9} className={spd.color} />
-            <span className={cn('text-[8px] font-mono', spd.color)}>{preset.speed}</span>
+            <span className={cn('text-[11px] font-mono', spd.color)}>{preset.speed}</span>
           </div>
         </div>
 
@@ -82,7 +82,7 @@ const PresetCard = ({
         {isSelected && (
           <button
             onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}
-            className="flex items-center gap-1 text-[8px] font-bold text-slate-600 hover:text-slate-400 transition-colors pt-0.5"
+            className="flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-400 transition-colors pt-0.5"
           >
             <ChevronDown size={10} className={cn('transition-transform', isExpanded && 'rotate-180')} />
             {isExpanded ? 'Hide models' : 'Show models'}
@@ -110,10 +110,10 @@ const PresetCard = ({
                     <div className={cn('w-4 h-4 rounded flex items-center justify-center', cfg.bgColor)}>
                       <Icon size={9} className={cfg.textColor} />
                     </div>
-                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-wider w-16">
+                    <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider w-16">
                       {cfg.displayName}
                     </span>
-                    <span className="text-[9px] text-slate-400 font-medium">{label}</span>
+                    <span className="text-[11px] text-slate-400 font-medium">{label}</span>
                   </div>
                 );
               })}
@@ -180,7 +180,7 @@ const CustomStageRow = ({
         <div className={cn('w-5 h-5 rounded-lg flex items-center justify-center', cfg.bgColor)}>
           <Icon size={10} className={cfg.textColor} />
         </div>
-        <span className="text-[8px] font-black text-slate-500 uppercase tracking-wider">
+        <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
           {cfg.displayName}
         </span>
       </div>
@@ -191,7 +191,7 @@ const CustomStageRow = ({
           const model = modelParts.join(':');
           onChange(model, provider);
         }}
-        className="flex-1 bg-white/[0.03] border border-white/[0.08] rounded-xl px-3 py-1.5 text-[10px] text-slate-300 font-medium outline-none focus:border-jb-purple/30 transition-colors appearance-none cursor-pointer"
+        className="flex-1 bg-white/[0.03] border border-white/[0.08] rounded-xl px-3 py-1.5 text-[11px] text-slate-300 font-medium outline-none focus:border-jb-purple/30 transition-colors appearance-none cursor-pointer"
       >
         {groups.map((group) => (
           <optgroup key={group} label={group} className="bg-[#0a0a0f]">
@@ -242,14 +242,14 @@ export const WaterfallPresetPicker = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Layers size={12} className="text-slate-500" />
-            <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">
+            <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest">
               Pipeline Preset
             </span>
           </div>
           <button
             onClick={handleCustomToggle}
             className={cn(
-              'flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[8px] font-bold uppercase tracking-wider transition-all',
+              'flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-bold uppercase tracking-wider transition-all',
               showCustom
                 ? 'bg-jb-purple/10 border-jb-purple/25 text-jb-purple'
                 : 'bg-white/[0.03] border-white/[0.08] text-slate-600 hover:text-slate-400 hover:border-white/15',
@@ -285,14 +285,14 @@ export const WaterfallPresetPicker = () => {
                   key={preset.key}
                   onClick={() => handleSelect(preset.key)}
                   className={cn(
-                    'shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all text-[9px] font-bold',
+                    'shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all text-[11px] font-bold',
                     isSelected
                       ? 'bg-jb-purple/[0.08] border-jb-purple/30 text-white'
                       : 'bg-white/[0.02] border-white/[0.06] text-slate-500 hover:text-slate-300 hover:border-white/15',
                   )}
                 >
                   {preset.name}
-                  <span className={cn('text-[8px] font-mono', badge.text)}>{badge.label}</span>
+                  <span className={cn('text-[11px] font-mono', badge.text)}>{badge.label}</span>
                 </button>
               );
             })}
@@ -310,7 +310,7 @@ export const WaterfallPresetPicker = () => {
               className="overflow-hidden"
             >
               <div className="pt-3 border-t border-white/[0.04] space-y-2.5">
-                <span className="text-[8px] text-slate-700 font-mono block">Select a model for each pipeline stage</span>
+                <span className="text-[11px] text-slate-700 font-mono block">Select a model for each pipeline stage</span>
                 {STAGE_ORDER.map((stage) => (
                   <CustomStageRow
                     key={stage}
@@ -328,7 +328,7 @@ export const WaterfallPresetPicker = () => {
         <div className="pt-2 border-t border-white/[0.04]">
           <div className="flex items-center gap-1.5">
             <Trophy size={9} className="text-slate-700" />
-            <span className="text-[8px] text-slate-700 font-mono">
+            <span className="text-[11px] text-slate-700 font-mono">
               Scores from 60 pipeline runs · MiMo V2 reviewer · Hard prompt
             </span>
           </div>

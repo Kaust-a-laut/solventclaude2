@@ -168,8 +168,8 @@ export const ChatInput = ({ compact = false }: ChatInputProps) => {
                     <FileText size={compact ? 14 : 18} />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-white max-w-[120px] truncate uppercase tracking-widest">{attachedFile.originalName}</span>
-                    <span className="text-[7px] text-slate-500 mt-0.5 uppercase">Staged</span>
+                    <span className="text-[11px] font-black text-white max-w-[120px] truncate uppercase tracking-widest">{attachedFile.originalName}</span>
+                    <span className="text-[11px] text-slate-500 mt-0.5 uppercase">Staged</span>
                   </div>
                   <button onClick={() => setAttachedFile(null)} className="absolute -top-2 -right-2 bg-rose-500 text-white p-1 rounded-full shadow-lg">
                     <X size={10} />
@@ -261,7 +261,7 @@ export const ChatInput = ({ compact = false }: ChatInputProps) => {
                             >
                                <div className="flex items-center gap-3">
                                  <item.icon size={15} className={cn("transition-transform group-hover:scale-110", item.color)} />
-                                 <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
+                                 <span className="text-[11px] font-black uppercase tracking-widest">{item.label}</span>
                                </div>
                             </button>
                           ))}
@@ -306,7 +306,7 @@ export const ChatInput = ({ compact = false }: ChatInputProps) => {
                 className={cn(
                   "bg-black/40 border border-white/5 rounded-2xl flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-2xl button-glow-hover font-black uppercase tracking-widest",
                   compact ? "w-8 h-8" : (deviceInfo.isMobile ? "w-10 h-10" : "px-6 h-11"),
-                  compact ? "text-[8px]" : "text-[10px]",
+                  compact ? "text-[11px]" : "text-[11px]",
                   "text-jb-accent hover:text-white hover:border-jb-accent/50"
                 )}
               >

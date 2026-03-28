@@ -65,7 +65,7 @@ export const FileExplorer = ({ onFileSelect }: { onFileSelect: (path: string) =>
   return (
     <div className="h-full flex flex-col bg-slate-900/50 border-r border-slate-800 w-64">
       <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-tighter text-slate-500">Explorer</span>
+        <span className="text-[11px] font-bold uppercase tracking-tighter text-slate-500">Explorer</span>
         <button onClick={fetchFiles} className={cn("p-1 hover:bg-white/10 rounded", loading && "animate-spin")}>
           <RefreshCw size={12} />
         </button>

@@ -66,7 +66,7 @@ export const MessageList = ({ compact }: MessageListProps) => {
           </div>
           <div className="flex flex-col items-center gap-2">
             <p className="text-sm font-bold text-slate-400">Ready when you are</p>
-            <p className="text-[10px] text-slate-600 max-w-xs text-center leading-relaxed">
+            <p className="text-[11px] text-slate-600 max-w-xs text-center leading-relaxed">
               Ask a question, share an idea, or drop in a file to get started.
             </p>
           </div>
@@ -114,7 +114,7 @@ export const MessageList = ({ compact }: MessageListProps) => {
               <span className="w-1.5 h-1.5 rounded-full bg-jb-accent/50 animate-bounce" style={{ animationDelay: '150ms' }} />
               <span className="w-1.5 h-1.5 rounded-full bg-jb-accent/30 animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
-            <span className="text-[10px] font-bold text-slate-600">
+            <span className="text-[11px] font-bold text-slate-600">
               {activeModel} is thinking
             </span>
          </div>

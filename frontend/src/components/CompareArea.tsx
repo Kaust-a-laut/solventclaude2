@@ -71,7 +71,7 @@ export const CompareArea = () => {
             </div>
             <div>
                 <h2 className="text-3xl md:text-4xl font-[900] text-white tracking-tighter">Model Comparison <span className="text-vibrant">Lab</span></h2>
-                <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-1">Cross-benchmarking Neural Intelligence</p>
+                <p className="text-[11px] text-slate-500 font-black uppercase tracking-[0.3em] mt-1">Cross-benchmarking Neural Intelligence</p>
             </div>
         </div>
 
@@ -129,7 +129,7 @@ export const CompareArea = () => {
         >
             <AlertCircle size={20} />
             <div className="flex flex-col">
-                <span className="font-black uppercase tracking-widest text-[10px]">Diagnostic Error</span>
+                <span className="font-black uppercase tracking-widest text-[11px]">Diagnostic Error</span>
                 <span className="font-bold">{error}</span>
             </div>
         </motion.div>
@@ -151,11 +151,11 @@ export const CompareArea = () => {
                         <span className="text-white font-black text-sm uppercase tracking-tight">{model1Label}</span>
                         <div className="flex items-center gap-2 mt-0.5">
                             <Cloud size={10} className="text-slate-500" />
-                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{fromKey(model1Key).provider}</span>
+                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{fromKey(model1Key).provider}</span>
                         </div>
                     </div>
                 </div>
-                <div className="px-3 py-1 rounded-lg bg-jb-accent/10 border border-jb-accent/20 text-jb-accent text-[9px] font-black uppercase tracking-widest">
+                <div className="px-3 py-1 rounded-lg bg-jb-accent/10 border border-jb-accent/20 text-jb-accent text-[11px] font-black uppercase tracking-widest">
                    Model A
                 </div>
             </div>
@@ -189,11 +189,11 @@ export const CompareArea = () => {
                         <span className="text-white font-black text-sm uppercase tracking-tight">{model2Label}</span>
                         <div className="flex items-center gap-2 mt-0.5">
                             <Shield size={10} className="text-slate-500" />
-                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{fromKey(model2Key).provider}</span>
+                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{fromKey(model2Key).provider}</span>
                         </div>
                     </div>
                 </div>
-                <div className="px-3 py-1 rounded-lg bg-jb-orange/10 border border-jb-orange/20 text-jb-orange text-[9px] font-black uppercase tracking-widest">
+                <div className="px-3 py-1 rounded-lg bg-jb-orange/10 border border-jb-orange/20 text-jb-orange text-[11px] font-black uppercase tracking-widest">
                    Model B
                 </div>
             </div>

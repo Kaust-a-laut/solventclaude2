@@ -186,8 +186,8 @@ export const GlobalSearch: React.FC = () => {
       {/* Trigger hint */}
       <div className="fixed bottom-4 left-4 z-30 flex items-center gap-2 px-3 py-1.5 bg-black/80 backdrop-blur border border-white/10 rounded-lg">
         <Command size={12} className="text-slate-500" />
-        <span className="text-[9px] font-mono text-slate-500">K</span>
-        <span className="text-[8px] text-slate-600">to search</span>
+        <span className="text-[11px] font-mono text-slate-500">K</span>
+        <span className="text-[11px] text-slate-600">to search</span>
       </div>
 
       <AnimatePresence>
@@ -237,11 +237,11 @@ export const GlobalSearch: React.FC = () => {
                   {error ? (
                     <div className="p-8 text-center">
                       <AlertTriangle size={24} className="text-rose-500 mx-auto mb-2" />
-                      <p className="text-[10px] text-rose-400 uppercase tracking-widest">Search Error</p>
-                      <p className="text-[8px] text-slate-500 mt-1">{error}</p>
+                      <p className="text-[11px] text-rose-400 uppercase tracking-widest">Search Error</p>
+                      <p className="text-[11px] text-slate-500 mt-1">{error}</p>
                       <button
                         onClick={() => { setError(null); setQuery(''); }}
-                        className="mt-3 px-3 py-1.5 bg-rose-500/20 border border-rose-500/30 rounded-lg text-[9px] text-rose-300 hover:bg-rose-500/30 transition-all"
+                        className="mt-3 px-3 py-1.5 bg-rose-500/20 border border-rose-500/30 rounded-lg text-[11px] text-rose-300 hover:bg-rose-500/30 transition-all"
                       >
                         Try Again
                       </button>
@@ -249,16 +249,16 @@ export const GlobalSearch: React.FC = () => {
                   ) : isLoading ? (
                     <div className="p-8 text-center">
                       <div className="inline-block w-5 h-5 border-2 border-jb-accent border-t-transparent rounded-full animate-spin" />
-                      <p className="text-[10px] text-slate-500 mt-2 uppercase tracking-widest">Searching...</p>
+                      <p className="text-[11px] text-slate-500 mt-2 uppercase tracking-widest">Searching...</p>
                     </div>
                   ) : groupedResults.length > 0 ? (
                     <div className="p-2">
                       {groupedResults.map((group, groupIndex) => (
                         <div key={group.type} className="mb-3 last:mb-0">
-                          <div className="flex items-center gap-2 px-2 py-1.5 text-[8px] font-black uppercase tracking-widest text-slate-500">
+                          <div className="flex items-center gap-2 px-2 py-1.5 text-[11px] font-black uppercase tracking-widest text-slate-500">
                             {group.icon}
                             {group.label}
-                            <span className="text-[7px] bg-white/5 px-1 rounded">{group.results.length}</span>
+                            <span className="text-[11px] bg-white/5 px-1 rounded">{group.results.length}</span>
                           </div>
                           {group.results.map((result, resultIndex) => {
                             const globalIndex = groupedResults
@@ -287,7 +287,7 @@ export const GlobalSearch: React.FC = () => {
                                 </div>
                                 <div className="flex-1 min-w-0 text-left">
                                   <div className="flex items-center gap-2 mb-0.5">
-                                    <p className="text-[10px] font-bold text-white truncate">{result.title}</p>
+                                    <p className="text-[11px] font-bold text-white truncate">{result.title}</p>
                                     {result.metadata?.mode && (
                                       <span className="text-[6px] font-mono text-slate-500 bg-white/5 px-1 rounded">
                                         {result.metadata.mode}
@@ -299,9 +299,9 @@ export const GlobalSearch: React.FC = () => {
                                       </span>
                                     )}
                                   </div>
-                                  <p className="text-[9px] text-slate-400 line-clamp-2">{result.excerpt}</p>
+                                  <p className="text-[11px] text-slate-400 line-clamp-2">{result.excerpt}</p>
                                   {result.metadata?.date && (
-                                    <p className="text-[7px] text-slate-600 mt-1 flex items-center gap-1">
+                                    <p className="text-[11px] text-slate-600 mt-1 flex items-center gap-1">
                                       <Clock size={6} />
                                       {result.metadata.date}
                                     </p>
@@ -317,13 +317,13 @@ export const GlobalSearch: React.FC = () => {
                   ) : query ? (
                     <div className="p-8 text-center">
                       <Search size={24} className="text-slate-700 mx-auto mb-2" />
-                      <p className="text-[10px] text-slate-500 uppercase tracking-widest">No results found</p>
+                      <p className="text-[11px] text-slate-500 uppercase tracking-widest">No results found</p>
                     </div>
                   ) : (
                     <div className="p-8 text-center">
                       <History size={24} className="text-slate-700 mx-auto mb-2" />
-                      <p className="text-[10px] text-slate-500 uppercase tracking-widest">Start typing to search</p>
-                      <div className="flex items-center justify-center gap-4 mt-4 text-[8px] text-slate-600">
+                      <p className="text-[11px] text-slate-500 uppercase tracking-widest">Start typing to search</p>
+                      <div className="flex items-center justify-center gap-4 mt-4 text-[11px] text-slate-600">
                         <span className="flex items-center gap-1">
                           <MessageSquare size={10} /> Sessions
                         </span>
@@ -341,7 +341,7 @@ export const GlobalSearch: React.FC = () => {
                 {/* Footer */}
                 {results.length > 0 && (
                   <div className="flex items-center justify-between px-4 py-2 border-t border-white/5 bg-white/[0.02]">
-                    <div className="flex items-center gap-3 text-[7px] text-slate-500">
+                    <div className="flex items-center gap-3 text-[11px] text-slate-500">
                       <span className="flex items-center gap-1">
                         <span className="px-1 bg-white/5 rounded">↑↓</span> to navigate
                       </span>
@@ -349,7 +349,7 @@ export const GlobalSearch: React.FC = () => {
                         <span className="px-1 bg-white/5 rounded">Enter</span> to open
                       </span>
                     </div>
-                    <span className="text-[7px] text-slate-600">{results.length} results</span>
+                    <span className="text-[11px] text-slate-600">{results.length} results</span>
                   </div>
                 )}
               </div>

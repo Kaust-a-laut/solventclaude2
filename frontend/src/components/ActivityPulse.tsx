@@ -86,8 +86,8 @@ export const ActivityPulse: React.FC<ActivityPulseProps> = ({ collapsed = false 
             <div className="absolute inset-0 w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
           )}
         </div>
-        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white">Live Pulse</span>
-        <span className="text-[9px] font-mono text-slate-600 ml-auto">{activities.length}</span>
+        <span className="text-[11px] font-black uppercase tracking-[0.3em] text-white">Live Pulse</span>
+        <span className="text-[11px] font-mono text-slate-600 ml-auto">{activities.length}</span>
       </div>
 
       {/* Activity List */}
@@ -112,17 +112,17 @@ export const ActivityPulse: React.FC<ActivityPulseProps> = ({ collapsed = false 
                   {getActivityIcon(activity.type)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] text-white font-medium leading-relaxed">
+                  <p className="text-[11px] text-white font-medium leading-relaxed">
                     {activity.message || activity.type || 'System event'}
                   </p>
                   <div className="flex items-center gap-2 mt-1">
-                    <p className="text-[8px] text-slate-500 font-mono">
+                    <p className="text-[11px] text-slate-500 font-mono">
                       {activity.timestamp
                         ? new Date(activity.timestamp).toLocaleTimeString()
                         : 'just now'}
                     </p>
                     {activity.source && (
-                      <span className="text-[7px] font-black text-slate-600 uppercase tracking-wider px-1.5 py-0.5 bg-white/5 rounded">
+                      <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider px-1.5 py-0.5 bg-white/5 rounded">
                         {activity.source}
                       </span>
                     )}
@@ -138,10 +138,10 @@ export const ActivityPulse: React.FC<ActivityPulseProps> = ({ collapsed = false 
             <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mb-3">
               <Activity size={20} className="text-slate-700" />
             </div>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">
+            <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mb-1">
               Neural Link Ready
             </p>
-            <p className="text-[9px] text-slate-600">
+            <p className="text-[11px] text-slate-600">
               Activity will appear here as the AI processes
             </p>
           </div>

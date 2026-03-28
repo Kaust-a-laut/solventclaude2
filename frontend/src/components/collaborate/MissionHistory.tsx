@@ -51,7 +51,7 @@ export const MissionHistory: React.FC<MissionHistoryProps> = ({
       >
         <div className="flex items-center gap-2">
           <Clock size={12} className="text-slate-500" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+          <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">
             Mission History
             {completed.length > 0 && (
               <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-white/5 text-slate-400">
@@ -79,7 +79,7 @@ export const MissionHistory: React.FC<MissionHistoryProps> = ({
           >
             <div className="p-3 space-y-2 max-h-64 overflow-y-auto no-scrollbar">
               {completed.length === 0 ? (
-                <p className="text-[9px] text-slate-700 uppercase tracking-widest text-center py-4">
+                <p className="text-[11px] text-slate-700 uppercase tracking-widest text-center py-4">
                   No completed missions yet
                 </p>
               ) : (
@@ -95,13 +95,13 @@ export const MissionHistory: React.FC<MissionHistoryProps> = ({
                         onClick={() => setExpandedId(isExpanded ? null : mission.jobId)}
                         className="w-full flex items-center gap-2 p-2.5 text-left hover:bg-white/[0.02] transition-colors"
                       >
-                        <span className={cn('px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border flex-shrink-0', badgeCls)}>
+                        <span className={cn('px-1.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider border flex-shrink-0', badgeCls)}>
                           {mission.missionType}
                         </span>
-                        <span className="text-[10px] text-slate-400 flex-1 truncate font-medium">
+                        <span className="text-[11px] text-slate-400 flex-1 truncate font-medium">
                           {mission.goal}
                         </span>
-                        <span className="text-[8px] text-slate-700 flex-shrink-0">
+                        <span className="text-[11px] text-slate-700 flex-shrink-0">
                           {relativeTime(mission.startedAt)}
                         </span>
                         <ChevronDown
@@ -123,11 +123,11 @@ export const MissionHistory: React.FC<MissionHistoryProps> = ({
                             <div className="mx-2.5 mb-2.5 p-2.5 rounded-xl border-l-2 border-emerald-500/40 bg-emerald-500/[0.04]">
                               <div className="flex items-center gap-1.5 mb-1.5">
                                 <GitMerge size={10} className="text-emerald-400" />
-                                <span className="text-[8px] font-black uppercase tracking-widest text-emerald-400">
+                                <span className="text-[11px] font-black uppercase tracking-widest text-emerald-400">
                                   Synthesis
                                 </span>
                               </div>
-                              <p className="text-[10px] text-slate-400 leading-relaxed">
+                              <p className="text-[11px] text-slate-400 leading-relaxed">
                                 {result.synthesis}
                               </p>
                             </div>

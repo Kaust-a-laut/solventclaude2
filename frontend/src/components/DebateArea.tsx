@@ -55,7 +55,7 @@ const DebatePanel = ({ role, content, agentName, isLoading }: DebatePanelProps) 
       <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-white/[0.04]">
         <div className="flex items-center gap-3">
           <span className={cn(
-            'px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border',
+            'px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-widest border',
             cfg.badgeCls,
           )}>
             {cfg.label}
@@ -114,7 +114,7 @@ const DebatePanel = ({ role, content, agentName, isLoading }: DebatePanelProps) 
               animate={{ opacity: 1 }}
               className="flex items-center justify-center py-12"
             >
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-700">
+              <p className="text-[11px] font-black uppercase tracking-widest text-slate-700">
                 Awaiting debate
               </p>
             </motion.div>
@@ -200,7 +200,7 @@ export const DebateArea = () => {
             <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-jb-orange shadow-[0_0_10px_rgba(251,146,60,0.9)] animate-pulse" />
           </div>
           <div>
-            <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.45em] block mb-1.5">
+            <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.45em] block mb-1.5">
               Adversarial Debate Lab
             </span>
             <h2 className="text-2xl md:text-3xl font-black tracking-tighter leading-none">
@@ -220,7 +220,7 @@ export const DebateArea = () => {
         <div className="glass-panel rounded-[2rem] overflow-hidden">
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 p-5">
             <div className="flex-1">
-              <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest block mb-2">
+              <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest block mb-2">
                 Debate Topic
               </span>
               <input
@@ -272,7 +272,7 @@ export const DebateArea = () => {
               <button
                 onClick={handleStartDebate}
                 disabled={isDebating || !topic.trim()}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-jb-orange/15 border border-jb-orange/25 text-jb-orange text-[10px] font-black uppercase tracking-widest hover:bg-jb-orange/25 disabled:opacity-30 transition-all shadow-lg"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-jb-orange/15 border border-jb-orange/25 text-jb-orange text-[11px] font-black uppercase tracking-widest hover:bg-jb-orange/25 disabled:opacity-30 transition-all shadow-lg"
               >
                 {isDebating ? (
                   <><RefreshCw size={13} className="animate-spin" /> Simulating...</>
@@ -295,7 +295,7 @@ export const DebateArea = () => {
             >
               <AlertCircle size={16} className="shrink-0" />
               <div>
-                <span className="text-[9px] font-black uppercase tracking-widest block mb-0.5">Simulation Error</span>
+                <span className="text-[11px] font-black uppercase tracking-widest block mb-0.5">Simulation Error</span>
                 <span className="text-xs">{error}</span>
               </div>
             </motion.div>
@@ -325,7 +325,7 @@ export const DebateArea = () => {
               {/* Header */}
               <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-white/[0.04]">
                 <GitMerge size={15} className="text-jb-purple shrink-0" />
-                <span className="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border bg-jb-purple/10 border-jb-purple/25 text-jb-purple">
+                <span className="px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-widest border bg-jb-purple/10 border-jb-purple/25 text-jb-purple">
                   SYNTHESIS
                 </span>
                 <h3 className="font-black tracking-tight text-sm">
@@ -403,7 +403,7 @@ export const DebateArea = () => {
                 />
               ))}
             </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-700 text-center">
+            <p className="text-[11px] font-black uppercase tracking-[0.5em] text-slate-700 text-center">
               Enter a topic to ignite the dialectic
             </p>
           </motion.div>

@@ -93,7 +93,7 @@ export const ConversationBubble: React.FC<ConversationBubbleProps> = ({
         <div className="flex items-center gap-2">
           {!isUser && agentConfig ? (
             <span
-              className="text-[9px] font-black uppercase tracking-widest"
+              className="text-[11px] font-black uppercase tracking-widest"
               style={{
                 background: `linear-gradient(135deg, ${agentConfig.borderRgba}1) 0%, ${agentConfig.borderRgba}0.6) 100%)`,
                 WebkitBackgroundClip: 'text',
@@ -104,14 +104,14 @@ export const ConversationBubble: React.FC<ConversationBubbleProps> = ({
             </span>
           ) : (
             <span className={cn(
-              'text-[9px] font-black uppercase tracking-widest',
+              'text-[11px] font-black uppercase tracking-widest',
               isUser ? 'text-jb-accent' : 'text-slate-400',
             )}>
               {message.agentName}
             </span>
           )}
           {message.addressing && (
-            <span className="text-[8px] text-slate-600 font-medium">
+            <span className="text-[11px] text-slate-600 font-medium">
               responding to <span className="text-slate-400">{message.addressing}</span>
             </span>
           )}
@@ -136,7 +136,7 @@ export const ConversationBubble: React.FC<ConversationBubbleProps> = ({
         {/* Delegation badge */}
         {effectiveType === 'delegation' && message.addressing && (
           <div className="flex items-center gap-1.5 pt-1">
-            <span className="text-[8px] font-bold uppercase tracking-wider text-slate-500 bg-white/5 px-2 py-0.5 rounded-full">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-white/5 px-2 py-0.5 rounded-full">
               Handing off to {message.addressing}
             </span>
           </div>

@@ -72,7 +72,7 @@ export const WaterfallScore = ({ score, size = 120 }: WaterfallScoreProps) => {
           >
             {score}
           </motion.span>
-          <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">/ 100</span>
+          <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest">/ 100</span>
         </div>
       </div>
 
@@ -81,7 +81,7 @@ export const WaterfallScore = ({ score, size = 120 }: WaterfallScoreProps) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
-          className="text-[9px] font-black uppercase tracking-widest"
+          className="text-[11px] font-black uppercase tracking-widest"
           style={{ color }}
         >
           {label}

@@ -187,12 +187,12 @@ export const CustomSelect = ({
             {/* Options */}
             <div ref={listRef} className="max-h-[320px] overflow-y-auto scrollbar-thin p-1.5">
               {filtered.length === 0 ? (
-                <div className="px-4 py-3 text-[10px] text-slate-600 text-center">No matches</div>
+                <div className="px-4 py-3 text-[11px] text-slate-600 text-center">No matches</div>
               ) : (
                 Array.from(groups.entries()).map(([group, opts]) => (
                   <div key={group}>
                     {group && (
-                      <div className="px-3 pt-2.5 pb-1 text-[8px] font-black text-slate-600 uppercase tracking-widest">
+                      <div className="px-3 pt-2.5 pb-1 text-[11px] font-black text-slate-600 uppercase tracking-widest">
                         {group}
                       </div>
                     )}

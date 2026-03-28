@@ -57,7 +57,7 @@ export const TitleBar = () => {
           title="Command Center"
         >
            <Brain size={14} className={cn(isProcessing && "animate-pulse")} />
-           <span className="text-[9px] font-black uppercase tracking-[0.2em] hidden xl:inline">Command Center</span>
+           <span className="text-[11px] font-black uppercase tracking-[0.2em] hidden xl:inline">Command Center</span>
            {isProcessing && <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-jb-orange rounded-full animate-pulse" />}
         </button>
       </div>
@@ -78,7 +78,7 @@ export const TitleBar = () => {
               className="flex-1 bg-transparent border-none outline-none text-xs font-bold text-white placeholder:text-slate-600"
             />
                  <div className="flex items-center gap-2">
-                    <div className="px-1.5 py-0.5 rounded-md bg-black border border-white/5 text-[8px] font-black text-slate-500 uppercase tracking-widest">
+                    <div className="px-1.5 py-0.5 rounded-md bg-black border border-white/5 text-[11px] font-black text-slate-500 uppercase tracking-widest">
                        ⌘K
                     </div>
                  </div>

@@ -384,18 +384,18 @@ export const CodingArea = () => {
             <button
               type="button"
               onClick={bootWebContainer}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-orange-500/30 bg-orange-500/5 text-orange-400 text-[10px] font-bold hover:bg-orange-500/10 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-orange-500/30 bg-orange-500/5 text-orange-400 text-[11px] font-bold hover:bg-orange-500/10 transition-colors"
             >
               <Box size={12} aria-hidden="true" /> Sandbox
             </button>
           )}
           {bootStatus === 'booting' && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 text-orange-400/60 text-[10px] font-bold">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 text-orange-400/60 text-[11px] font-bold">
               <Loader2 size={12} className="animate-spin" aria-hidden="true" /> Booting…
             </div>
           )}
           {bootStatus === 'ready' && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/5 text-emerald-400 text-[10px] font-bold">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/5 text-emerald-400 text-[11px] font-bold">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
@@ -407,7 +407,7 @@ export const CodingArea = () => {
             <button
               type="button"
               onClick={() => { isBootingRef.current = false; bootWebContainer(); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/5 text-rose-400 text-[10px] font-bold hover:bg-rose-500/10 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/5 text-rose-400 text-[11px] font-bold hover:bg-rose-500/10 transition-colors"
             >
               <Box size={12} aria-hidden="true" /> Retry Sandbox
             </button>
@@ -466,11 +466,11 @@ export const CodingArea = () => {
           <div className="flex-1 min-h-0 relative">
             <div className="absolute inset-0 flex">
               <div className="flex-1 overflow-auto p-4 border-r border-white/[0.06]">
-                <div className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20 mb-2">Original</div>
+                <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/20 mb-2">Original</div>
                 <pre className="font-mono text-[13px] text-slate-400 whitespace-pre leading-[1.6]">{pendingDiff.original}</pre>
               </div>
               <div className="flex-1 overflow-auto p-4">
-                <div className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20 mb-2">Modified</div>
+                <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/20 mb-2">Modified</div>
                 <pre className="font-mono text-[13px] text-slate-300 whitespace-pre leading-[1.6]">{pendingDiff.modified}</pre>
               </div>
             </div>
@@ -532,7 +532,7 @@ export const CodingArea = () => {
         ) : (
           <div className="flex-1 min-h-0 flex flex-col items-center justify-center opacity-10 gap-4">
             <Cpu size={48} strokeWidth={1} aria-hidden="true" />
-            <span className="text-[10px] font-black uppercase tracking-[0.5em]">Open a file to begin</span>
+            <span className="text-[11px] font-black uppercase tracking-[0.5em]">Open a file to begin</span>
           </div>
         )}
 
@@ -550,7 +550,7 @@ export const CodingArea = () => {
             type="button"
             onClick={() => setTerminalVisible(true)}
             aria-label="Show terminal"
-            className="mx-4 mb-2 mt-1 flex items-center gap-2 px-3 py-1 rounded-lg border border-white/[0.04] text-white/20 hover:text-white/50 text-[10px] font-mono hover:bg-white/5 transition-colors shrink-0"
+            className="mx-4 mb-2 mt-1 flex items-center gap-2 px-3 py-1 rounded-lg border border-white/[0.04] text-white/20 hover:text-white/50 text-[11px] font-mono hover:bg-white/5 transition-colors shrink-0"
           >
             <span>▸ CONSOLE</span>
             {terminalLines.some((l) => l.startsWith('[ERROR]')) && (
@@ -573,7 +573,7 @@ export const CodingArea = () => {
             >
               <div className="h-8 bg-slate-100 flex items-center px-3 gap-2 shrink-0">
                 <Globe size={12} className="text-slate-400" aria-hidden="true" />
-                <span className="text-[10px] font-mono text-slate-500 flex-1 truncate">{iframeUrl}</span>
+                <span className="text-[11px] font-mono text-slate-500 flex-1 truncate">{iframeUrl}</span>
                 <button type="button" onClick={() => setShowPreview(false)} aria-label="Close preview">
                   <X size={14} className="text-slate-400 cursor-pointer" aria-hidden="true" />
                 </button>

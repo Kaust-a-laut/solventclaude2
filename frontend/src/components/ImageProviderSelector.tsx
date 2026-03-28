@@ -100,10 +100,10 @@ export const ImageProviderSelector: React.FC<ImageProviderSelectorProps> = ({ lo
           <ActiveIcon size={13} className={activeProvider.color} />
         </div>
         <div className="flex-1 text-left">
-          <span className="text-[9px] font-black text-white uppercase tracking-widest block leading-tight">
+          <span className="text-[11px] font-black text-white uppercase tracking-widest block leading-tight">
             {activeProvider.label}
           </span>
-          <span className="text-[10px] text-slate-400 leading-none">{activeProvider.desc}</span>
+          <span className="text-[11px] text-slate-400 leading-none">{activeProvider.desc}</span>
         </div>
 
         {/* Status badge */}
@@ -156,19 +156,19 @@ export const ImageProviderSelector: React.FC<ImageProviderSelectorProps> = ({ lo
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <span className="text-[10px] font-bold text-white block leading-tight truncate">{p.label}</span>
-                      <span className="text-[10px] text-slate-400 leading-none truncate block">{p.desc}</span>
+                      <span className="text-[11px] font-bold text-white block leading-tight truncate">{p.label}</span>
+                      <span className="text-[11px] text-slate-400 leading-none truncate block">{p.desc}</span>
                     </div>
 
                     {/* Badges */}
                     <div className="flex items-center gap-1 shrink-0">
                       {p.free && (
-                        <span className="px-1.5 py-0.5 rounded-full text-[7px] font-black uppercase bg-emerald-500/15 border border-emerald-500/25 text-emerald-400">
+                        <span className="px-1.5 py-0.5 rounded-full text-[11px] font-black uppercase bg-emerald-500/15 border border-emerald-500/25 text-emerald-400">
                           Free
                         </span>
                       )}
                       {!p.free && !keyOk && (
-                        <span className="px-1.5 py-0.5 rounded-full text-[7px] font-black uppercase bg-amber-500/15 border border-amber-500/25 text-amber-400">
+                        <span className="px-1.5 py-0.5 rounded-full text-[11px] font-black uppercase bg-amber-500/15 border border-amber-500/25 text-amber-400">
                           Key
                         </span>
                       )}
@@ -189,7 +189,7 @@ export const ImageProviderSelector: React.FC<ImageProviderSelectorProps> = ({ lo
 
             {/* Footer hint for paid providers */}
             <div className="px-3 pb-3">
-              <p className="text-[9px] text-slate-500 font-medium leading-relaxed">
+              <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
                 API keys for paid providers can be configured in Settings.
               </p>
             </div>

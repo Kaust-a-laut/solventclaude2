@@ -94,11 +94,11 @@ const MiniTerminal: React.FC<{ lines: string[] }> = ({ lines }) => {
   return (
     <div
       ref={ref}
-      className="flex-1 bg-black/40 rounded-lg border border-white/5 p-2 overflow-y-auto no-scrollbar font-mono text-[8px] leading-[1.6] min-h-0"
+      className="flex-1 bg-black/40 rounded-lg border border-white/5 p-2 overflow-y-auto no-scrollbar font-mono text-[11px] leading-[1.6] min-h-0"
     >
       {tail.length === 0 ? (
         <div className="h-full flex items-center justify-center opacity-20">
-          <span className="text-[8px] font-black uppercase">Terminal empty</span>
+          <span className="text-[11px] font-black uppercase">Terminal empty</span>
         </div>
       ) : (
         tail.map((line, i) => {
@@ -125,7 +125,7 @@ const TogglePill: React.FC<{
   <button
     onClick={onClick}
     className={cn(
-      'flex items-center gap-1 px-2 py-1 rounded-md text-[7px] font-black uppercase transition-all border',
+      'flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-black uppercase transition-all border',
       active
         ? 'bg-jb-accent/15 border-jb-accent/25 text-jb-accent'
         : 'bg-white/[0.02] border-white/5 text-slate-600 hover:text-white',
@@ -290,10 +290,10 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
         </div>
         <div className="space-y-1">
           <h3 className="text-[11px] font-black text-white uppercase tracking-widest">{label}</h3>
-          <p className="text-[8px] text-slate-500 font-bold uppercase tracking-tight line-clamp-1">{desc}</p>
+          <p className="text-[11px] text-slate-500 font-bold uppercase tracking-tight line-clamp-1">{desc}</p>
         </div>
       </div>
-      <div className="relative z-10 pt-4 flex items-center gap-2 text-[7px] font-black uppercase tracking-[0.3em] text-white/10 group-hover:text-white transition-all">
+      <div className="relative z-10 pt-4 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.3em] text-white/10 group-hover:text-white transition-all">
         Open <ChevronDown size={10} className="rotate-[-90deg]" />
       </div>
     </button>
@@ -311,9 +311,9 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
       >
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-jb-purple animate-pulse shadow-[0_0_10px_rgba(139,92,246,0.5)]" />
-          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/70">Solvent</span>
+          <span className="text-[11px] font-black uppercase tracking-[0.3em] text-white/70">Solvent</span>
           {activeMissionCount > 0 && (
-            <span className="px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 text-[7px] font-black">
+            <span className="px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 text-[11px] font-black">
               {activeMissionCount} active
             </span>
           )}
@@ -366,14 +366,14 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
               className="absolute top-3 left-3 right-3 z-[100] glass-panel rounded-xl border border-white/10 shadow-2xl p-3 flex flex-col gap-2 bg-[#0a0a0f]/95"
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] font-black uppercase text-white tracking-widest">Settings</span>
+                <span className="text-[11px] font-black uppercase text-white tracking-widest">Settings</span>
                 <button onClick={() => setShowSettings(false)}><X size={10} /></button>
               </div>
               <div className="space-y-1">
                 <button
                   onClick={() => setThinkingModeEnabled(!thinkingModeEnabled)}
                   className={cn(
-                    "w-full flex items-center justify-between p-2 rounded-lg text-[9px] font-black uppercase transition-all",
+                    "w-full flex items-center justify-between p-2 rounded-lg text-[11px] font-black uppercase transition-all",
                     thinkingModeEnabled ? "bg-jb-purple/20 text-jb-purple" : "bg-white/5 text-slate-500 hover:text-white"
                   )}
                 >
@@ -383,7 +383,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                 <button
                   onClick={() => setAuraMode(auraMode === 'off' ? 'organic' : 'off')}
                   className={cn(
-                    "w-full flex items-center justify-between p-2 rounded-lg text-[9px] font-black uppercase transition-all",
+                    "w-full flex items-center justify-between p-2 rounded-lg text-[11px] font-black uppercase transition-all",
                     auraMode !== 'off' ? "bg-jb-orange/20 text-jb-orange" : "bg-white/5 text-slate-500 hover:text-white"
                   )}
                 >
@@ -391,14 +391,14 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                   <div className={cn("w-2 h-2 rounded-full", auraMode !== 'off' ? "bg-jb-orange shadow-[0_0_8px_rgba(251,146,60,1)]" : "bg-slate-800")} />
                 </button>
                 <div className="pt-2 mt-2 border-t border-white/5 flex flex-col gap-1">
-                  <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest ml-1">AI Provider</span>
+                  <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest ml-1">AI Provider</span>
                   <div className="flex gap-1">
                     {['cloud', 'local', 'auto'].map(p => (
                       <button
                         key={p}
                         onClick={() => setGlobalProvider(p)}
                         className={cn(
-                          "flex-1 py-1.5 rounded-md text-[8px] font-black uppercase transition-all border",
+                          "flex-1 py-1.5 rounded-md text-[11px] font-black uppercase transition-all border",
                           globalProvider === p ? "bg-white text-black border-white" : "bg-black/40 text-slate-500 border-white/5 hover:border-white/20"
                         )}
                       >
@@ -438,12 +438,12 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                         <h3 className="text-[11px] font-black text-white uppercase tracking-widest">Overseer</h3>
                         {isThinking && <Loader2 size={9} className="animate-spin text-emerald-400" />}
                         {overseerDecisions.length > 0 && (
-                          <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[7px] font-black">
+                          <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[11px] font-black">
                             {overseerDecisions.length}
                           </span>
                         )}
                       </div>
-                      <p className="text-[9px] text-slate-500 font-bold leading-relaxed line-clamp-2">
+                      <p className="text-[11px] text-slate-500 font-bold leading-relaxed line-clamp-2">
                         {supervisorInsight || 'Watching your session — click to open'}
                       </p>
                     </div>
@@ -452,20 +452,20 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                     <button
                       onClick={() => triggerOverseer('manual_check')}
                       disabled={isThinking}
-                      className="px-2 py-1 rounded-md text-[7px] font-black uppercase bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all disabled:opacity-40"
+                      className="px-2 py-1 rounded-md text-[11px] font-black uppercase bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all disabled:opacity-40"
                     >
                       {isThinking ? '...' : 'Think'}
                     </button>
                     <button
                       onClick={() => triggerOverseer('nudge_me')}
                       disabled={isThinking}
-                      className="px-2 py-1 rounded-md text-[7px] font-black uppercase bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all disabled:opacity-40"
+                      className="px-2 py-1 rounded-md text-[11px] font-black uppercase bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all disabled:opacity-40"
                     >
                       Nudge
                     </button>
                   </div>
                 </div>
-                <div className="mt-3 flex items-center gap-2 text-[7px] font-black uppercase tracking-[0.3em] text-white/10 group-hover:text-emerald-400/40 transition-all">
+                <div className="mt-3 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.3em] text-white/10 group-hover:text-emerald-400/40 transition-all">
                   Open Overseer <ChevronDown size={10} className="rotate-[-90deg]" />
                 </div>
               </button>
@@ -496,7 +496,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                             <h3 className="text-[11px] font-black text-white uppercase tracking-widest">Pipeline</h3>
                             {pipelineComplete && reviewerScore != null && (
                               <span className={cn(
-                                'px-1.5 py-0.5 rounded-full text-[8px] font-black tabular-nums',
+                                'px-1.5 py-0.5 rounded-full text-[11px] font-black tabular-nums',
                                 reviewerScore >= 90 ? 'bg-emerald-500/20 text-emerald-400' :
                                 reviewerScore >= 80 ? 'bg-sky-500/20 text-sky-400' :
                                 reviewerScore >= 70 ? 'bg-amber-500/20 text-amber-400' :
@@ -509,7 +509,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                               <Loader2 size={9} className="animate-spin text-jb-purple" />
                             )}
                           </div>
-                          <p className="text-[9px] text-slate-500 font-bold leading-relaxed line-clamp-1">
+                          <p className="text-[11px] text-slate-500 font-bold leading-relaxed line-clamp-1">
                             {pipelineComplete
                               ? waterfall.prompt.slice(0, 60) + (waterfall.prompt.length > 60 ? '…' : '')
                               : currentStage
@@ -537,7 +537,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                           </div>
                         </div>
                       </div>
-                      <div className="mt-3 flex items-center gap-2 text-[7px] font-black uppercase tracking-[0.3em] text-white/10 group-hover:text-jb-purple/40 transition-all">
+                      <div className="mt-3 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.3em] text-white/10 group-hover:text-jb-purple/40 transition-all">
                         {pipelineComplete ? 'View Results' : 'Monitor Pipeline'} <ChevronDown size={10} className="rotate-[-90deg]" />
                       </div>
                     </button>
@@ -556,7 +556,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
 
               {/* Activity Feed */}
               <div className="flex-1 bg-black/40 rounded-xl border border-white/5 p-3 flex flex-col overflow-hidden min-h-0">
-                <div className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                <div className="text-[11px] font-black text-slate-600 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                   <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
                   <span>Recent Activity</span>
                 </div>
@@ -564,11 +564,11 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                   {activities.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center opacity-20">
                       <Database size={24} strokeWidth={1} />
-                      <span className="text-[8px] font-black uppercase mt-2">Buffer Empty</span>
+                      <span className="text-[11px] font-black uppercase mt-2">Buffer Empty</span>
                     </div>
                   ) : (
                     activities.slice(0, 15).map((act: any, i: number) => (
-                      <div key={i} className="text-[9px] leading-tight flex gap-2">
+                      <div key={i} className="text-[11px] leading-tight flex gap-2">
                         <span className={cn(
                           "font-black uppercase text-[6px] px-1 py-0.5 rounded-sm shrink-0 h-fit mt-0.5",
                           act.type === 'user_message' ? "bg-blue-500/20 text-blue-400" :
@@ -604,7 +604,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
               className="flex-1 flex flex-col gap-2 p-3"
             >
               <div className="flex items-center justify-between px-1">
-                <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Your Notes</span>
+                <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Your Notes</span>
                 <button
                   onClick={() => { setNotepadContent(''); window.electron?.saveNotepad(''); }}
                   className="p-1 hover:text-red-400 transition-colors"
@@ -615,7 +615,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
               <textarea
                 value={notepadContent}
                 onChange={(e) => { setNotepadContent(e.target.value); window.electron?.saveNotepad(e.target.value); }}
-                className="flex-1 bg-black/20 border border-white/5 rounded-xl p-3 text-[10px] font-mono leading-relaxed outline-none resize-none text-slate-300 placeholder:text-slate-800"
+                className="flex-1 bg-black/20 border border-white/5 rounded-xl p-3 text-[11px] font-mono leading-relaxed outline-none resize-none text-slate-300 placeholder:text-slate-800"
                 placeholder="Type your notes here..."
                 spellCheck={false}
               />
@@ -634,7 +634,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Shield size={12} className="text-emerald-400" />
-                    <span className="text-[9px] font-black uppercase text-emerald-400 tracking-widest">Overseer</span>
+                    <span className="text-[11px] font-black uppercase text-emerald-400 tracking-widest">Overseer</span>
                     {isThinking && <Loader2 size={9} className="animate-spin text-emerald-400" />}
                   </div>
                   <div className="flex items-center gap-1">
@@ -642,7 +642,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                       onClick={() => triggerOverseer('manual_check')}
                       disabled={isThinking}
                       title="Think Now"
-                      className="px-2 py-0.5 rounded-md text-[8px] font-black uppercase bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all disabled:opacity-40"
+                      className="px-2 py-0.5 rounded-md text-[11px] font-black uppercase bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all disabled:opacity-40"
                     >
                       {isThinking ? '...' : 'Think'}
                     </button>
@@ -650,7 +650,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                       onClick={() => triggerOverseer('nudge_me')}
                       disabled={isThinking}
                       title="Ask for guidance"
-                      className="px-2 py-0.5 rounded-md text-[8px] font-black uppercase bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all disabled:opacity-40"
+                      className="px-2 py-0.5 rounded-md text-[11px] font-black uppercase bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all disabled:opacity-40"
                     >
                       Nudge
                     </button>
@@ -663,14 +663,14 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                     </button>
                   </div>
                 </div>
-                <p className="text-[10px] text-slate-300 leading-relaxed">
+                <p className="text-[11px] text-slate-300 leading-relaxed">
                   {supervisorInsight || "Watching your session. Hit Think to get a proactive insight, or Nudge for guidance."}
                 </p>
               </div>
 
               {/* Decisions Feed */}
               <div className="flex-[1] flex flex-col overflow-hidden min-h-0">
-                <div className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                <div className="text-[11px] font-black text-slate-600 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                   <div className="w-1 h-1 rounded-full bg-emerald-500/50 animate-pulse" />
                   <span>Decision Feed</span>
                   <span className="text-slate-700">({overseerDecisions.length})</span>
@@ -679,7 +679,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                 {overseerDecisions.length === 0 ? (
                   <div className="flex-1 flex flex-col items-center justify-center opacity-20 gap-2">
                     <Shield size={28} strokeWidth={1} />
-                    <span className="text-[8px] font-black uppercase">No decisions yet</span>
+                    <span className="text-[11px] font-black uppercase">No decisions yet</span>
                   </div>
                 ) : (
                   <div className="flex-1 overflow-y-auto space-y-2 no-scrollbar">
@@ -688,21 +688,21 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                         <div className="flex items-start justify-between gap-2">
                           {d.intervention?.needed && (
                             <span className={cn(
-                              "text-[7px] font-black uppercase px-1.5 py-0.5 rounded border flex-shrink-0",
+                              "text-[11px] font-black uppercase px-1.5 py-0.5 rounded border flex-shrink-0",
                               interventionColor[d.intervention.type] || interventionColor.suggestion
                             )}>
                               {d.intervention.type}
                             </span>
                           )}
-                          <span className="text-[7px] text-slate-700 font-mono ml-auto flex-shrink-0">
+                          <span className="text-[11px] text-slate-700 font-mono ml-auto flex-shrink-0">
                             {formatTime(d.timestamp)}
                           </span>
                         </div>
-                        <p className="text-[9px] text-slate-300 leading-relaxed line-clamp-4">
+                        <p className="text-[11px] text-slate-300 leading-relaxed line-clamp-4">
                           {d.decision}
                         </p>
                         {d.intervention?.message && d.intervention.message !== d.decision && (
-                          <p className="text-[8px] text-slate-500 leading-relaxed border-t border-white/5 pt-2">
+                          <p className="text-[11px] text-slate-500 leading-relaxed border-t border-white/5 pt-2">
                             {d.intervention.message}
                           </p>
                         )}
@@ -731,21 +731,21 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
               {/* Status bar */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Code2 size={12} className="text-jb-accent" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-jb-accent">IDE Control</span>
+                <span className="text-[11px] font-black uppercase tracking-widest text-jb-accent">IDE Control</span>
                 <div className="flex-1" />
                 {pendingDiff && (
-                  <span className="px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[7px] font-black animate-pulse">
+                  <span className="px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[11px] font-black animate-pulse">
                     Diff pending
                   </span>
                 )}
                 {agentMessages.some(m => m.isStreaming) && (
-                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-jb-accent/20 text-jb-accent text-[7px] font-black">
+                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-jb-accent/20 text-jb-accent text-[11px] font-black">
                     <Loader2 size={8} className="animate-spin" /> Agent active
                   </span>
                 )}
                 <button
                   onClick={() => launchInMainApp('coding')}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[7px] font-black uppercase bg-jb-accent/10 text-jb-accent hover:bg-jb-accent/20 transition-all"
+                  className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-black uppercase bg-jb-accent/10 text-jb-accent hover:bg-jb-accent/20 transition-all"
                   title="Open full IDE"
                 >
                   Open IDE <ArrowRight size={8} />
@@ -756,14 +756,14 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
               {activeFile && (
                 <div className="flex items-center gap-1.5 px-2 py-1.5 bg-black/30 rounded-lg border border-white/5 flex-shrink-0">
                   <FileText size={10} className="text-jb-accent/60 shrink-0" />
-                  <span className="text-[9px] font-mono text-slate-400 truncate">{activeFile}</span>
+                  <span className="text-[11px] font-mono text-slate-400 truncate">{activeFile}</span>
                 </div>
               )}
 
               {/* Open files list */}
               {openFiles.length > 0 && (
                 <div className="flex-shrink-0 space-y-1">
-                  <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest ml-1">Open Files</span>
+                  <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest ml-1">Open Files</span>
                   <div className="flex flex-wrap gap-1">
                     {openFiles.map((f) => {
                       const name = f.path.split('/').pop() || f.path;
@@ -772,7 +772,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                         <span
                           key={f.path}
                           className={cn(
-                            'px-2 py-0.5 rounded-md text-[8px] font-mono border transition-all',
+                            'px-2 py-0.5 rounded-md text-[11px] font-mono border transition-all',
                             isActive
                               ? 'bg-jb-accent/15 border-jb-accent/30 text-jb-accent'
                               : 'bg-black/20 border-white/5 text-slate-500',
@@ -792,10 +792,10 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                 <div className="flex-shrink-0 bg-amber-500/[0.04] border border-amber-500/15 rounded-xl p-3 space-y-2">
                   <div className="flex items-center gap-2">
                     <Diff size={12} className="text-amber-400" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-amber-400">Pending Diff</span>
+                    <span className="text-[11px] font-black uppercase tracking-widest text-amber-400">Pending Diff</span>
                   </div>
-                  <p className="text-[9px] font-mono text-slate-400 truncate">{pendingDiff.filePath}</p>
-                  <p className="text-[8px] text-slate-500 line-clamp-2">{pendingDiff.description}</p>
+                  <p className="text-[11px] font-mono text-slate-400 truncate">{pendingDiff.filePath}</p>
+                  <p className="text-[11px] text-slate-500 line-clamp-2">{pendingDiff.description}</p>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => {
@@ -807,13 +807,13 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                         useAppStore.getState().setOpenFiles(updated);
                         clearPendingDiff();
                       }}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[8px] font-black uppercase bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-all border border-emerald-500/20"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-black uppercase bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-all border border-emerald-500/20"
                     >
                       <Check size={9} /> Apply
                     </button>
                     <button
                       onClick={clearPendingDiff}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[8px] font-black uppercase bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-all border border-rose-500/15"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-black uppercase bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-all border border-rose-500/15"
                     >
                       <XCircle size={9} /> Reject
                     </button>
@@ -823,14 +823,14 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
 
               {/* Agent activity */}
               <div className="flex-shrink-0 max-h-[140px] overflow-hidden">
-                <div className="text-[7px] font-black text-slate-600 uppercase tracking-widest mb-1.5 flex items-center gap-1.5 ml-1">
+                <div className="text-[11px] font-black text-slate-600 uppercase tracking-widest mb-1.5 flex items-center gap-1.5 ml-1">
                   <MessageSquare size={8} />
                   <span>Agent Activity</span>
                   <span className="text-slate-700">({agentMessages.length})</span>
                 </div>
                 {agentMessages.length === 0 ? (
                   <div className="flex items-center justify-center py-3 opacity-20">
-                    <span className="text-[8px] font-black uppercase">No agent activity</span>
+                    <span className="text-[11px] font-black uppercase">No agent activity</span>
                   </div>
                 ) : (
                   <div className="space-y-1.5 overflow-y-auto max-h-[110px] no-scrollbar">
@@ -838,7 +838,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                       <div
                         key={msg.id}
                         className={cn(
-                          'rounded-lg px-2.5 py-1.5 border text-[9px]',
+                          'rounded-lg px-2.5 py-1.5 border text-[11px]',
                           msg.role === 'user'
                             ? 'bg-jb-accent/[0.05] border-jb-accent/15 text-slate-400'
                             : 'bg-white/[0.02] border-white/5 text-slate-400',
@@ -846,7 +846,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                       >
                         <div className="flex items-center gap-1.5 mb-0.5">
                           <span className={cn(
-                            'text-[7px] font-black uppercase tracking-wider',
+                            'text-[11px] font-black uppercase tracking-wider',
                             msg.role === 'user' ? 'text-jb-accent' : 'text-emerald-400',
                           )}>
                             {msg.role === 'user' ? 'You' : 'Agent'}
@@ -875,7 +875,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                                   <span
                                     key={e.callId}
                                     className={cn(
-                                      'flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[7px] font-mono border',
+                                      'flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-mono border',
                                       hasError ? 'bg-rose-500/10 border-rose-500/15 text-rose-400' :
                                       hasResult ? 'bg-emerald-500/10 border-emerald-500/15 text-emerald-400' :
                                       'bg-white/5 border-white/10 text-slate-500',
@@ -898,7 +898,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
 
               {/* Mini terminal */}
               <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-                <div className="text-[7px] font-black text-slate-600 uppercase tracking-widest mb-1.5 flex items-center gap-1.5 ml-1">
+                <div className="text-[11px] font-black text-slate-600 uppercase tracking-widest mb-1.5 flex items-center gap-1.5 ml-1">
                   <TerminalIcon size={8} />
                   <span>Terminal</span>
                   <span className="text-slate-700">({terminalLines.length})</span>
@@ -915,7 +915,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
 
               {/* Quick actions */}
               <div className="flex items-center gap-1.5 flex-shrink-0 pt-1 border-t border-white/5">
-                <span className="text-[7px] font-black text-slate-700 uppercase tracking-wider mr-1">Panels:</span>
+                <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider mr-1">Panels:</span>
                 <TogglePill
                   icon={FolderOpen}
                   label="Tree"
@@ -951,7 +951,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                   <div className={cn('rounded-xl p-3 space-y-3 flex-shrink-0 border', tmpl.cardCls)}>
                     <div className="flex items-center gap-2">
                       <Users size={12} className={tmpl.iconCls} />
-                      <span className={cn('text-[9px] font-black uppercase tracking-widest', tmpl.headerCls)}>
+                      <span className={cn('text-[11px] font-black uppercase tracking-widest', tmpl.headerCls)}>
                         Launch Mission
                       </span>
                     </div>
@@ -960,7 +960,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                       onChange={(e) => setMissionGoal(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) launchMission(); }}
                       placeholder="Define the mission goal..."
-                      className="w-full bg-black/30 border border-white/5 rounded-lg px-3 py-2 text-[10px] font-mono outline-none resize-none text-slate-300 placeholder:text-slate-700 h-16"
+                      className="w-full bg-black/30 border border-white/5 rounded-lg px-3 py-2 text-[11px] font-mono outline-none resize-none text-slate-300 placeholder:text-slate-700 h-16"
                     />
                     <div className="flex items-center gap-2">
                       <div className="flex gap-1 flex-1">
@@ -969,7 +969,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                             key={t.id}
                             onClick={() => setMissionTemplate(t.id)}
                             className={cn(
-                              'px-2 py-1 rounded-full text-[8px] font-black uppercase border transition-all',
+                              'px-2 py-1 rounded-full text-[11px] font-black uppercase border transition-all',
                               missionTemplate === t.id ? t.activeCls : 'bg-white/[0.02] border-white/5 text-slate-600 hover:text-white',
                             )}
                           >
@@ -981,7 +981,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                         onClick={launchMission}
                         disabled={!missionGoal.trim() || launchingMission}
                         className={cn(
-                          'flex items-center gap-1.5 px-3 py-1.5 disabled:opacity-50 text-white text-[9px] font-black rounded-full transition-all',
+                          'flex items-center gap-1.5 px-3 py-1.5 disabled:opacity-50 text-white text-[11px] font-black rounded-full transition-all',
                           tmpl.id === 'consultation' ? 'bg-jb-purple hover:bg-jb-purple/80' : 'bg-jb-accent hover:bg-jb-accent/80',
                         )}
                       >
@@ -995,7 +995,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
 
               {/* Active Missions List */}
               <div className="flex-1 flex flex-col overflow-hidden">
-                <div className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                <div className="text-[11px] font-black text-slate-600 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                   <div className={cn("w-1 h-1 rounded-full", activeMissionCount > 0 ? "bg-indigo-500 animate-pulse" : "bg-slate-700")} />
                   <span>Active Missions</span>
                   <span className="text-slate-700">({activeMissions.length})</span>
@@ -1004,7 +1004,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                 {activeMissions.length === 0 ? (
                   <div className="flex-1 flex flex-col items-center justify-center opacity-20 gap-2">
                     <Users size={28} strokeWidth={1} />
-                    <span className="text-[8px] font-black uppercase">No missions yet</span>
+                    <span className="text-[11px] font-black uppercase">No missions yet</span>
                   </div>
                 ) : (
                   <div className="flex-1 overflow-y-auto space-y-2 no-scrollbar">
@@ -1016,10 +1016,10 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                       >
                         <div className="p-3 space-y-2">
                           <div className="flex items-center justify-between gap-2">
-                            <p className="text-[9px] text-slate-300 font-medium line-clamp-1 flex-1">{m.goal}</p>
+                            <p className="text-[11px] text-slate-300 font-medium line-clamp-1 flex-1">{m.goal}</p>
                             <div className="flex items-center gap-1.5 flex-shrink-0">
                               <span className={cn(
-                                "text-[7px] font-black uppercase px-1.5 py-0.5 rounded",
+                                "text-[11px] font-black uppercase px-1.5 py-0.5 rounded",
                                 m.status === 'complete' ? "bg-emerald-500/20 text-emerald-400" :
                                 m.status === 'failed' ? "bg-rose-500/20 text-rose-400" :
                                 m.status === 'active' ? "bg-indigo-500/20 text-indigo-400" :
@@ -1036,10 +1036,10 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                           {(m.status === 'queued' || m.status === 'active') && (
                             <div className="space-y-1.5">
                               <div className="flex justify-between">
-                                <span className="text-[8px] font-black uppercase tracking-wider text-slate-600">
+                                <span className="text-[11px] font-black uppercase tracking-wider text-slate-600">
                                   {phaseLabel(m.progress, m.status)}
                                 </span>
-                                <span className="text-[7px] text-slate-700 font-mono">{m.progress}%</span>
+                                <span className="text-[11px] text-slate-700 font-mono">{m.progress}%</span>
                               </div>
                               <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                                 <motion.div
@@ -1058,7 +1058,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                           <div className="border-t border-white/5 p-3 space-y-3">
                             {m.result.expertOpinions && (
                               <div className="space-y-2">
-                                <span className="text-[7px] font-black uppercase tracking-widest text-slate-600 block">
+                                <span className="text-[11px] font-black uppercase tracking-widest text-slate-600 block">
                                   Expert Analysis
                                 </span>
                                 {m.result.expertOpinions.map((op: any, i: number) => {
@@ -1066,10 +1066,10 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                                   const agentText    = ['text-jb-purple',   'text-jb-accent',   'text-jb-orange'];
                                   return (
                                     <div key={i} className={cn('glass-card p-2.5 rounded-xl border-l-2', agentBorders[i % 3])}>
-                                      <span className={cn('text-[7px] font-black uppercase tracking-widest block mb-0.5', agentText[i % 3])}>
+                                      <span className={cn('text-[11px] font-black uppercase tracking-widest block mb-0.5', agentText[i % 3])}>
                                         {op.role}
                                       </span>
-                                      <p className="text-[8px] text-slate-400 leading-relaxed">{op.opinion}</p>
+                                      <p className="text-[11px] text-slate-400 leading-relaxed">{op.opinion}</p>
                                     </div>
                                   );
                                 })}
@@ -1077,10 +1077,10 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                             )}
                             {m.result.synthesis && (
                               <div className="glass-panel rounded-xl p-3">
-                                <h4 className="text-[8px] font-black mb-1.5">
+                                <h4 className="text-[11px] font-black mb-1.5">
                                   <span className="text-vibrant">Synthesis</span>
                                 </h4>
-                                <p className="text-[8px] text-slate-400 leading-relaxed">{m.result.synthesis}</p>
+                                <p className="text-[11px] text-slate-400 leading-relaxed">{m.result.synthesis}</p>
                               </div>
                             )}
                           </div>
@@ -1088,7 +1088,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
 
                         {expandedMission === m.jobId && m.error && (
                           <div className="border-t border-white/5 p-3">
-                            <p className="text-[8px] text-rose-400">{m.error}</p>
+                            <p className="text-[11px] text-rose-400">{m.error}</p>
                           </div>
                         )}
                       </div>

@@ -142,7 +142,7 @@ export const MissionDashboard: React.FC = () => {
           <div className="bg-black/95 backdrop-blur-2xl border border-white/10 rounded-2xl p-4">
             <div className="flex items-center gap-3 text-slate-500">
               <Activity size={18} className="animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-widest">No Active Mission</span>
+              <span className="text-[11px] font-black uppercase tracking-widest">No Active Mission</span>
             </div>
           </div>
         </div>
@@ -159,9 +159,9 @@ export const MissionDashboard: React.FC = () => {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Activity size={16} className="text-jb-accent" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-white">Mission Control</span>
+              <span className="text-[11px] font-black uppercase tracking-widest text-white">Mission Control</span>
             </div>
-            <span className={`text-[8px] font-mono px-2 py-0.5 rounded ${
+            <span className={`text-[11px] font-mono px-2 py-0.5 rounded ${
               activeMission.status === 'active' ? 'bg-emerald-500/20 text-emerald-400' :
               activeMission.status === 'failed' ? 'bg-rose-500/20 text-rose-400' :
               'bg-slate-500/20 text-slate-400'
@@ -179,15 +179,15 @@ export const MissionDashboard: React.FC = () => {
             />
           </div>
           <div className="flex items-center justify-between mt-1.5">
-            <span className="text-[8px] font-mono text-slate-500">{activeMission.progress || 0}% complete</span>
-            <span className="text-[8px] font-mono text-slate-500">{formatTime(elapsedTime)}</span>
+            <span className="text-[11px] font-mono text-slate-500">{activeMission.progress || 0}% complete</span>
+            <span className="text-[11px] font-mono text-slate-500">{formatTime(elapsedTime)}</span>
           </div>
         </div>
 
         {/* Current Agent */}
         {activeMission.currentAgent && (
           <div className="p-4 border-b border-white/5">
-            <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">
+            <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">
               <Cpu size={10} />
               Current Agent
             </div>
@@ -196,11 +196,11 @@ export const MissionDashboard: React.FC = () => {
                 {getPhaseIcon(activeMission.phase)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-bold text-white truncate">{activeMission.currentAgent.name}</p>
-                <p className="text-[8px] text-slate-500">{activeMission.currentAgent.role}</p>
+                <p className="text-[11px] font-bold text-white truncate">{activeMission.currentAgent.name}</p>
+                <p className="text-[11px] text-slate-500">{activeMission.currentAgent.role}</p>
               </div>
               <div className="text-right">
-                <p className="text-[8px] font-mono text-slate-500">Round {activeMission.roundNumber || 1}/{activeMission.totalRounds || '?'}</p>
+                <p className="text-[11px] font-mono text-slate-500">Round {activeMission.roundNumber || 1}/{activeMission.totalRounds || '?'}</p>
               </div>
             </div>
           </div>
@@ -209,11 +209,11 @@ export const MissionDashboard: React.FC = () => {
         {/* Consensus Meter */}
         <div className="p-4 border-b border-white/5">
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-500">
+            <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-500">
               <TrendingUp size={10} />
               Consensus
             </div>
-            <span className={`text-[10px] font-bold ${getConsensusColor(activeMission.progress || 0)}`}>
+            <span className={`text-[11px] font-bold ${getConsensusColor(activeMission.progress || 0)}`}>
               {getConsensusLabel(activeMission.progress || 0)}
             </span>
           </div>
@@ -244,7 +244,7 @@ export const MissionDashboard: React.FC = () => {
         {/* Agent Activity Timeline */}
         {activeMission.agentContributions && activeMission.agentContributions.length > 0 && (
           <div className="p-4 border-b border-white/5">
-            <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-500 mb-3">
+            <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-500 mb-3">
               <Users size={10} />
               Agent Activity
             </div>
@@ -254,15 +254,15 @@ export const MissionDashboard: React.FC = () => {
                   key={agent.agent}
                   className="flex items-center gap-2 p-2 bg-white/5 rounded-lg"
                 >
-                  <div className={`w-6 h-6 rounded border flex items-center justify-center text-[8px] font-bold ${getAgentStatusColor(agent.status)}`}>
+                  <div className={`w-6 h-6 rounded border flex items-center justify-center text-[11px] font-bold ${getAgentStatusColor(agent.status)}`}>
                     {i + 1}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[9px] font-bold text-white truncate">{agent.agent}</p>
-                    <p className="text-[7px] text-slate-500">{agent.messageCount} messages</p>
+                    <p className="text-[11px] font-bold text-white truncate">{agent.agent}</p>
+                    <p className="text-[11px] text-slate-500">{agent.messageCount} messages</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[8px] font-mono text-slate-400">{formatNumber(agent.tokenCount)} tokens</p>
+                    <p className="text-[11px] font-mono text-slate-400">{formatNumber(agent.tokenCount)} tokens</p>
                   </div>
                 </div>
               ))}
@@ -273,18 +273,18 @@ export const MissionDashboard: React.FC = () => {
         {/* Resource Usage */}
         {activeMission.tokensUsed && (
           <div className="p-4">
-            <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-500 mb-3">
+            <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-500 mb-3">
               <Zap size={10} />
               Resources
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="p-2 bg-white/5 rounded-lg">
-                <p className="text-[7px] text-slate-500 uppercase">Tokens In</p>
-                <p className="text-[10px] font-mono text-white">{formatNumber(activeMission.tokensUsed.in || 0)}</p>
+                <p className="text-[11px] text-slate-500 uppercase">Tokens In</p>
+                <p className="text-[11px] font-mono text-white">{formatNumber(activeMission.tokensUsed.in || 0)}</p>
               </div>
               <div className="p-2 bg-white/5 rounded-lg">
-                <p className="text-[7px] text-slate-500 uppercase">Tokens Out</p>
-                <p className="text-[10px] font-mono text-white">{formatNumber(activeMission.tokensUsed.out || 0)}</p>
+                <p className="text-[11px] text-slate-500 uppercase">Tokens Out</p>
+                <p className="text-[11px] font-mono text-white">{formatNumber(activeMission.tokensUsed.out || 0)}</p>
               </div>
             </div>
           </div>

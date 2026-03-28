@@ -109,7 +109,7 @@ export const ImportFileButton: React.FC<ImportFileButtonProps> = ({ onImported }
             <button
               type="button"
               onClick={() => setError(null)}
-              className="ml-2 text-[9px] text-white/30 hover:text-white/60"
+              className="ml-2 text-[11px] text-white/30 hover:text-white/60"
               aria-label="Dismiss error"
             >
               ✕

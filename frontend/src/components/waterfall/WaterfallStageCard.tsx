@@ -123,21 +123,21 @@ const GateContent = ({ data }: { data: any }) => {
       className="mt-4 p-4 rounded-2xl bg-amber-500/[0.04] border border-amber-400/20 space-y-3"
     >
       <div className="flex items-center justify-between">
-        <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest">Resource Gate</span>
-        <span className={cn('px-2 py-0.5 rounded-full text-[8px] font-black uppercase border', complexityColors[complexity] ?? complexityColors.medium)}>
+        <span className="text-[11px] font-black text-amber-400 uppercase tracking-widest">Resource Gate</span>
+        <span className={cn('px-2 py-0.5 rounded-full text-[11px] font-black uppercase border', complexityColors[complexity] ?? complexityColors.medium)}>
           {complexity}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-3">
         {estimate.estimatedTokens && (
           <div>
-            <div className="text-[8px] text-slate-600 uppercase font-black mb-0.5">Est. Tokens</div>
+            <div className="text-[11px] text-slate-600 uppercase font-black mb-0.5">Est. Tokens</div>
             <div className="text-[13px] font-black text-white font-mono">{estimate.estimatedTokens.toLocaleString()}</div>
           </div>
         )}
         {estimate.estimatedCost && (
           <div>
-            <div className="text-[8px] text-slate-600 uppercase font-black mb-0.5">Est. Cost</div>
+            <div className="text-[11px] text-slate-600 uppercase font-black mb-0.5">Est. Cost</div>
             <div className="text-[13px] font-black text-white font-mono">${Number(estimate.estimatedCost).toFixed(4)}</div>
           </div>
         )}
@@ -165,7 +165,7 @@ const StageOutput = ({ stageKey, data, textColor }: { stageKey: StageKey; data: 
         )}
         {data.crystallizable_insight && (
           <div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/15 text-xs text-emerald-300/80 leading-relaxed">
-            <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest block mb-1">Crystallized Insight</span>
+            <span className="text-[11px] font-black text-emerald-400 uppercase tracking-widest block mb-1">Crystallized Insight</span>
             {data.crystallizable_insight}
           </div>
         )}
@@ -205,13 +205,13 @@ const StageOutput = ({ stageKey, data, textColor }: { stageKey: StageKey; data: 
         {data.files?.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-2">
             {data.files.map((f: string, i: number) => (
-              <span key={i} className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-[9px] font-mono text-slate-400">{f}</span>
+              <span key={i} className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-mono text-slate-400">{f}</span>
             ))}
           </div>
         )}
         <div className="bg-black/60 border border-white/5 rounded-xl overflow-hidden">
           <div className="px-4 py-1.5 border-b border-white/5 bg-white/[0.02]">
-            <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Generated Code</span>
+            <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Generated Code</span>
           </div>
           <pre className="p-4 font-mono text-xs text-slate-300 max-h-48 overflow-y-auto scrollbar-thin leading-relaxed">
             {data.code}
@@ -316,17 +316,17 @@ export const WaterfallStageCard = ({
             {/* Labels */}
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white">
+                <span className="text-[11px] font-black uppercase tracking-[0.3em] text-white">
                   {config.displayName}
                 </span>
                 {config.key === 'executor' && retryCount > 0 && (
-                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-jb-orange/15 border border-jb-orange/30 text-jb-orange text-[8px] font-black uppercase">
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-jb-orange/15 border border-jb-orange/30 text-jb-orange text-[11px] font-black uppercase">
                     <RefreshCw size={8} />
                     Attempt {retryCount + 1}
                   </span>
                 )}
               </div>
-              <span className="text-[9px] text-slate-600 font-mono uppercase tracking-widest">
+              <span className="text-[11px] text-slate-600 font-mono uppercase tracking-widest">
                 {status === 'idle' && config.description}
                 {status === 'processing' && 'Processing...'}
                 {status === 'completed' && `Completed${timing ? ` · ${(timing / 1000).toFixed(1)}s` : ''}`}
@@ -371,7 +371,7 @@ export const WaterfallStageCard = ({
                 />
               ))}
               {data?.message && (
-                <span className="text-[10px] text-slate-600 font-mono ml-1 animate-pulse">
+                <span className="text-[11px] text-slate-600 font-mono ml-1 animate-pulse">
                   {data.message}
                 </span>
               )}

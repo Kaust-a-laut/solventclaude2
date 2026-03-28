@@ -78,7 +78,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         
         {!isUser && (
            <div className={cn(
-              "text-[7px] font-black uppercase tracking-[0.15em] px-1.5 py-0.5 rounded-full border flex items-center gap-1 backdrop-blur-md",
+              "text-[11px] font-black uppercase tracking-[0.15em] px-1.5 py-0.5 rounded-full border flex items-center gap-1 backdrop-blur-md",
               isLocal 
                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" 
                  : "bg-jb-accent/10 text-jb-accent border-jb-accent/20"
@@ -95,7 +95,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         isUser && "text-right"
       )}>
         <div className={cn(
-           "flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5",
+           "flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-500 mb-0.5",
            isUser && "justify-end"
         )}>
           <span className={cn("transition-colors", isUser ? "text-jb-accent" : "text-slate-300 group-hover:text-white")}>
@@ -110,7 +110,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
               <button 
                  onClick={() => setShowThinking(!showThinking)}
                  className={cn(
-                    "flex items-center gap-2.5 px-3 py-1.5 rounded-full transition-all duration-300 text-[10px] font-bold uppercase tracking-widest border",
+                    "flex items-center gap-2.5 px-3 py-1.5 rounded-full transition-all duration-300 text-[11px] font-bold uppercase tracking-widest border",
                     showThinking 
                       ? "bg-jb-purple/10 border-jb-purple/30 text-jb-purple" 
                       : "bg-white/5 border-white/5 text-slate-500 hover:text-slate-300 hover:bg-white/10"
@@ -131,7 +131,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                     >
                        <div className={cn(
                          "font-mono text-slate-400 leading-relaxed whitespace-pre-wrap border-l-2 border-jb-purple/30 pl-4 py-1 my-2 italic",
-                         compact ? "text-[10px]" : "text-[11.5px]"
+                         compact ? "text-[11px]" : "text-[11.5px]"
                        )}>
                           {thinkingContent}
                        </div>
@@ -187,23 +187,23 @@ export const MessageItem: React.FC<MessageItemProps> = ({
            {/* Context Trace (Provenance) HUD */}
            {!isUser && message.provenance && (
               <div className="mt-6 flex flex-wrap gap-2 pt-4 border-t border-white/5 opacity-60 hover:opacity-100 transition-opacity duration-500">
-                 <div className="text-[8px] font-black uppercase tracking-widest text-slate-500 w-full mb-1">
+                 <div className="text-[11px] font-black uppercase tracking-widest text-slate-500 w-full mb-1">
                     Context Trace Telemetry
                  </div>
                  
                  {/* Workspace Badge & HUD */}
                  {message.provenance.counts.workspace > 0 && (
                     <div className="group/hud relative">
-                       <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/10 text-slate-400 text-[9px] font-bold cursor-help">
+                       <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/10 text-slate-400 text-[11px] font-bold cursor-help">
                           <Shield size={10} />
                           <span>{message.provenance.counts.workspace} WORKSPACE</span>
                        </div>
                        <div className="absolute bottom-full left-0 mb-2 w-64 hidden group-hover/hud:block z-50 animate-in fade-in slide-in-from-bottom-2">
                           <div className="bg-black/90 border border-white/10 rounded-lg p-3 backdrop-blur-xl shadow-2xl">
-                             <div className="text-[8px] font-black text-slate-400 uppercase tracking-tighter mb-2 border-b border-white/10 pb-1">Active File Context</div>
+                             <div className="text-[11px] font-black text-slate-400 uppercase tracking-tighter mb-2 border-b border-white/10 pb-1">Active File Context</div>
                              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
                                 {message.provenance.workspaceFiles.map((file: string, i: number) => (
-                                   <div key={i} className="text-[10px] font-mono text-slate-300 truncate">/ {file}</div>
+                                   <div key={i} className="text-[11px] font-mono text-slate-300 truncate">/ {file}</div>
                                 ))}
                              </div>
                           </div>
@@ -214,21 +214,21 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                  {/* Project/Local Badge & HUD */}
                  {message.provenance.counts.local > 0 && (
                     <div className="group/hud relative">
-                       <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-jb-accent/10 border border-jb-accent/20 text-jb-accent text-[9px] font-bold cursor-help">
+                       <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-jb-accent/10 border border-jb-accent/20 text-jb-accent text-[11px] font-bold cursor-help">
                           <Brain size={10} />
                           <span>{message.provenance.counts.local} PROJECT</span>
                        </div>
                        <div className="absolute bottom-full left-0 mb-2 w-80 hidden group-hover/hud:block z-50 animate-in fade-in slide-in-from-bottom-2">
                           <div className="bg-black/90 border border-jb-accent/30 rounded-lg p-3 backdrop-blur-xl shadow-2xl">
-                             <div className="text-[8px] font-black text-jb-accent uppercase tracking-tighter mb-2 border-b border-jb-accent/20 pb-1">Crystallized Memories</div>
+                             <div className="text-[11px] font-black text-jb-accent uppercase tracking-tighter mb-2 border-b border-jb-accent/20 pb-1">Crystallized Memories</div>
                              <div className="space-y-2">
                                 {message.provenance.active.filter((p: any) => p.source === 'LOCAL').map((p: any, i: number) => (
                                    <div key={i} className={cn(
-                                      "text-[10px] text-slate-300 leading-relaxed border-l border-jb-accent/30 pl-2 group/item relative",
+                                      "text-[11px] text-slate-300 leading-relaxed border-l border-jb-accent/30 pl-2 group/item relative",
                                       deprecatedIds.has(p.id) && "opacity-40 line-through"
                                    )}>
                                       <div className="flex justify-between items-start gap-2">
-                                         <span className="text-jb-accent font-black uppercase text-[7px] block">{p.type}</span>
+                                         <span className="text-jb-accent font-black uppercase text-[11px] block">{p.type}</span>
                                          {!deprecatedIds.has(p.id) && (
                                             <button 
                                                onClick={() => handleDeprecate(p.id, p.text)}
@@ -252,7 +252,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                  {(message.provenance.counts.global > 0 || message.provenance.suppressed.some((p: any) => p.source === 'GLOBAL')) && (
                     <div className="group/hud relative">
                        <div className={cn(
-                          "flex items-center gap-1.5 px-2 py-1 rounded-md text-[9px] font-bold cursor-help border",
+                          "flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-bold cursor-help border",
                           message.provenance.counts.global > 0 
                             ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
                             : "bg-slate-500/10 border-slate-500/20 text-slate-400"
@@ -262,17 +262,17 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                        </div>
                        <div className="absolute bottom-full left-0 mb-2 w-80 hidden group-hover/hud:block z-50 animate-in fade-in slide-in-from-bottom-2">
                           <div className="bg-black/90 border border-emerald-500/30 rounded-lg p-3 backdrop-blur-xl shadow-2xl">
-                             <div className="text-[8px] font-black text-emerald-400 uppercase tracking-tighter mb-2 border-b border-emerald-500/20 pb-1">Universal Engineering Wisdom</div>
+                             <div className="text-[11px] font-black text-emerald-400 uppercase tracking-tighter mb-2 border-b border-emerald-500/20 pb-1">Universal Engineering Wisdom</div>
                              
                              <div className="space-y-3">
                                 {/* Active Patterns */}
                                 {message.provenance.active.filter((p: any) => p.source === 'GLOBAL').map((p: any, i: number) => (
                                    <div key={i} className={cn(
-                                      "text-[10px] text-slate-200 leading-relaxed border-l-2 border-emerald-500 pl-2 group/item relative",
+                                      "text-[11px] text-slate-200 leading-relaxed border-l-2 border-emerald-500 pl-2 group/item relative",
                                       deprecatedIds.has(p.id) && "opacity-40 line-through"
                                    )}>
                                       <div className="flex justify-between items-start gap-2">
-                                         <span className="text-emerald-400 font-black uppercase text-[7px] flex items-center gap-1">
+                                         <span className="text-emerald-400 font-black uppercase text-[11px] flex items-center gap-1">
                                             <div className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
                                             Active Pattern
                                          </span>
@@ -292,12 +292,12 @@ export const MessageItem: React.FC<MessageItemProps> = ({
 
                                 {/* Suppressed Conflicts */}
                                 {message.provenance.suppressed.filter((p: any) => p.source === 'GLOBAL').map((p: any, i: number) => (
-                                   <div key={i} className="text-[10px] text-slate-500 leading-relaxed border-l-2 border-rose-500/50 pl-2 opacity-80">
-                                      <span className="text-rose-400 font-black uppercase text-[7px] flex items-center gap-1">
+                                   <div key={i} className="text-[11px] text-slate-500 leading-relaxed border-l-2 border-rose-500/50 pl-2 opacity-80">
+                                      <span className="text-rose-400 font-black uppercase text-[11px] flex items-center gap-1">
                                          <div className="w-1 h-1 rounded-full bg-rose-400" />
                                          Suppressed Pattern
                                       </span>
-                                      <div className="italic text-[8px] mb-1">Reason: {p.reason}</div>
+                                      <div className="italic text-[11px] mb-1">Reason: {p.reason}</div>
                                       <span className="line-through decoration-rose-500/30">{p.text}</span>
                                    </div>
                                 ))}
@@ -309,7 +309,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
 
                  {/* Rules Badge */}
                  {message.provenance.counts.rules > 0 && (
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[9px] font-bold">
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[11px] font-bold">
                        <Shield size={10} />
                        <span>{message.provenance.counts.rules} RULES</span>
                     </div>

@@ -21,13 +21,13 @@ export const VisionToolControls: React.FC<ToolControlProps> = ({ activeTool, onA
       case 'analyze':
         return (
           <div className="space-y-3">
-            <p className="text-[10px] text-slate-400 leading-relaxed font-medium">
+            <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
               Perform a deep structural audit of the visual entity. AI will identify UI components, spacing, and hierarchy.
             </p>
             <button 
               onClick={() => onAction('Deep Scan')}
               disabled={isProcessing}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-jb-accent/10 border border-jb-accent/20 text-jb-accent rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-jb-accent hover:text-white transition-all shadow-lg"
+              className="w-full flex items-center justify-center gap-2 py-3 bg-jb-accent/10 border border-jb-accent/20 text-jb-accent rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-jb-accent hover:text-white transition-all shadow-lg"
             >
               <ScanEye size={14} /> Initiate Logic Scan
             </button>
@@ -46,7 +46,7 @@ export const VisionToolControls: React.FC<ToolControlProps> = ({ activeTool, onA
             <button 
               onClick={() => onAction('Gen-Fill', localInput)}
               disabled={isProcessing || !localInput.trim()}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-jb-orange/10 border border-jb-orange/20 text-jb-orange rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-jb-orange hover:text-black transition-all shadow-lg"
+              className="w-full flex items-center justify-center gap-2 py-3 bg-jb-orange/10 border border-jb-orange/20 text-jb-orange rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-jb-orange hover:text-black transition-all shadow-lg"
             >
               <Sparkles size={14} /> Predict & Generate
             </button>
@@ -65,7 +65,7 @@ export const VisionToolControls: React.FC<ToolControlProps> = ({ activeTool, onA
             <button 
               onClick={() => onAction('Agentic Edit', localInput)}
               disabled={isProcessing || !localInput.trim()}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-jb-purple/10 border border-jb-purple/20 text-jb-purple rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-jb-purple hover:text-white transition-all shadow-lg"
+              className="w-full flex items-center justify-center gap-2 py-3 bg-jb-purple/10 border border-jb-purple/20 text-jb-purple rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-jb-purple hover:text-white transition-all shadow-lg"
             >
               <Wand2 size={14} /> Execute Modification
             </button>
@@ -75,13 +75,13 @@ export const VisionToolControls: React.FC<ToolControlProps> = ({ activeTool, onA
       case 'colors':
         return (
           <div className="space-y-3">
-            <p className="text-[10px] text-slate-400 leading-relaxed font-medium">
+            <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
               Analyze the color DNA of this entity. Extracts hex codes and generates a cohesive theme palette.
             </p>
             <button 
               onClick={() => onAction('Extract Palette')}
               disabled={isProcessing}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-black transition-all"
+              className="w-full flex items-center justify-center gap-2 py-3 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-black transition-all"
             >
               <Palette size={14} /> Extract Color DNA
             </button>
@@ -96,7 +96,7 @@ export const VisionToolControls: React.FC<ToolControlProps> = ({ activeTool, onA
                  <button 
                    key={aspect}
                    onClick={() => onAction('Crop Prep', aspect)}
-                   className="py-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-[9px] font-black uppercase text-slate-500 hover:text-white hover:border-white/10 transition-all"
+                   className="py-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-[11px] font-black uppercase text-slate-500 hover:text-white hover:border-white/10 transition-all"
                  >
                    {aspect}
                  </button>
@@ -105,7 +105,7 @@ export const VisionToolControls: React.FC<ToolControlProps> = ({ activeTool, onA
             <button 
               onClick={() => onAction('Execute Crop')}
               disabled={isProcessing}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-jb-purple/10 border border-jb-purple/20 text-jb-purple rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-jb-purple hover:text-white transition-all shadow-lg"
+              className="w-full flex items-center justify-center gap-2 py-3 bg-jb-purple/10 border border-jb-purple/20 text-jb-purple rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-jb-purple hover:text-white transition-all shadow-lg"
             >
               <Scissors size={14} /> Auto-Focus Crop
             </button>
@@ -116,7 +116,7 @@ export const VisionToolControls: React.FC<ToolControlProps> = ({ activeTool, onA
         return (
           <div className="flex flex-col items-center justify-center p-8 text-center opacity-40">
              <Target size={32} className="mb-4" />
-             <p className="text-[10px] font-black uppercase tracking-widest">Select a toolkit agent to begin</p>
+             <p className="text-[11px] font-black uppercase tracking-widest">Select a toolkit agent to begin</p>
           </div>
         );
     }
@@ -129,7 +129,7 @@ export const VisionToolControls: React.FC<ToolControlProps> = ({ activeTool, onA
       </div>
       <div className="flex items-center gap-3 mb-4">
          <div className="w-1.5 h-1.5 rounded-full bg-jb-accent animate-pulse shadow-[0_0_8px_rgba(60,113,247,0.8)]" />
-         <span className="text-[9px] font-black text-white uppercase tracking-widest">Active Directive</span>
+         <span className="text-[11px] font-black text-white uppercase tracking-widest">Active Directive</span>
       </div>
       {renderToolUI()}
     </div>

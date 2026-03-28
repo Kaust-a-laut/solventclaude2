@@ -28,7 +28,7 @@ const ModelPlaygroundArea = lazy(() => import('./ModelPlaygroundArea').then(m =>
 const LoadingFallback = () => (
   <div className="flex-1 flex flex-col items-center justify-center gap-4">
     <Loader2 className="w-8 h-8 text-jb-purple animate-spin" />
-    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Initializing Neural Canvas...</span>
+    <span className="text-[11px] font-black uppercase tracking-[0.4em] text-slate-500">Initializing Neural Canvas...</span>
   </div>
 );
 
@@ -158,7 +158,7 @@ export const ChatArea = () => {
                         <div className="w-2 h-2 rounded-full bg-jb-purple" />
                         <div className="absolute inset-0 w-2 h-2 rounded-full bg-jb-purple animate-ping" />
                       </div>
-                      <span className="text-[10px] font-black text-jb-purple uppercase tracking-widest">
+                      <span className="text-[11px] font-black text-jb-purple uppercase tracking-widest">
                         +{newNodeCount} Node{newNodeCount > 1 ? 's' : ''}
                       </span>
                       <Network size={12} className="text-jb-purple" />

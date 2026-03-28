@@ -69,7 +69,7 @@ const ToolGridComponent: React.FC<ToolGridProps> = ({ activeTool, setActiveTool,
   <div className="space-y-3 shrink-0">
     {TOOL_GRID.map((section) => (
       <div key={section.label}>
-        <span className="text-[7px] font-black text-slate-700 uppercase tracking-[0.3em] block mb-1.5 px-0.5">
+        <span className="text-[11px] font-black text-slate-700 uppercase tracking-[0.3em] block mb-1.5 px-0.5">
           {section.label}
         </span>
         <div className="grid grid-cols-3 gap-1.5">
@@ -91,7 +91,7 @@ const ToolGridComponent: React.FC<ToolGridProps> = ({ activeTool, setActiveTool,
                 )}
               >
                 <Icon size={14} />
-                <span className="text-[8px] font-black uppercase tracking-wide leading-none text-center">
+                <span className="text-[11px] font-black uppercase tracking-wide leading-none text-center">
                   {tool.label}
                 </span>
               </button>
@@ -411,8 +411,8 @@ export const SolventSeeArea = () => {
         {/* Toolbar */}
         <div className="h-16 border-b border-white/5 flex items-center px-4 lg:px-6 bg-black/40 backdrop-blur-xl relative z-30 shadow-2xl gap-3">
           <div className="flex flex-col shrink-0">
-            <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.4em]">SolventSee</span>
-            <span className="text-white font-black text-[10px] uppercase tracking-tight truncate max-w-[150px]">
+            <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.4em]">SolventSee</span>
+            <span className="text-white font-black text-[11px] uppercase tracking-tight truncate max-w-[150px]">
               {selectedImage ? 'Image Loaded' : 'No Image'}
             </span>
           </div>
@@ -420,7 +420,7 @@ export const SolventSeeArea = () => {
           <div className="h-6 w-[1px] bg-white/10 shrink-0" />
 
           {/* Active tool badge */}
-          <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest shrink-0">
+          <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest shrink-0">
             <span className="text-slate-600">Tool:</span>
             <span className="text-white capitalize">{activeTool}</span>
           </div>
@@ -429,7 +429,7 @@ export const SolventSeeArea = () => {
             {/* Upload button — moved from old sidebar */}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border bg-white/5 border-white/5 text-slate-400 hover:text-white hover:border-white/10"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border bg-white/5 border-white/5 text-slate-400 hover:text-white hover:border-white/10"
             >
               <Upload size={14} />
               <span className="hidden sm:inline">Upload</span>
@@ -454,7 +454,7 @@ export const SolventSeeArea = () => {
             <button
               onClick={() => setShowPanel(!showPanel)}
               className={cn(
-                'flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border',
+                'flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border',
                 showPanel
                   ? 'bg-jb-accent/10 border-jb-accent/20 text-jb-accent'
                   : 'bg-white/5 border-white/5 text-slate-400',
@@ -497,7 +497,7 @@ export const SolventSeeArea = () => {
                       />
                       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center">
                         <Loader2 size={40} className="text-jb-orange animate-spin mb-4" />
-                        <span className="text-[10px] font-black text-jb-orange uppercase tracking-[0.5em] animate-pulse">Processing...</span>
+                        <span className="text-[11px] font-black text-jb-orange uppercase tracking-[0.5em] animate-pulse">Processing...</span>
                       </div>
                     </div>
                   )}
@@ -561,8 +561,8 @@ export const SolventSeeArea = () => {
                   {/* Rotation guard — overlay tools require flat image */}
                   {isOverlayTool && previewFilter.rotation !== 0 && (
                     <div className="absolute inset-0 rounded-[2.5rem] bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center gap-2 pointer-events-none">
-                      <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">Apply rotation first</span>
-                      <span className="text-[8px] text-slate-500">Use the Apply button in Transform before cropping.</span>
+                      <span className="text-[11px] font-black text-amber-400 uppercase tracking-widest">Apply rotation first</span>
+                      <span className="text-[11px] text-slate-500">Use the Apply button in Transform before cropping.</span>
                     </div>
                   )}
 
@@ -620,7 +620,7 @@ export const SolventSeeArea = () => {
                 <p className="text-2xl font-[900] text-white tracking-tighter">
                   Drop an image to <span className="text-vibrant">get started</span>
                 </p>
-                <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em]">
+                <p className="text-[11px] text-slate-500 font-black uppercase tracking-[0.3em]">
                   Upload, edit manually, or generate with AI
                 </p>
               </div>
@@ -664,8 +664,8 @@ export const SolventSeeArea = () => {
                     <SlidersHorizontal size={16} />
                   </div>
                   <div>
-                    <span className="text-[10px] font-black text-white uppercase tracking-[0.2em] block">Tools</span>
-                    <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-0.5 block">SolventSee Studio</span>
+                    <span className="text-[11px] font-black text-white uppercase tracking-[0.2em] block">Tools</span>
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mt-0.5 block">SolventSee Studio</span>
                   </div>
                 </div>
                 <button
@@ -745,7 +745,7 @@ export const SolventSeeArea = () => {
                 {/* ── AI Chat history (AI tools only) ───────────────────── */}
                 {isAiTool && (
                   <div className="flex flex-col space-y-2">
-                    <label className="text-[8px] font-black text-slate-600 uppercase tracking-[0.3em]">AI Chat</label>
+                    <label className="text-[11px] font-black text-slate-600 uppercase tracking-[0.3em]">AI Chat</label>
                     <div className="h-64 border border-white/5 rounded-[1.5rem] bg-black/20 overflow-hidden flex flex-col">
                       <MessageList />
                     </div>
@@ -775,20 +775,20 @@ export const SolventSeeArea = () => {
                   <button
                     onClick={handleGenerate}
                     disabled={!instruction.trim() || isProcessing}
-                    className="flex items-center justify-center gap-2 py-2.5 bg-jb-orange/10 border border-jb-orange/20 text-jb-orange rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-jb-orange hover:text-black transition-all disabled:opacity-20"
+                    className="flex items-center justify-center gap-2 py-2.5 bg-jb-orange/10 border border-jb-orange/20 text-jb-orange rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-jb-orange hover:text-black transition-all disabled:opacity-20"
                   >
                     <Sparkles size={12} /> Generate
                   </button>
                   <button
                     onClick={() => selectedImage && handleAnalyze(selectedImage)}
                     disabled={!selectedImage || isProcessing}
-                    className="flex items-center justify-center gap-2 py-2.5 bg-jb-accent/10 border border-jb-accent/20 text-jb-accent rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-jb-accent hover:text-white transition-all disabled:opacity-20"
+                    className="flex items-center justify-center gap-2 py-2.5 bg-jb-accent/10 border border-jb-accent/20 text-jb-accent rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-jb-accent hover:text-white transition-all disabled:opacity-20"
                   >
                     <ScanEye size={12} /> Analyze
                   </button>
                 </div>
 
-                <p className="text-[8px] text-slate-700 text-center font-medium">
+                <p className="text-[11px] text-slate-700 text-center font-medium">
                   More tools coming soon
                 </p>
               </div>

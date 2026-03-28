@@ -49,12 +49,12 @@ export const BehaviorTab = () => {
         <div className="flex justify-between items-end">
           <div>
             <div className="flex items-center gap-3">
-              <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Temperature</h4>
-              <button onClick={handleResetBehavior} className="flex items-center gap-1 text-[8px] font-black text-slate-700 hover:text-slate-400 uppercase tracking-widest transition-colors" title="Reset behavior to defaults">
+              <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.4em]">Temperature</h4>
+              <button onClick={handleResetBehavior} className="flex items-center gap-1 text-[11px] font-black text-slate-700 hover:text-slate-400 uppercase tracking-widest transition-colors" title="Reset behavior to defaults">
                 <RotateCcw size={9} /> Reset All
               </button>
             </div>
-            <p className="text-[9px] text-slate-600 font-bold mt-1">Controls response randomness — 0 = deterministic, 1 = creative</p>
+            <p className="text-[11px] text-slate-600 font-bold mt-1">Controls response randomness — 0 = deterministic, 1 = creative</p>
           </div>
           <span className="text-lg font-mono text-jb-accent">{temperature}</span>
         </div>
@@ -72,8 +72,8 @@ export const BehaviorTab = () => {
       <motion.section variants={staggerItem} className="space-y-8" id="settings-max-tokens">
         <div className="flex justify-between items-end">
           <div>
-            <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Max Tokens</h4>
-            <p className="text-[9px] text-slate-600 font-bold mt-1">Maximum token budget per inference request</p>
+            <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.4em]">Max Tokens</h4>
+            <p className="text-[11px] text-slate-600 font-bold mt-1">Maximum token budget per inference request</p>
           </div>
           <span className="text-lg font-mono text-jb-purple">{maxTokens.toLocaleString()}</span>
         </div>
@@ -88,7 +88,7 @@ export const BehaviorTab = () => {
 
       {/* Assistant Features */}
       <motion.section variants={staggerItem} className="space-y-2 pt-6 border-t border-white/5" id="settings-smart-router">
-        <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-4">Assistant Features</h4>
+        <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.4em] mb-4">Assistant Features</h4>
         <SectionCard>
           <InlineToggle
             label="Smart Router"
@@ -113,12 +113,12 @@ export const BehaviorTab = () => {
 
       {/* Performance */}
       <motion.section variants={staggerItem} className="space-y-2 pt-6 border-t border-white/5" id="settings-performance-mode">
-        <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-4">Performance</h4>
+        <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.4em] mb-4">Performance</h4>
         <SectionCard>
           <div className="flex items-center justify-between py-4">
             <div className="flex flex-col gap-0.5 pr-8">
               <span className="text-xs font-bold text-white">Performance Mode</span>
-              <span className="text-[10px] text-slate-500 font-medium leading-snug">
+              <span className="text-[11px] text-slate-500 font-medium leading-snug">
                 Auto detects your hardware. Full enables all visual effects. Lite reduces animation complexity and background work for smoother performance.
               </span>
             </div>
@@ -128,7 +128,7 @@ export const BehaviorTab = () => {
                   key={mode}
                   onClick={() => setPerformanceMode(mode)}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all",
+                    "px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all",
                     performanceMode === mode
                       ? "bg-jb-accent text-white shadow-[0_0_12px_rgba(60,113,247,0.3)]"
                       : "text-slate-500 hover:text-slate-300"
@@ -141,7 +141,7 @@ export const BehaviorTab = () => {
           </div>
           {performanceMode === 'auto' && (
             <div className="pb-3 -mt-1">
-              <span className="text-[9px] text-slate-600 font-medium">
+              <span className="text-[11px] text-slate-600 font-medium">
                 Detected: <span className="text-slate-400 font-bold uppercase">{detectedTier}</span>
               </span>
             </div>
@@ -151,7 +151,7 @@ export const BehaviorTab = () => {
 
       {/* Aura */}
       <motion.section variants={staggerItem} className="space-y-6 pt-6 border-t border-white/5" id="settings-aura">
-        <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Environmental Aura</h4>
+        <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.4em]">Environmental Aura</h4>
         <div className="flex gap-4">
           {[
             { id: 'off',     label: 'Minimalist', desc: 'Deep Black' },
@@ -169,7 +169,7 @@ export const BehaviorTab = () => {
               )}
             >
               <span className="text-[11px] font-black text-white uppercase block mb-1 tracking-wider">{mode.label}</span>
-              <span className="text-[8px] text-slate-500 font-black uppercase tracking-widest">{mode.desc}</span>
+              <span className="text-[11px] text-slate-500 font-black uppercase tracking-widest">{mode.desc}</span>
               {auraMode === mode.id && <div className="absolute top-0 right-0 w-8 h-8 bg-jb-accent/10 blur-xl rounded-full" />}
             </button>
           ))}

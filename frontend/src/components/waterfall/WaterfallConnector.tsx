@@ -72,7 +72,7 @@ export const WaterfallConnector = ({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.85 }}
             onClick={onStartEdit}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-jb-purple/10 border border-jb-purple/25 text-jb-purple text-[9px] font-black uppercase tracking-widest hover:bg-jb-purple/20 transition-all"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-jb-purple/10 border border-jb-purple/25 text-jb-purple text-[11px] font-black uppercase tracking-widest hover:bg-jb-purple/20 transition-all"
           >
             <Edit3 size={10} />
             Edit Plan
@@ -91,11 +91,11 @@ export const WaterfallConnector = ({
           >
             <div className="my-1 bg-black/60 border border-jb-purple/25 rounded-2xl overflow-hidden shadow-[0_0_30px_-10px_rgba(157,91,210,0.25)]">
               <div className="flex items-center justify-between px-4 py-2 border-b border-jb-purple/15 bg-jb-purple/5">
-                <span className="text-[9px] font-black text-jb-purple uppercase tracking-widest">Edit Plan JSON</span>
+                <span className="text-[11px] font-black text-jb-purple uppercase tracking-widest">Edit Plan JSON</span>
                 <div className="flex items-center gap-1">
                   <button
                     onClick={onApplyEdit}
-                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[8px] font-black uppercase hover:bg-emerald-500/20 transition-all"
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-black uppercase hover:bg-emerald-500/20 transition-all"
                   >
                     <Check size={10} /> Apply
                   </button>
@@ -129,13 +129,13 @@ export const WaterfallConnector = ({
           >
             <button
               onClick={onProceed}
-              className="px-4 py-1.5 rounded-full bg-amber-500/15 border border-amber-400/30 text-amber-400 text-[9px] font-black uppercase tracking-widest hover:bg-amber-500/25 transition-all"
+              className="px-4 py-1.5 rounded-full bg-amber-500/15 border border-amber-400/30 text-amber-400 text-[11px] font-black uppercase tracking-widest hover:bg-amber-500/25 transition-all"
             >
               Proceed Anyway
             </button>
             <button
               onClick={onCancel}
-              className="px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[9px] font-black uppercase hover:bg-rose-500/20 transition-all"
+              className="px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] font-black uppercase hover:bg-rose-500/20 transition-all"
             >
               Cancel
             </button>
