@@ -340,15 +340,14 @@ export const CONTEXT_LIMITS: Record<string, number> = {
 };
 
 export const getModelContextLimit = (modelName: string): number => {
-  if (!modelName) return CONTEXT_LIMITS['default'];
-  // Exact match
-  if (CONTEXT_LIMITS[modelName]) return CONTEXT_LIMITS[modelName];
-  // Fuzzy match
+  if (!modelName) return CONTEXT_LIMITS['default'] ?? 8192;
+  const limit = CONTEXT_LIMITS[modelName];
+  if (limit !== undefined) return limit;
   if (modelName.includes('gemini')) return 1000000;
   if (modelName.includes('llama-3')) return 128000;
   if (modelName.includes('gpt-4')) return 128000;
   if (modelName.includes('claude-3')) return 200000;
   if (modelName.includes('qwen')) return 131072;
   
-  return CONTEXT_LIMITS['default'];
+  return CONTEXT_LIMITS['default'] ?? 8192;
 };

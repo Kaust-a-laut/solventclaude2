@@ -259,7 +259,7 @@ export const KnowledgeMap = () => {
       {graphNodes.length === 0 && (
          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="text-center opacity-20">
-               <div className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-500">Awaiting Data</div>
+               <div className="text-[11px] font-black uppercase tracking-[0.5em] text-slate-500">Awaiting Data</div>
             </div>
          </div>
       )}
@@ -280,14 +280,14 @@ export const KnowledgeMap = () => {
           >
              <div className="flex items-start justify-between mb-2">
                 <h3 className="text-sm font-black text-white uppercase tracking-wider">{hoveredNode.title}</h3>
-                <span className="text-[9px] font-mono text-slate-500 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">{hoveredNode.id}</span>
+                <span className="text-[11px] font-mono text-slate-500 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">{hoveredNode.id}</span>
              </div>
              <p className="text-[11px] text-slate-300 leading-relaxed font-medium">
                 {hoveredNode.description || "No detailed metrics available for this node."}
              </p>
              <div className="mt-3 pt-3 border-t border-white/10 flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-jb-accent animate-pulse" />
-                <span className="text-[9px] font-black text-jb-accent uppercase tracking-widest">Active Node</span>
+                <span className="text-[11px] font-black text-jb-accent uppercase tracking-widest">Active Node</span>
              </div>
           </motion.div>
         )}
@@ -306,7 +306,7 @@ export const KnowledgeMap = () => {
           >
             <div className="h-12 bg-white/5 border-b border-white/5 flex items-center justify-between px-4">
                 <div className="flex items-center gap-2 text-slate-300">
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Edge Interceptor</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider">Edge Interceptor</span>
                 </div>
                 <button 
                     onClick={() => setSelectedEdge(null)}

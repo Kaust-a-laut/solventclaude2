@@ -36,17 +36,17 @@ export const ReviewScorecard: React.FC<ScorecardProps> = ({ score, breakdown, is
           {status === 'rejected' && <XCircle size={18} className="text-rose-500" />}
           {status === 'approved' && <CheckCircle2 size={18} className="text-emerald-500" />}
           <div className="flex flex-col">
-            <span className="text-[10px] font-black uppercase tracking-widest text-white">
+            <span className="text-[11px] font-black uppercase tracking-widest text-white">
               {status === 'analyzing' ? 'Auditing Code...' : status === 'rejected' ? 'Validation Failed' : 'Production Ready'}
             </span>
-            <span className="text-[9px] font-mono text-slate-500">Attempt #{attempt}</span>
+            <span className="text-[11px] font-mono text-slate-500">Attempt #{attempt}</span>
           </div>
         </div>
         <div className={cn(
           "text-xl font-black font-mono",
           isPassing ? "text-emerald-400" : "text-rose-400"
         )}>
-          {score}<span className="text-[10px] text-slate-500 ml-0.5">/100</span>
+          {score}<span className="text-[11px] text-slate-500 ml-0.5">/100</span>
         </div>
       </div>
 
@@ -69,15 +69,15 @@ export const ReviewScorecard: React.FC<ScorecardProps> = ({ score, breakdown, is
             >
               <div className="flex items-center gap-2 mb-2 text-rose-400">
                 <AlertTriangle size={12} />
-                <span className="text-[9px] font-black uppercase tracking-widest">Critical Issues</span>
+                <span className="text-[11px] font-black uppercase tracking-widest">Critical Issues</span>
               </div>
               <ul className="space-y-1">
                 {issues.slice(0, 3).map((issue, i) => (
-                  <li key={i} className="text-[10px] text-slate-400 leading-relaxed pl-2 border-l border-rose-500/30">
+                  <li key={i} className="text-[11px] text-slate-400 leading-relaxed pl-2 border-l border-rose-500/30">
                     {issue}
                   </li>
                 ))}
-                {issues.length > 3 && <li className="text-[9px] text-slate-600 italic">...and {issues.length - 3} more</li>}
+                {issues.length > 3 && <li className="text-[11px] text-slate-600 italic">...and {issues.length - 3} more</li>}
               </ul>
             </motion.div>
           )}
@@ -99,7 +99,7 @@ export const ReviewScorecard: React.FC<ScorecardProps> = ({ score, breakdown, is
 
 const RubricItem = ({ label, value, max }: { label: string, value: number, max: number }) => (
   <div className="flex flex-col gap-1">
-    <div className="flex justify-between text-[9px] font-bold uppercase tracking-wider text-slate-500">
+    <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-slate-500">
       <span>{label}</span>
       <span>{value}/{max}</span>
     </div>

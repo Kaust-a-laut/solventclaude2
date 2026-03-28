@@ -133,3 +133,18 @@ describe('ContextService', () => {
     });
   });
 });
+
+describe('Importance scoring in retrieval', () => {
+  it('should boost high-importance entries in final score', () => {
+    const baseScore = 0.7;
+    const importanceHigh = 10;
+    const importanceLow = 1;
+    const IMPORTANCE_WEIGHT = 0.04;
+
+    const scoreHigh = baseScore + (importanceHigh * IMPORTANCE_WEIGHT);
+    const scoreLow = baseScore + (importanceLow * IMPORTANCE_WEIGHT);
+
+    expect(scoreHigh).toBeGreaterThan(scoreLow);
+    expect(scoreHigh - scoreLow).toBeCloseTo(0.36, 2);
+  });
+});

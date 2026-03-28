@@ -58,7 +58,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
           </AnimatePresence>
 
           <span className={cn(
-            'text-[9px] font-black uppercase tracking-widest transition-colors duration-300',
+            'text-[11px] font-black uppercase tracking-widest transition-colors duration-300',
             isAwaiting   ? 'text-slate-600'
               : isComplete ? 'text-emerald-400'
               : 'text-jb-purple',
@@ -72,7 +72,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
           {isReady && (
             <button
               onClick={() => onAnalyze(userContext)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-jb-purple/15 border border-jb-purple/30 hover:bg-jb-purple/25 text-jb-purple text-[9px] font-black uppercase tracking-wider rounded-full transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-jb-purple/15 border border-jb-purple/30 hover:bg-jb-purple/25 text-jb-purple text-[11px] font-black uppercase tracking-wider rounded-full transition-all"
             >
               Analyze Findings ▶
             </button>
@@ -112,7 +112,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
                 />
               ))}
             </div>
-            <p className="text-[10px] text-slate-600 font-medium">
+            <p className="text-[11px] text-slate-600 font-medium">
               Awaiting agent findings...
             </p>
           </motion.div>
@@ -128,7 +128,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
             transition={{ duration: 0.3 }}
             className="space-y-3"
           >
-            <p className="text-[10px] text-slate-500">
+            <p className="text-[11px] text-slate-500">
               Agent findings ready — run analysis to synthesize deeper insights
             </p>
             <textarea
@@ -163,7 +163,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
                 )
               )}
             </div>
-            <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">
+            <p className="text-[11px] text-slate-500 uppercase tracking-widest font-bold">
               Synthesizing expert findings...
             </p>
           </motion.div>

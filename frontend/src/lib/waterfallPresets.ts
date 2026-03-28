@@ -28,7 +28,7 @@ export const WATERFALL_PRESET_LIST: WaterfallPresetMeta[] = [
   {
     key: 'glm-speed',
     name: 'GLM Speed',
-    description: 'Best overall score. GLM-4.7 architect.',
+    description: 'GLM\'s structured planning with Groq-speed execution',
     score: 94,
     speed: '~1-2m',
     tier: 'top',
@@ -43,7 +43,7 @@ export const WATERFALL_PRESET_LIST: WaterfallPresetMeta[] = [
   {
     key: 'glm-kimi',
     name: 'GLM-Kimi',
-    description: 'Strong + consistent. Kimi K2.5 reasoner.',
+    description: 'Kimi\'s methodical reasoning with consistent quality',
     score: 93,
     speed: '~2-3m',
     tier: 'top',
@@ -58,7 +58,7 @@ export const WATERFALL_PRESET_LIST: WaterfallPresetMeta[] = [
   {
     key: 'groq-speed',
     name: 'Groq Speed',
-    description: 'Fastest honest pipeline. All-Groq inference.',
+    description: 'Ultra-fast inference, all Groq-hosted models',
     score: 91,
     speed: '~30s',
     tier: 'top',
@@ -73,7 +73,7 @@ export const WATERFALL_PRESET_LIST: WaterfallPresetMeta[] = [
   {
     key: 'kimi-duo',
     name: 'Kimi Duo',
-    description: 'Kimi reasons + executes. High ceiling.',
+    description: 'Kimi handles both reasoning and execution end-to-end',
     score: 89,
     speed: '~2-3m',
     tier: 'top',
@@ -90,7 +90,7 @@ export const WATERFALL_PRESET_LIST: WaterfallPresetMeta[] = [
   {
     key: 'deepseek-kimi',
     name: 'DeepSeek-Kimi',
-    description: 'DeepSeek V3.2 reasoner. Slower but strong.',
+    description: 'DeepSeek\'s deep chain-of-thought, trades speed for depth',
     score: 88,
     speed: '~2-3m',
     tier: 'standard',
@@ -105,7 +105,7 @@ export const WATERFALL_PRESET_LIST: WaterfallPresetMeta[] = [
   {
     key: 'glm-nemotron',
     name: 'GLM-Nemotron',
-    description: 'Fast Nemotron reasoner. Compact pipeline.',
+    description: 'Efficient multi-provider with Nemotron reasoning',
     score: 85,
     speed: '~2-3m',
     tier: 'standard',
@@ -120,7 +120,7 @@ export const WATERFALL_PRESET_LIST: WaterfallPresetMeta[] = [
   {
     key: 'ollama-ultima',
     name: 'Ollama Ultima',
-    description: 'Maximum intelligence. All large models.',
+    description: 'Largest models available, prioritizes depth over speed',
     score: 78,
     speed: '~5m+',
     tier: 'standard',
@@ -137,7 +137,7 @@ export const WATERFALL_PRESET_LIST: WaterfallPresetMeta[] = [
   {
     key: 'reliable',
     name: 'Reliable',
-    description: 'Zero failures, generous reviewer. For demos.',
+    description: 'Tuned for zero failures and consistent output',
     score: 97,
     speed: '~30s',
     tier: 'demo',

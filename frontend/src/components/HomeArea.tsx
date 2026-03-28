@@ -124,12 +124,12 @@ export const HomeArea = () => {
             ].map((stage, i) => (
               <div key={stage.label} className="flex flex-col items-center">
                 <div className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl border ${stage.rowCls}`}>
-                  <span className="text-[8px] font-black font-mono text-white/20">{stage.num}</span>
+                  <span className="text-[11px] font-black font-mono text-white/20">{stage.num}</span>
                   <div className={`w-2 h-2 rounded-full shrink-0 ${stage.dotCls}`} />
-                  <span className={`text-[9px] font-black uppercase tracking-[0.2em] flex-1 ${stage.textCls}`}>{stage.label}</span>
-                  {stage.state === 'done'    && <span className={`text-[7px] font-mono ${stage.tagCls}`}>verified ✓</span>}
-                  {stage.state === 'active'  && <span className="text-[7px] font-mono text-jb-orange/60 animate-pulse">running…</span>}
-                  {stage.state === 'pending' && <span className="text-[7px] font-mono text-white/15">queued</span>}
+                  <span className={`text-[11px] font-black uppercase tracking-[0.2em] flex-1 ${stage.textCls}`}>{stage.label}</span>
+                  {stage.state === 'done'    && <span className={`text-[11px] font-mono ${stage.tagCls}`}>verified ✓</span>}
+                  {stage.state === 'active'  && <span className="text-[11px] font-mono text-jb-orange/60 animate-pulse">running…</span>}
+                  {stage.state === 'pending' && <span className="text-[11px] font-mono text-white/15">queued</span>}
                 </div>
                 {i < 3 && <div className={`w-px h-2.5 ${i === 0 ? 'bg-jb-accent/15' : i === 1 ? 'bg-rose-400/15' : 'bg-jb-orange/20'}`} />}
               </div>
@@ -162,11 +162,11 @@ export const HomeArea = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/80 animate-pulse" />
-              <span className="text-[7px] font-black uppercase tracking-[0.25em] text-emerald-500/60">Live</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.25em] text-emerald-500/60">Live</span>
             </div>
             <div className="flex items-center gap-1 px-2 py-0.5 rounded-md border border-jb-orange/30 bg-jb-orange/10">
               <div className="w-2.5 h-2 rounded-sm border border-jb-orange/50 bg-transparent" />
-              <span className="text-[7px] font-black tracking-wider text-jb-orange/70">PiP</span>
+              <span className="text-[11px] font-black tracking-wider text-jb-orange/70">PiP</span>
             </div>
           </div>
           {/* Dashboard tool cards */}
@@ -182,8 +182,8 @@ export const HomeArea = () => {
                 <div className="absolute top-0 right-0 w-px h-8 bg-white/[0.06]" />
                 <div className={`w-3 h-3 rounded-full mb-2 ${t.dotCls}`} />
                 <div>
-                  <div className={`text-[8px] font-black uppercase tracking-[0.2em] ${t.iconCls}`}>{t.label}</div>
-                  <div className="text-[7px] text-white/25 mt-0.5 leading-tight">{t.desc}</div>
+                  <div className={`text-[11px] font-black uppercase tracking-[0.2em] ${t.iconCls}`}>{t.label}</div>
+                  <div className="text-[11px] text-white/25 mt-0.5 leading-tight">{t.desc}</div>
                 </div>
               </div>
             ))}
@@ -275,7 +275,7 @@ export const HomeArea = () => {
             </div>
             {/* Annotation tag */}
             <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded border border-jb-accent/30 bg-jb-accent/10">
-              <span className="text-[7px] font-black text-jb-accent/70 tracking-wider">UI</span>
+              <span className="text-[11px] font-black text-jb-accent/70 tracking-wider">UI</span>
             </div>
             {/* Confidence bar */}
             <div className="absolute bottom-2 left-2 right-2">
@@ -296,7 +296,7 @@ export const HomeArea = () => {
             ].map((t) => (
               <div key={t.label} className={`${t.w} rounded-lg border ${t.cls} px-2 py-1.5`}>
                 <div className="text-[6px] uppercase tracking-wider text-white/20">{t.label}</div>
-                <div className="text-[9px] font-black text-white/50">{t.val}</div>
+                <div className="text-[11px] font-black text-white/50">{t.val}</div>
               </div>
             ))}
           </div>
@@ -383,7 +383,7 @@ export const HomeArea = () => {
         <div className="absolute inset-x-7 bottom-7 top-7 z-20 flex flex-col gap-2">
           {/* Header bar */}
           <div className="flex items-center justify-between px-1">
-            <span className="text-[7px] font-black uppercase tracking-[0.25em] text-white/20">Comparing</span>
+            <span className="text-[11px] font-black uppercase tracking-[0.25em] text-white/20">Comparing</span>
             <div className="flex gap-1">
               <div className="w-1.5 h-1.5 rounded-full bg-jb-accent/50" />
               <div className="w-1.5 h-1.5 rounded-full bg-jb-orange/50" />
@@ -396,13 +396,13 @@ export const HomeArea = () => {
               { name: 'Gemini',  cls: 'border-jb-orange/20 bg-jb-orange/[0.05]',  labelCls: 'text-jb-orange/70', bars: ['bg-jb-orange/30 w-3/5', 'bg-jb-orange/20 w-4/5', 'bg-jb-orange/20 w-1/2', 'bg-jb-orange/15 w-full'] },
             ].map((m) => (
               <div key={m.name} className={`rounded-xl border ${m.cls} p-2.5 flex flex-col gap-2`}>
-                <div className={`text-[8px] font-black uppercase tracking-[0.2em] ${m.labelCls}`}>{m.name}</div>
+                <div className={`text-[11px] font-black uppercase tracking-[0.2em] ${m.labelCls}`}>{m.name}</div>
                 <div className="flex-1 space-y-1.5">
                   {m.bars.map((b, i) => (
                     <div key={i} className={`h-1 rounded-full ${b}`} />
                   ))}
                 </div>
-                <div className={`text-[7px] font-mono ${m.labelCls} opacity-60`}>responding…</div>
+                <div className={`text-[11px] font-mono ${m.labelCls} opacity-60`}>responding…</div>
               </div>
             ))}
           </div>
@@ -420,7 +420,7 @@ export const HomeArea = () => {
 
   return (
     <div className="flex-1 min-h-0 relative bg-transparent z-10">
-      <div className="absolute inset-0 overflow-y-scroll scrollbar-thin p-6 md:p-10 lg:p-12 pt-2 md:pt-4 lg:pt-6">
+      <div className="absolute inset-0 overflow-y-scroll scrollbar-thin fluid-scrollbar p-6 md:p-10 lg:p-12 pt-2 md:pt-4 lg:pt-6">
       <div className="max-w-[1400px] mx-auto space-y-4 md:space-y-6 relative">
         
         {/* Massive Background Beaker Logo - Using new Logo component */}
@@ -452,8 +452,8 @@ export const HomeArea = () => {
               </motion.div>
             </div>
 
-            {/* Text column — heading + paragraph */}
-            <div className="md:flex-1 flex flex-col gap-4 md:gap-6">
+            {/* Text column — heading + paragraph (z-20 lifts above beaker glow) */}
+            <div className="md:flex-1 flex flex-col gap-4 md:gap-6 relative z-20">
 
               <motion.h2
                 initial={{ opacity: 0, y: 20 }}
@@ -500,6 +500,8 @@ export const HomeArea = () => {
 
         </div>
 
+        <div className="fluid-divider rounded-full my-2" />
+
         {/* Bento Grid - Enhanced scaling */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 grid-flow-dense gap-4 md:gap-6">
            {features.map((feature, idx) => (
@@ -522,9 +524,9 @@ export const HomeArea = () => {
         </div>
 
         {/* Mode Showcase Strip */}
-        <div className="border-t border-white/[0.03] pt-16 md:pt-24 space-y-24 md:space-y-32 pb-16">
+        <div className="border-t border-white/[0.06] pt-16 md:pt-24 space-y-24 md:space-y-32 pb-16">
           <div className="text-center space-y-2">
-            <p className="text-[9px] font-black uppercase tracking-[0.35em] text-white/20">Explore the suite</p>
+            <p className="text-[11px] font-black uppercase tracking-[0.35em] text-white/20">Explore the suite</p>
             <h2 className="text-2xl md:text-3xl font-black text-white/60 tracking-tight">Every tool. One surface.</h2>
           </div>
 
@@ -562,7 +564,7 @@ export const HomeArea = () => {
                     <div className="absolute bottom-0 right-0 w-12 h-px bg-white/[0.06]" />
                     <div className="absolute bottom-0 right-0 w-px h-12 bg-white/[0.06]" />
                     {/* Tag */}
-                    <div className="absolute top-4 left-4 text-[8px] font-black uppercase tracking-[0.25em] font-mono opacity-40" style={{ color: item.accentColor }}>
+                    <div className="absolute top-4 left-4 text-[11px] font-black uppercase tracking-[0.25em] font-mono opacity-40" style={{ color: item.accentColor }}>
                       {item.tag}
                     </div>
                     {/* Mode-specific decoration */}
@@ -576,7 +578,7 @@ export const HomeArea = () => {
                     <Icon size={20} className={item.color} />
                   </div>
                   <div className="space-y-2">
-                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20">{item.category}</p>
+                    <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/20">{item.category}</p>
                     <h3 className="text-3xl lg:text-4xl xl:text-[2.75rem] font-black text-white tracking-tighter leading-[1.05]">{item.title}</h3>
                   </div>
                   <p className="text-white/45 text-base lg:text-[17px] leading-relaxed">{item.desc}</p>

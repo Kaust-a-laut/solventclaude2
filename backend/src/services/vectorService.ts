@@ -289,19 +289,31 @@ export class VectorService {
     const symbols: string[] = [];
     // Class definitions
     const classMatches = text.matchAll(/class\s+([a-zA-Z0-9_]+)/g);
-    for (const match of classMatches) symbols.push(match[1]);
+    for (const match of classMatches) {
+      const sym = match[1];
+      if (sym) symbols.push(sym);
+    }
 
     // Interface definitions
     const interfaceMatches = text.matchAll(/interface\s+([a-zA-Z0-9_]+)/g);
-    for (const match of interfaceMatches) symbols.push(match[1]);
+    for (const match of interfaceMatches) {
+      const sym = match[1];
+      if (sym) symbols.push(sym);
+    }
 
     // Function definitions
     const functionMatches = text.matchAll(/function\s+([a-zA-Z0-9_]+)/g);
-    for (const match of functionMatches) symbols.push(match[1]);
+    for (const match of functionMatches) {
+      const sym = match[1];
+      if (sym) symbols.push(sym);
+    }
 
     // Exported constants/vars
     const constMatches = text.matchAll(/export\s+(const|let|var)\s+([a-zA-Z0-9_]+)/g);
-    for (const match of constMatches) symbols.push(match[2]);
+    for (const match of constMatches) {
+      const sym = match[2];
+      if (sym) symbols.push(sym);
+    }
 
     return [...new Set(symbols)];
   }
@@ -513,9 +525,9 @@ export class VectorService {
           });
 
           response.embeddings.forEach((emb, j) => {
-            const originalIndex = missingIndices[i + j];
+            const originalIndex = missingIndices[i + j]!;
             results[originalIndex] = emb.values;
-            this.cacheEmbedding(chunk[j], emb.values);
+            this.cacheEmbedding(chunk[j]!, emb.values);
           });
         }
       } catch (err: unknown) {
@@ -523,12 +535,13 @@ export class VectorService {
 
         // Fallback: Process remaining with Ollama individually
         for (let i = 0; i < missingTexts.length; i++) {
-          const originalIndex = missingIndices[i];
+          const originalIndex = missingIndices[i]!;
           if (!results[originalIndex]) {
             try {
-              const values = await this.ollama!.embed(missingTexts[i]);
+              const text = missingTexts[i]!;
+              const values = await this.ollama!.embed(text);
               results[originalIndex] = values;
-              this.cacheEmbedding(missingTexts[i], values);
+              this.cacheEmbedding(text, values);
             } catch (ollamaErr: unknown) {
               logger.warn('[VectorService] Ollama embedding failed for batch item, using zero vector:', ollamaErr instanceof Error ? ollamaErr.message : String(ollamaErr));
               results[originalIndex] = new Array(768).fill(0);
@@ -588,6 +601,7 @@ export class VectorService {
         ...metadata, 
         text, 
         tier: metadata.tier || 'episodic',
+        importance: metadata.importance || 5,
         createdAt: metadata.createdAt || new Date().toISOString(),
         status: metadata.status || 'active',
         links: normalizedLinks
@@ -626,11 +640,12 @@ export class VectorService {
 
       const entry: VectorEntry = {
         id: e.metadata.id || Date.now().toString() + Math.random().toString(36).substr(2, 5) + `_${i}`,
-        vector: embeddings[i],
+        vector: embeddings[i] ?? new Array(768).fill(0),
         metadata: {
           ...e.metadata,
           text: e.text,
           tier: e.metadata.tier || 'episodic',
+          importance: e.metadata.importance || 5,
           createdAt: e.metadata.createdAt || new Date().toISOString(),
           status: e.metadata.status || 'active',
           links: normalizedLinks
@@ -1016,16 +1031,16 @@ export class VectorService {
     async updateEntry(id: string, updates: any) {
       const index = this.memory.findIndex(m => m.id === id);
       if (index === -1) return false;
-  
-      const oldEntry = { ...this.memory[index] };
+
+      const entry = this.memory[index]!;
       this.removeFromIndices(id);
 
-      this.memory[index].metadata = {
-        ...this.memory[index].metadata,
+      entry.metadata = {
+        ...entry.metadata,
         ...updates
       };
 
-      this.addToIndices(this.memory[index]);
+      this.addToIndices(entry);
       await this.saveMemory();
       return true;
     }
@@ -1033,9 +1048,10 @@ export class VectorService {
     async deprecateEntry(id: string, reason: string) {
       const index = this.memory.findIndex(m => m.id === id);
       if (index === -1) return false;
-  
-      this.memory[index].metadata = {
-        ...this.memory[index].metadata,
+
+      const entry = this.memory[index]!;
+      entry.metadata = {
+        ...entry.metadata,
         status: 'deprecated',
         deprecationReason: reason,
         deprecatedAt: new Date().toISOString()
@@ -1332,9 +1348,11 @@ export class VectorService {
     let magA = 0;
     let magB = 0;
     for (let i = 0; i < vecA.length; i++) {
-      dotProduct += vecA[i] * vecB[i];
-      magA += vecA[i] * vecA[i];
-      magB += vecB[i] * vecB[i];
+      const a = vecA[i] ?? 0;
+      const b = vecB[i] ?? 0;
+      dotProduct += a * b;
+      magA += a * a;
+      magB += b * b;
     }
     const denom = Math.sqrt(magA) * Math.sqrt(magB);
     if (denom === 0) return 0;

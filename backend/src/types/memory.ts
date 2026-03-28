@@ -1,5 +1,6 @@
 export type MemoryConfidence = 'HIGH' | 'MEDIUM' | 'LOW';
 export type MemoryStatus = 'active' | 'flagged_for_review' | 'deprecated';
+export type ImportanceScore = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
 export type SemanticLinkType = 'import' | 'implements' | 'calls' | 'depends_on' | 'references';
 
@@ -48,3 +49,12 @@ export interface UserPreference extends BaseMemory {
 }
 
 export type CrystallizedMemory = CrystallizedRule | SuccessPattern | SupervisoryInsight | UserPreference;
+
+export interface StageHandoff {
+  stage: 'architect' | 'reasoner' | 'executor' | 'reviewer';
+  confidence: number;
+  keyDecisions: string[];
+  constraints: string[];
+  openQuestions: string[];
+  tokenCount: number;
+}

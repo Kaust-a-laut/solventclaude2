@@ -129,7 +129,7 @@ const ReasonerOutput = ({ data, textColor }: { data: any; textColor: string }) =
             {d.steps.map((s: any, i: number) => (
               <div key={i} className="flex items-start gap-3">
                 <span className={cn(
-                  'w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5',
+                  'w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-black shrink-0 mt-0.5',
                   'bg-jb-accent/10 text-jb-accent border border-jb-accent/20',
                 )}>
                   {i + 1}
@@ -170,7 +170,7 @@ const CopyButton = ({ text }: { text: string }) => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }}
-      className="flex items-center gap-1 px-2 py-1 rounded-md bg-white/[0.04] border border-white/10 text-slate-500 text-[9px] font-bold uppercase tracking-wider hover:bg-white/[0.08] hover:text-slate-300 transition-all"
+      className="flex items-center gap-1 px-2 py-1 rounded-md bg-white/[0.04] border border-white/10 text-slate-500 text-[11px] font-bold uppercase tracking-wider hover:bg-white/[0.08] hover:text-slate-300 transition-all"
     >
       {copied ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} />}
       {copied ? 'Copied' : 'Copy'}
@@ -288,7 +288,7 @@ const ReviewerOutput = ({ data }: { data: any }) => {
             {Object.entries(d.breakdown).map(([key, val]) => (
               <div key={key} className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-center">
                 <div className="text-[18px] font-black text-white tabular-nums">{val as number}</div>
-                <div className="text-[10px] font-black text-slate-600 uppercase tracking-wider mt-0.5">{key}</div>
+                <div className="text-[11px] font-black text-slate-600 uppercase tracking-wider mt-0.5">{key}</div>
               </div>
             ))}
           </div>
@@ -435,15 +435,18 @@ function splitCodeByFiles(code: string | undefined | null): CodeBlock[] {
 
   const blocks: CodeBlock[] = [];
   for (let i = 0; i < matches.length; i++) {
-    const filename = matches[i][1].trim();
-    const start = matches[i].index! + matches[i][0].length;
-    const end = i < matches.length - 1 ? matches[i + 1].index! : code.length;
+    const m = matches[i];
+    if (!m) continue;
+    const filename = (m[1] ?? '').trim();
+    const start = m.index! + m[0].length;
+    const nextMatch = matches[i + 1];
+    const end = nextMatch ? nextMatch.index! : code.length;
     blocks.push({ filename, code: code.slice(start, end) });
   }
 
-  // If there's content before the first separator
-  if (matches[0].index! > 0) {
-    const prefix = code.slice(0, matches[0].index!).trim();
+  const firstMatch = matches[0];
+  if (firstMatch && firstMatch.index! > 0) {
+    const prefix = code.slice(0, firstMatch.index!).trim();
     if (prefix) blocks.unshift({ filename: null, code: prefix });
   }
 
@@ -545,7 +548,7 @@ export const WaterfallDetailPanel = ({ selectedStage, steps }: WaterfallDetailPa
     }
 
     setOpenFiles(merged);
-    setActiveFile(newFiles[0].path);
+    if (newFiles[0]) setActiveFile(newFiles[0].path);
     setCurrentMode('coding');
   }, [selectedStage, steps.executor.data, openFiles, setOpenFiles, setActiveFile, setCurrentMode]);
 
@@ -567,7 +570,7 @@ export const WaterfallDetailPanel = ({ selectedStage, steps }: WaterfallDetailPa
             exit={{ opacity: 0 }}
             className="flex-1 flex items-center justify-center"
           >
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-800">
+            <p className="text-[11px] font-black uppercase tracking-[0.4em] text-slate-800">
               Click a stage to view output
             </p>
           </motion.div>
@@ -607,7 +610,7 @@ export const WaterfallDetailPanel = ({ selectedStage, steps }: WaterfallDetailPa
                         {hasExecutorCode && (
                           <button
                             onClick={handleOpenInIDE}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-jb-accent/10 border border-jb-accent/20 text-jb-accent text-[9px] font-black uppercase tracking-wider hover:bg-jb-accent/20 transition-all"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-jb-accent/10 border border-jb-accent/20 text-jb-accent text-[11px] font-black uppercase tracking-wider hover:bg-jb-accent/20 transition-all"
                           >
                             <Code size={11} />
                             Open in IDE
@@ -615,7 +618,7 @@ export const WaterfallDetailPanel = ({ selectedStage, steps }: WaterfallDetailPa
                         )}
                         <button
                           onClick={handleDownload}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/10 text-slate-400 text-[9px] font-black uppercase tracking-wider hover:bg-white/[0.08] transition-all"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/10 text-slate-400 text-[11px] font-black uppercase tracking-wider hover:bg-white/[0.08] transition-all"
                         >
                           <Download size={11} />
                           Download

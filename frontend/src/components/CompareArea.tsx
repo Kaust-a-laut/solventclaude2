@@ -56,7 +56,7 @@ export const CompareArea = () => {
 
   return (
     <div className={cn(
-      "flex flex-col h-full bg-black/20 backdrop-blur-3xl overflow-y-auto scrollbar-thin transition-all duration-500",
+      "flex flex-col h-full bg-black/20 backdrop-blur-3xl overflow-y-auto scrollbar-thin fluid-scrollbar transition-all duration-500",
       deviceInfo.isMobile ? "p-4 pt-28 pb-32" : "p-12"
     )}>
       
@@ -71,7 +71,7 @@ export const CompareArea = () => {
             </div>
             <div>
                 <h2 className="text-3xl md:text-4xl font-[900] text-white tracking-tighter">Model Comparison <span className="text-vibrant">Lab</span></h2>
-                <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-1">Cross-benchmarking Neural Intelligence</p>
+                <p className="text-[11px] text-slate-500 font-black uppercase tracking-[0.3em] mt-1">Cross-benchmarking Neural Intelligence</p>
             </div>
         </div>
 
@@ -129,7 +129,7 @@ export const CompareArea = () => {
         >
             <AlertCircle size={20} />
             <div className="flex flex-col">
-                <span className="font-black uppercase tracking-widest text-[10px]">Diagnostic Error</span>
+                <span className="font-black uppercase tracking-widest text-[11px]">Diagnostic Error</span>
                 <span className="font-bold">{error}</span>
             </div>
         </motion.div>
@@ -141,7 +141,7 @@ export const CompareArea = () => {
       )}>
         
         {/* Model A Column */}
-        <BentoItem delay={0.1} className="min-h-[500px] flex flex-col">
+        <BentoItem delay={0.1} className="min-h-[500px] flex flex-col border-t-[3px] border-t-jb-accent">
             <div className="flex items-center justify-between border-b border-white/5 pb-6 mb-6">
                 <div className="flex items-center gap-4">
                     <div className="p-2.5 rounded-xl bg-jb-accent/10 border border-jb-accent/20 text-jb-accent">
@@ -151,11 +151,11 @@ export const CompareArea = () => {
                         <span className="text-white font-black text-sm uppercase tracking-tight">{model1Label}</span>
                         <div className="flex items-center gap-2 mt-0.5">
                             <Cloud size={10} className="text-slate-500" />
-                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{fromKey(model1Key).provider}</span>
+                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{fromKey(model1Key).provider}</span>
                         </div>
                     </div>
                 </div>
-                <div className="px-3 py-1 rounded-lg bg-jb-accent/10 border border-jb-accent/20 text-jb-accent text-[9px] font-black uppercase tracking-widest">
+                <div className="px-3 py-1 rounded-lg bg-jb-accent/10 border border-jb-accent/20 text-jb-accent text-[11px] font-black uppercase tracking-widest">
                    Model A
                 </div>
             </div>
@@ -168,18 +168,18 @@ export const CompareArea = () => {
                       dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parse(results.model1 || '') as string) }}
                     />
                 ) : (
-                    <div className="h-full flex flex-col justify-center gap-4 opacity-20">
-                        <div className="bg-white/10 animate-pulse rounded-full h-4 w-3/4" />
-                        <div className="bg-white/10 animate-pulse rounded-full h-4 w-1/2" />
-                        <div className="bg-white/10 animate-pulse rounded-full h-4 w-5/6" />
-                        <div className="bg-white/10 animate-pulse rounded-full h-4 w-2/3" />
+                    <div className="h-full flex flex-col justify-center gap-4">
+                        <div className="fluid-shimmer rounded-full h-4 w-3/4" />
+                        <div className="fluid-shimmer rounded-full h-4 w-1/2" style={{ animationDelay: '0.3s' }} />
+                        <div className="fluid-shimmer rounded-full h-4 w-5/6" style={{ animationDelay: '0.6s' }} />
+                        <div className="fluid-shimmer rounded-full h-4 w-2/3" style={{ animationDelay: '0.9s' }} />
                     </div>
                 )}
             </div>
         </BentoItem>
 
         {/* Model B Column */}
-        <BentoItem delay={0.2} className="min-h-[500px] flex flex-col">
+        <BentoItem delay={0.2} className="min-h-[500px] flex flex-col border-t-[3px] border-t-jb-orange">
             <div className="flex items-center justify-between border-b border-white/5 pb-6 mb-6">
                 <div className="flex items-center gap-4">
                     <div className="p-2.5 rounded-xl bg-jb-orange/10 border border-jb-orange/20 text-jb-orange">
@@ -189,11 +189,11 @@ export const CompareArea = () => {
                         <span className="text-white font-black text-sm uppercase tracking-tight">{model2Label}</span>
                         <div className="flex items-center gap-2 mt-0.5">
                             <Shield size={10} className="text-slate-500" />
-                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{fromKey(model2Key).provider}</span>
+                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{fromKey(model2Key).provider}</span>
                         </div>
                     </div>
                 </div>
-                <div className="px-3 py-1 rounded-lg bg-jb-orange/10 border border-jb-orange/20 text-jb-orange text-[9px] font-black uppercase tracking-widest">
+                <div className="px-3 py-1 rounded-lg bg-jb-orange/10 border border-jb-orange/20 text-jb-orange text-[11px] font-black uppercase tracking-widest">
                    Model B
                 </div>
             </div>
@@ -206,11 +206,11 @@ export const CompareArea = () => {
                       dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parse(results.model2 || '') as string) }}
                     />
                 ) : (
-                    <div className="h-full flex flex-col justify-center gap-4 opacity-20">
-                        <div className="bg-white/10 animate-pulse rounded-full h-4 w-3/4" />
-                        <div className="bg-white/10 animate-pulse rounded-full h-4 w-1/2" />
-                        <div className="bg-white/10 animate-pulse rounded-full h-4 w-5/6" />
-                        <div className="bg-white/10 animate-pulse rounded-full h-4 w-2/3" />
+                    <div className="h-full flex flex-col justify-center gap-4">
+                        <div className="fluid-shimmer rounded-full h-4 w-3/4" />
+                        <div className="fluid-shimmer rounded-full h-4 w-1/2" style={{ animationDelay: '0.3s' }} />
+                        <div className="fluid-shimmer rounded-full h-4 w-5/6" style={{ animationDelay: '0.6s' }} />
+                        <div className="fluid-shimmer rounded-full h-4 w-2/3" style={{ animationDelay: '0.9s' }} />
                     </div>
                 )}
             </div>

@@ -105,10 +105,10 @@ export const FolderPickerModal: React.FC<FolderPickerModalProps> = ({ fileName, 
 
         {/* File name label */}
         <div className="px-4 pt-3 pb-1">
-          <p className="text-[10px] text-white/40">
+          <p className="text-[11px] text-white/40">
             Importing <span className="font-mono text-white/70">{fileName}</span>
           </p>
-          <p className="text-[10px] text-white/30 mt-0.5">Choose destination folder:</p>
+          <p className="text-[11px] text-white/30 mt-0.5">Choose destination folder:</p>
         </div>
 
         {/* Folder list */}
@@ -140,7 +140,7 @@ export const FolderPickerModal: React.FC<FolderPickerModalProps> = ({ fileName, 
 
         {/* Fallback note — shown when folder list fetch failed */}
         {fetchFailed && (
-          <p className="px-4 pb-1 text-[9px] text-amber-400/60">
+          <p className="px-4 pb-1 text-[11px] text-amber-400/60">
             Couldn't load folders — will import to project root
           </p>
         )}
@@ -150,14 +150,14 @@ export const FolderPickerModal: React.FC<FolderPickerModalProps> = ({ fileName, 
           <button
             type="button"
             onClick={onClose}
-            className="px-3 py-1.5 rounded-xl text-[10px] font-bold text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors"
+            className="px-3 py-1.5 rounded-xl text-[11px] font-bold text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={() => onConfirm(selected)}
-            className="px-3 py-1.5 rounded-xl text-[10px] font-black bg-jb-accent/15 border border-jb-accent/25 text-jb-accent hover:bg-jb-accent/25 transition-colors"
+            className="px-3 py-1.5 rounded-xl text-[11px] font-black bg-jb-accent/15 border border-jb-accent/25 text-jb-accent hover:bg-jb-accent/25 transition-colors"
           >
             Import
           </button>

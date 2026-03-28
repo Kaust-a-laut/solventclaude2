@@ -117,7 +117,7 @@
   }
 
   .glass-panel {
-    @apply bg-black/20 backdrop-blur-3xl border border-white/[0.03] shadow-2xl relative overflow-hidden;
+    @apply bg-black/20 backdrop-blur-3xl border border-white/[0.06] shadow-2xl relative overflow-hidden;
   }
 
   /* Add a rim-light effect to glass panels */
@@ -128,7 +128,7 @@
   }
 
   .glass-card {
-    @apply bg-white/[0.01] backdrop-blur-2xl border border-white/[0.03] rounded-2xl;
+    @apply bg-white/[0.01] backdrop-blur-2xl border border-white/[0.06] rounded-2xl;
   }
 
   .text-vibrant {
@@ -182,12 +182,12 @@
   }
 
   .chat-bubble-ai {
-    @apply bg-white/[0.02] backdrop-blur-md border border-white/[0.05] text-[15.5px] leading-[1.6];
+    @apply bg-white/[0.02] backdrop-blur-md border border-white/[0.05] text-[15px] leading-[1.6];
   }
 
   /* Technical Metadata */
   .technical-meta {
-    @apply font-mono text-[10px] uppercase tracking-widest text-white/30;
+    @apply font-mono text-[11px] uppercase tracking-widest text-white/30;
   }
 
   @keyframes border-flow {
@@ -233,7 +233,7 @@
 
   .prose pre::before {
     content: "Source Analysis // Diagnostic Output";
-    @apply block w-full bg-white/5 px-4 py-2 text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] border-b border-white/5;
+    @apply block w-full bg-white/5 px-4 py-2 text-[11px] font-black text-slate-500 uppercase tracking-[0.3em] border-b border-white/5;
   }
 
   .prose code {
@@ -254,7 +254,7 @@
   }
 
   .prose th {
-    @apply px-4 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-white/10;
+    @apply px-4 py-3 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest border-b border-white/10;
   }
 
   .prose td {
@@ -305,6 +305,67 @@
     );
     background-size: 400% 400%;
     animation: liquid-flow 8s ease infinite;
+  }
+
+  /* Fluid Shimmer - Flowing gradient shimmer for loading skeletons */
+  @keyframes fluid-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .fluid-shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(157, 91, 210, 0.06) 20%,
+      rgba(60, 113, 247, 0.08) 40%,
+      rgba(6, 182, 212, 0.06) 60%,
+      rgba(251, 146, 60, 0.04) 80%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: fluid-shimmer 2.5s ease-in-out infinite;
+  }
+
+  /* Fluid Divider - Hair-thin horizontal gradient line */
+  .fluid-divider {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(60, 113, 247, 0.15) 20%,
+      rgba(157, 91, 210, 0.2) 50%,
+      rgba(251, 146, 60, 0.15) 80%,
+      transparent 100%
+    );
+  }
+
+  /* Fluid Scrollbar - Gradient scrollbar thumb */
+  .fluid-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .fluid-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .fluid-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(
+      180deg,
+      rgba(60, 113, 247, 0.2),
+      rgba(157, 91, 210, 0.25),
+      rgba(251, 146, 60, 0.2)
+    );
+    border-radius: 4px;
+  }
+
+  .fluid-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(
+      180deg,
+      rgba(60, 113, 247, 0.35),
+      rgba(157, 91, 210, 0.4),
+      rgba(251, 146, 60, 0.35)
+    );
   }
 
   /* Frosted Glass Depth Layers */

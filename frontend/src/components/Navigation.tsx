@@ -72,7 +72,10 @@ export const Navigation = () => {
         {isActive && !isCollapsed && (
           <motion.div
             layoutId="navGlow"
-            className={`absolute left-0 top-[20%] bottom-[20%] w-[3px] rounded-full bg-gradient-to-b from-transparent ${getLineColor(color)} to-transparent opacity-90`}
+            className="absolute left-0 top-[20%] bottom-[40%] w-[3px] rounded-full opacity-90"
+            style={{
+              background: 'linear-gradient(180deg, transparent, rgba(60,113,247,0.8), rgba(157,91,210,0.8), rgba(251,146,60,0.6), transparent)',
+            }}
           />
         )}
         {isActive && !isCollapsed && (

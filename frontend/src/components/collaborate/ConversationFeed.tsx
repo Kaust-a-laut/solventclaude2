@@ -103,7 +103,7 @@ export const ConversationFeed: React.FC<ConversationFeedProps> = ({
                 />
               ))}
             </div>
-            <p className="text-[10px] text-slate-600 uppercase tracking-widest font-bold">
+            <p className="text-[11px] text-slate-600 uppercase tracking-widest font-bold">
               Agents joining the roundtable...
             </p>
           </div>
@@ -138,7 +138,7 @@ export const ConversationFeed: React.FC<ConversationFeedProps> = ({
                   className="flex items-center gap-3 py-1"
                 >
                   <div className="flex-1 h-px bg-white/5" />
-                  <span className="text-[8px] font-black uppercase tracking-widest text-slate-700">
+                  <span className="text-[11px] font-black uppercase tracking-widest text-slate-700">
                     Round {currentMsgRound}
                   </span>
                   <div className="flex-1 h-px bg-white/5" />
@@ -185,7 +185,7 @@ export const ConversationFeed: React.FC<ConversationFeedProps> = ({
                     />
                   ))}
                 </div>
-                <span className={cn('text-[9px] uppercase tracking-widest font-bold', config?.textColor || 'text-slate-500')}>
+                <span className={cn('text-[11px] uppercase tracking-widest font-bold', config?.textColor || 'text-slate-500')}>
                   Thinking...
                 </span>
               </>

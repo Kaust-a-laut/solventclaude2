@@ -73,7 +73,7 @@ export const ModelPlaygroundArea = () => {
                 className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10"
               >
                  <Sparkles size={12} className="text-jb-accent" />
-                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Advanced Neural Laboratory</span>
+                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Advanced Neural Laboratory</span>
               </motion.div>
               
               <div className="space-y-4">
@@ -110,19 +110,19 @@ export const ModelPlaygroundArea = () => {
         </div>
 
         {/* Decorative Grid Footer */}
-        <div className="pt-12 border-t border-white/[0.03] flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="pt-12 border-t border-white/[0.06] flex flex-col md:flex-row justify-between items-center gap-6">
            <div className="flex gap-8">
               <div className="space-y-1">
-                 <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Latency Matrix</p>
+                 <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Latency Matrix</p>
                  <p className="text-sm font-mono text-white/40">Sub-100ms Optimization</p>
               </div>
               <div className="space-y-1">
-                 <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Inference Engine</p>
+                 <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Inference Engine</p>
                  <p className="text-sm font-mono text-white/40">Hybrid Cloud/Edge</p>
               </div>
            </div>
            
-           <p className="text-[10px] font-mono text-slate-700">SOLVENT.PLAYGROUND_V2.0 // BUILD_2026.01.19</p>
+           <p className="text-[11px] font-mono text-slate-700">SOLVENT.PLAYGROUND_V2.0 // BUILD_2026.01.19</p>
         </div>
       </div>
     </div>

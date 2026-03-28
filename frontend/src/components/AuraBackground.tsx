@@ -23,7 +23,7 @@ const AuraBackground: React.FC<{ children: React.ReactNode }> = ({ children }) =
             radial-gradient(circle at 40% 40%, rgba(251, 146, 60, 0.1) 0%, transparent 50%);
           background-blend-mode: screen;
           filter: blur(100px);
-          animation: aura-organic-pulse 25s infinite ease-in-out;
+          animation: aura-organic-pulse 12s infinite ease-in-out;
           will-change: opacity, transform;
           transform: translate3d(0,0,0);
           pointer-events: none;

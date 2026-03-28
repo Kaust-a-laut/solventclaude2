@@ -132,8 +132,8 @@ export const ModelsTab = () => {
       {/* Routing Mode */}
       <motion.section variants={staggerItem} className="space-y-6" id="settings-routing-mode">
         <div className="flex items-center justify-between">
-          <h4 className="text-[10px] font-black text-jb-accent uppercase tracking-[0.4em]">Routing Mode</h4>
-          <button onClick={handleResetModels} className="flex items-center gap-1 text-[8px] font-black text-slate-700 hover:text-slate-400 uppercase tracking-widest transition-colors" title="Reset models to defaults">
+          <h4 className="text-[11px] font-black text-jb-accent uppercase tracking-[0.4em]">Routing Mode</h4>
+          <button onClick={handleResetModels} className="flex items-center gap-1 text-[11px] font-black text-slate-700 hover:text-slate-400 uppercase tracking-widest transition-colors" title="Reset models to defaults">
             <RotateCcw size={9} /> Reset
           </button>
         </div>
@@ -154,7 +154,7 @@ export const ModelsTab = () => {
               )}
             >
               <span className="text-xs font-black text-white uppercase block mb-1">{p.label}</span>
-              <span className="text-[9px] text-slate-500 font-bold">{p.desc}</span>
+              <span className="text-[11px] text-slate-500 font-bold">{p.desc}</span>
               {globalProvider === p.id && (
                 <div className="absolute top-0 right-0 w-16 h-16 bg-jb-accent/10 blur-2xl rounded-full" />
               )}
@@ -166,11 +166,11 @@ export const ModelsTab = () => {
       {/* Default Models */}
       <motion.section variants={staggerItem} className="space-y-6" id="settings-default-cloud-model">
         <div className="flex items-center justify-between">
-          <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Default Models</h4>
+          <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.4em]">Default Models</h4>
           <button
             onClick={fetchModels}
             disabled={isRefreshing}
-            className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-slate-600 hover:text-slate-300 transition-colors disabled:opacity-40"
+            className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-slate-600 hover:text-slate-300 transition-colors disabled:opacity-40"
           >
             <RefreshCw size={10} className={cn(isRefreshing && "animate-spin")} />
             Refresh
@@ -178,7 +178,7 @@ export const ModelsTab = () => {
         </div>
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-2" id="settings-default-cloud-model">
-            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1">Default Cloud Model</label>
+            <label className="text-[11px] font-black text-slate-600 uppercase tracking-widest ml-1">Default Cloud Model</label>
             <CustomSelect
               value={selectedCloudModel}
               onChange={handleGlobalCloudModelChange}
@@ -188,7 +188,7 @@ export const ModelsTab = () => {
             />
           </div>
           <div className="space-y-2" id="settings-default-local-model">
-            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1">Default Local Model</label>
+            <label className="text-[11px] font-black text-slate-600 uppercase tracking-widest ml-1">Default Local Model</label>
             <CustomSelect
               value={selectedLocalModel}
               onChange={v => setSelectedLocalModel(v)}
@@ -200,7 +200,7 @@ export const ModelsTab = () => {
 
         {/* OpenRouter Model Override */}
         <div className="space-y-2 pt-2" id="settings-openrouter-override">
-          <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1">OpenRouter Model Override</label>
+          <label className="text-[11px] font-black text-slate-600 uppercase tracking-widest ml-1">OpenRouter Model Override</label>
           <div className="flex gap-3 items-stretch">
             <input
               type="text"
@@ -221,13 +221,13 @@ export const ModelsTab = () => {
               </div>
             )}
           </div>
-          <p className="text-[9px] text-slate-600 ml-1">Used when routing to OpenRouter provider. Supports any model slug from openrouter.ai/models.</p>
+          <p className="text-[11px] text-slate-600 ml-1">Used when routing to OpenRouter provider. Supports any model slug from openrouter.ai/models.</p>
         </div>
       </motion.section>
 
       {/* Image Provider */}
       <motion.section variants={staggerItem} className="space-y-6" id="settings-image-provider">
-        <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Image Provider</h4>
+        <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.4em]">Image Provider</h4>
         <div className="grid grid-cols-2 gap-4">
           {[
             { id: 'gemini',       label: 'Gemini Imagen',  desc: 'Imagen 3.0 — requires Gemini API key' },
@@ -245,8 +245,8 @@ export const ModelsTab = () => {
                   : "bg-transparent border-white/5 opacity-40 hover:opacity-100"
               )}
             >
-              <span className="text-[10px] font-black text-white uppercase block mb-1">{p.label}</span>
-              <span className="text-[8px] text-slate-500 font-bold uppercase tracking-tighter">{p.desc}</span>
+              <span className="text-[11px] font-black text-white uppercase block mb-1">{p.label}</span>
+              <span className="text-[11px] text-slate-500 font-bold uppercase tracking-tighter">{p.desc}</span>
             </button>
           ))}
         </div>
@@ -256,7 +256,7 @@ export const ModelsTab = () => {
             <div className="flex items-center gap-4 bg-white/[0.02] border border-white/5 rounded-2xl p-4">
               <Globe size={16} className="text-slate-500 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <label className="text-[8px] font-black text-slate-600 uppercase tracking-widest block mb-1">Local Node Endpoint</label>
+                <label className="text-[11px] font-black text-slate-600 uppercase tracking-widest block mb-1">Local Node Endpoint</label>
                 <input
                   type="text"
                   value={localImageUrl}
@@ -265,7 +265,7 @@ export const ModelsTab = () => {
                   className="w-full bg-transparent border-none outline-none text-[11px] font-mono text-jb-accent placeholder:text-slate-700"
                 />
               </div>
-              <div className="px-3 py-1 bg-white/5 rounded-lg border border-white/5 text-[8px] font-black text-slate-500 uppercase flex-shrink-0">A1111 / WebUI</div>
+              <div className="px-3 py-1 bg-white/5 rounded-lg border border-white/5 text-[11px] font-black text-slate-500 uppercase flex-shrink-0">A1111 / WebUI</div>
             </div>
           </div>
         )}
@@ -275,7 +275,7 @@ export const ModelsTab = () => {
       <motion.section variants={staggerItem} className="space-y-4 pt-6 border-t border-white/5" id="settings-mode-overrides">
         <button
           onClick={() => setModeConfigsExpanded(prev => !prev)}
-          className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] hover:text-slate-300 transition-colors"
+          className="flex items-center gap-2 text-[11px] font-black text-slate-500 uppercase tracking-[0.4em] hover:text-slate-300 transition-colors"
         >
           <ChevronDown size={12} className={cn("transition-transform duration-300", modeConfigsExpanded && "rotate-180")} />
           Per-Mode Model Overrides
@@ -284,7 +284,7 @@ export const ModelsTab = () => {
           <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
             {Object.entries(modeConfigs).map(([modeId, config]) => (
               <div key={modeId} className="flex items-center gap-4 bg-white/[0.02] border border-white/5 rounded-2xl px-3 py-2">
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest w-32 flex-shrink-0">{modeId.replace('_', ' ')}</span>
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest w-32 flex-shrink-0">{modeId.replace('_', ' ')}</span>
                 <div className="flex-1">
                   <CustomSelect
                     value={config.model}
@@ -292,7 +292,7 @@ export const ModelsTab = () => {
                     options={modeOverrideOptions}
                   />
                 </div>
-                <span className="text-[9px] text-slate-600 font-mono flex-shrink-0">{config.provider}</span>
+                <span className="text-[11px] text-slate-600 font-mono flex-shrink-0">{config.provider}</span>
               </div>
             ))}
           </div>

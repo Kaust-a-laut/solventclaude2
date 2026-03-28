@@ -70,14 +70,14 @@ export const ModelPickerDropdown = ({
   return (
     <div className="flex flex-col gap-1" ref={ref}>
       {label && (
-        <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">{label}</span>
+        <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest">{label}</span>
       )}
       <div className="relative">
         <button
           onClick={() => !disabled && setOpen(v => !v)}
           disabled={disabled}
           className={cn(
-            "flex items-center gap-2 appearance-none bg-black/60 border border-white/10 rounded-2xl pl-4 pr-9 py-3 text-[10px] font-bold uppercase tracking-wider outline-none transition-all",
+            "flex items-center gap-2 appearance-none bg-black/60 border border-white/10 rounded-2xl pl-4 pr-9 py-3 text-[11px] font-bold uppercase tracking-wider outline-none transition-all",
             accentClass,
             disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:border-white/20"
           )}
@@ -107,7 +107,7 @@ export const ModelPickerDropdown = ({
                       key={g}
                       onClick={() => setActiveGroup(g)}
                       className={cn(
-                        "flex-1 py-1 rounded-md text-[8px] font-black uppercase tracking-wider transition-all",
+                        "flex-1 py-1 rounded-md text-[11px] font-black uppercase tracking-wider transition-all",
                         activeGroup === g ? accentTab : "text-slate-600 hover:text-slate-400"
                       )}
                     >
@@ -133,8 +133,8 @@ export const ModelPickerDropdown = ({
                           : "bg-white/[0.02] border-white/[0.05] hover:bg-white/[0.05] hover:border-white/10"
                       )}
                     >
-                      <span className="text-[7px] font-black uppercase tracking-wider text-slate-600">{m.group}</span>
-                      <span className={cn("text-[9px] font-bold leading-tight", isSelected ? accentClass : "text-slate-300")}>
+                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-600">{m.group}</span>
+                      <span className={cn("text-[11px] font-bold leading-tight", isSelected ? accentClass : "text-slate-300")}>
                         {m.label}
                       </span>
                       {isSelected && <Check size={8} className={cn("mt-0.5", accentClass)} />}
@@ -145,7 +145,7 @@ export const ModelPickerDropdown = ({
 
               {/* Footer */}
               <div className="px-3 py-2 border-t border-white/5">
-                <p className="text-[8px] text-slate-700 text-center">More models in Settings → Models</p>
+                <p className="text-[11px] text-slate-700 text-center">More models in Settings → Models</p>
               </div>
             </motion.div>
           )}

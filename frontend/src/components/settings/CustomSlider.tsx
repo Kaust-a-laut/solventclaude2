@@ -109,7 +109,7 @@ export const CustomSlider = ({
                 exit={{ opacity: 0, y: 4 }}
                 transition={{ duration: 0.12 }}
                 className={cn(
-                  "absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-[#0a0a0f] border border-white/10 rounded-lg text-[10px] font-mono whitespace-nowrap pointer-events-none",
+                  "absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-[#0a0a0f] border border-white/10 rounded-lg text-[11px] font-mono whitespace-nowrap pointer-events-none",
                   styles.tooltip
                 )}
               >

@@ -288,19 +288,31 @@ export class CodebaseIndexer {
     
     // Class definitions
     const classMatches = text.matchAll(/class\s+([a-zA-Z0-9_]+)/g);
-    for (const match of classMatches) symbols.push(match[1]);
+    for (const match of classMatches) {
+      const sym = match[1];
+      if (sym) symbols.push(sym);
+    }
 
     // Interface definitions
     const interfaceMatches = text.matchAll(/interface\s+([a-zA-Z0-9_]+)/g);
-    for (const match of interfaceMatches) symbols.push(match[1]);
+    for (const match of interfaceMatches) {
+      const sym = match[1];
+      if (sym) symbols.push(sym);
+    }
 
     // Function definitions
     const functionMatches = text.matchAll(/function\s+([a-zA-Z0-9_]+)/g);
-    for (const match of functionMatches) symbols.push(match[1]);
+    for (const match of functionMatches) {
+      const sym = match[1];
+      if (sym) symbols.push(sym);
+    }
 
     // Exported constants/vars
     const constMatches = text.matchAll(/export\s+(const|let|var)\s+([a-zA-Z0-9_]+)/g);
-    for (const match of constMatches) symbols.push(match[2]);
+    for (const match of constMatches) {
+      const sym = match[2];
+      if (sym) symbols.push(sym);
+    }
 
     return [...new Set(symbols)];
   }

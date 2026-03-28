@@ -80,7 +80,7 @@ export const BentoCard = ({
           </div>
           {badge && (
             <span className={cn(
-              "px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-[0.2em] backdrop-blur-md",
+              "px-3 py-1 rounded-lg text-[11px] font-black uppercase tracking-[0.2em] backdrop-blur-md",
               badgeColor ?? "bg-black/40 text-white/60 border border-white/10"
             )}>
               {badge}
@@ -116,7 +116,7 @@ export const BentoCard = ({
         </div>
       </div>
       
-      <div className="relative z-10 pt-6 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-white/40 group-hover:text-white transition-all">
+      <div className="relative z-10 pt-6 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.3em] text-white/40 group-hover:text-white transition-all">
         {actionText.startsWith('Dive') ? (
           <div className="flex flex-col items-center w-full gap-1">
             <div className="flex items-center justify-center w-full gap-[0.5em]">

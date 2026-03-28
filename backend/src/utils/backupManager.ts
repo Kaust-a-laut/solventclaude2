@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import crypto from 'crypto';
+import { createHash } from 'node:crypto';
 import { logger } from './logger';
 import { AtomicFileSystem } from './fileSystem';
 
@@ -115,6 +115,6 @@ export class BackupManager {
   }
 
   private computeChecksum(data: string): string {
-    return crypto.createHash('sha256').update(data).digest('hex').slice(0, 16);
+    return createHash('sha256').update(data).digest('hex').slice(0, 16);
   }
 }

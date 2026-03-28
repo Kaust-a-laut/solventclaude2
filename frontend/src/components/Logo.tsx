@@ -141,6 +141,11 @@ const Logo: React.FC<LogoProps> = memo(({
           <feGaussianBlur stdDeviation={2.5} result="blur" />
           <feComposite in="SourceGraphic" in2="blur" operator="over" />
         </filter>
+
+        {/* Soft blur for meniscus blending */}
+        <filter id={`meniscusBlur-${colorScheme}`} x="-20%" y="-50%" width="140%" height="200%">
+          <feGaussianBlur stdDeviation={1.8} />
+        </filter>
       </defs>
 
       {/* Neural network background pattern (hero size only) */}
@@ -249,14 +254,15 @@ const Logo: React.FC<LogoProps> = memo(({
         />
       )}
 
-      {/* Surface tension meniscus */}
+      {/* Surface tension meniscus — softened to blend into fluid */}
       <motion.path
         initial={{ d: "M25 80 Q50 85 75 80" }}
         fill="none"
-        stroke="white"
-        strokeWidth={simplified ? 0.8 : 1}
-        strokeOpacity="0.6"
+        stroke={`url(#beakerFluid-${colorScheme})`}
+        strokeWidth={simplified ? 1 : 2}
+        strokeOpacity={simplified ? 0.4 : 0.5}
         strokeLinecap="round"
+        filter={!simplified ? `url(#meniscusBlur-${colorScheme})` : undefined}
         animate={{ d: ["M25 80 Q50 85 75 80", "M25 81 Q50 86 75 81", "M25 80 Q50 85 75 80"] }}
         transition={{ duration: fluidDuration, repeat: Infinity, ease: "easeInOut" }}
       />

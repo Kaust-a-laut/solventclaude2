@@ -23,7 +23,7 @@ export interface ParsedCommand {
 export function parseSlashCommand(input: string): ParsedCommand | null {
   const match = input.match(/^\/([a-z]+)\s*(.*)/s);
   if (!match) return null;
-  return { command: match[1], rest: match[2].trim() };
+  return { command: match[1] ?? '', rest: (match[2] ?? '').trim() };
 }
 
 export function buildSystemPrompt(

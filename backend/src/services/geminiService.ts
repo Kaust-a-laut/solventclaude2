@@ -6,6 +6,18 @@ import { getGeminiTools } from '../constants/tools';
 import { logger } from '../utils/logger';
 import { extractImageFromDataUrl, normalizeMessagesForGemini } from '../utils/messageUtils';
 
+const GEMINI_TIMEOUT_MS = parseInt(process.env.GEMINI_TIMEOUT_MS || '60000', 10);
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+    promise.then(
+      val => { clearTimeout(timer); resolve(val); },
+      err => { clearTimeout(timer); reject(err); }
+    );
+  });
+}
+
 export class GeminiService implements AIProvider {
   readonly name = 'gemini';
   private genAI: GoogleGenerativeAI | null = null;
@@ -47,10 +59,10 @@ export class GeminiService implements AIProvider {
     // Use shared message normalization
     const history = normalizeMessagesForGemini(messages.slice(0, -1));
     const chat = model.startChat({ history });
-    const lastMessage = messages[messages.length - 1].content;
+    const lastMessage = messages[messages.length - 1]!.content;
 
     try {
-      let result = await chat.sendMessage(lastMessage);
+      let result = await withTimeout(chat.sendMessage(lastMessage), GEMINI_TIMEOUT_MS, 'Gemini chat');
       let response = await result.response;
       let call = response.candidates?.[0]?.content?.parts?.find(p => p.functionCall);
 
@@ -82,7 +94,7 @@ export class GeminiService implements AIProvider {
           }
         }
 
-        result = await chat.sendMessage(Array.isArray(messagePart) ? messagePart : [messagePart]);
+        result = await withTimeout(chat.sendMessage(Array.isArray(messagePart) ? messagePart : [messagePart]), GEMINI_TIMEOUT_MS, 'Gemini tool response');
         response = await result.response;
         call = response.candidates?.[0]?.content?.parts?.find(p => p.functionCall);
       }
@@ -109,8 +121,10 @@ export class GeminiService implements AIProvider {
     // Use shared message normalization
     const history = normalizeMessagesForGemini(messages.slice(0, -1));
     const chat = model.startChat({ history });
-    const lastMessage = messages[messages.length - 1].content;
-    const result = await chat.sendMessageStream(lastMessage);
+    const lastMsg = messages[messages.length - 1];
+    if (!lastMsg) throw new Error('No messages provided');
+    const lastMessage = lastMsg.content;
+    const result = await withTimeout(chat.sendMessageStream(lastMessage), GEMINI_TIMEOUT_MS, 'Gemini stream');
 
     for await (const chunk of result.stream) {
       yield chunk.text();
@@ -127,7 +141,7 @@ export class GeminiService implements AIProvider {
         maxOutputTokens: maxTokens,
       }
     });
-    const result = await model.generateContent([prompt, ...imageParts]);
+    const result = await withTimeout(model.generateContent([prompt, ...imageParts]), GEMINI_TIMEOUT_MS, 'Gemini vision');
     const response = await result.response;
     return response.text();
   }
@@ -138,7 +152,7 @@ export class GeminiService implements AIProvider {
     const genAI = this.getGenAI(apiKey);
     logger.info(`[Gemini] Requesting image generation with model: ${modelName}`);
     const model = genAI.getGenerativeModel({ model: modelName });
-    const result = await model.generateContent(prompt);
+    const result = await withTimeout(model.generateContent(prompt), GEMINI_TIMEOUT_MS, 'Gemini image');
     const response = await result.response;
     const parts = response.candidates?.[0]?.content?.parts;
     const imagePart = parts?.find(part => part.inlineData);

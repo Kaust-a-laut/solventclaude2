@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { AIProviderFactory } from './aiProviderFactory';
 import { vectorService } from './vectorService';
 import { logger } from '../utils/logger';
@@ -196,7 +197,7 @@ export class SupervisorService {
             content: analysis.crystallize.content,
             type: analysis.crystallize.type || 'architectural_decision',
             tags: ['supervisor_detected']
-          }, crypto.randomUUID());
+          }, randomUUID());
           logger.info(`[Supervisor] Crystallized: ${analysis.crystallize.content}`);
         }
       }
@@ -378,7 +379,7 @@ RESPONSE FORMAT (strict JSON):
 
         // Create a decision record for history
         const decisionRecord: DecisionRecord = {
-          id: crypto.randomUUID(),
+          id: randomUUID(),
           timestamp: Date.now(),
           trigger: this.mapActivityToTrigger(context.activity),
           decision: result.decision || '',

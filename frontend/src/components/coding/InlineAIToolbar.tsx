@@ -101,7 +101,7 @@ export const InlineAIToolbar: React.FC<Props> = ({ editorRef, containerRef, onCo
               key={t.id}
               type="button"
               onClick={() => handleToolClick(t.id)}
-              className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+              className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold text-white/50 hover:text-white hover:bg-white/10 transition-colors"
               aria-label={t.label}
             >
               <t.icon size={10} />

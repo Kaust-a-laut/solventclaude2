@@ -77,7 +77,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
               <Icon size={14} className={config.textColor} />
             </div>
             <div>
-              <p className={cn('text-[9px] font-black uppercase tracking-widest', config.textColor)}>
+              <p className={cn('text-[11px] font-black uppercase tracking-widest', config.textColor)}>
                 {config.displayName}
               </p>
             </div>
@@ -125,7 +125,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
                   />
                 ))}
               </div>
-              <p className={cn('text-[9px] font-bold uppercase tracking-widest', config.textColor)}>
+              <p className={cn('text-[11px] font-bold uppercase tracking-widest', config.textColor)}>
                 Analyzing...
               </p>
             </motion.div>
@@ -144,7 +144,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
               </p>
               <div className="pt-2 border-t border-white/5 flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                <span className="text-[8px] font-black uppercase tracking-widest text-emerald-500">
+                <span className="text-[11px] font-black uppercase tracking-widest text-emerald-500">
                   Analysis Complete
                 </span>
               </div>
@@ -156,7 +156,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
               key="idle"
               className="flex-1 flex items-center justify-center"
             >
-              <p className="text-[9px] text-slate-700 uppercase tracking-widest font-bold">
+              <p className="text-[11px] text-slate-700 uppercase tracking-widest font-bold">
                 Standby
               </p>
             </motion.div>

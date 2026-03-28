@@ -49,11 +49,17 @@ export class PluginManager {
   }
 
   private async loadAllPlugins(): Promise<void> {
-    // Load provider plugins
-    await this.loadProviderPlugins();
-    
-    // Load tool plugins
-    await this.loadToolPlugins();
+    const [providerResults, toolResults] = await Promise.allSettled([
+      this.loadProviderPlugins(),
+      this.loadToolPlugins()
+    ]);
+
+    if (providerResults.status === 'rejected') {
+      logger.error('[PluginManager] Provider plugin loading failed:', providerResults.reason);
+    }
+    if (toolResults.status === 'rejected') {
+      logger.error('[PluginManager] Tool plugin loading failed:', toolResults.reason);
+    }
   }
 
   private async loadProviderPlugins(): Promise<void> {
@@ -66,29 +72,26 @@ export class PluginManager {
         !file.endsWith('.d.ts')
       );
       
-      for (const file of jsFiles) {
-        const filePath = path.join(providerDir, file);
-        try {
-          const module = await import(filePath);
-          
-          // Look for a default export that implements IProviderPlugin
-          if (module.default && typeof module.default === 'function') {
-            const pluginInstance = new module.default();
-            
-            if (this.isValidProviderPlugin(pluginInstance)) {
-              await this.registerProvider(pluginInstance);
-              logger.info(`[PluginManager] Registered provider plugin: ${pluginInstance.name}`);
-            } else {
-              logger.warn(`[PluginManager] Invalid provider plugin in file: ${file}`);
+      await Promise.allSettled(
+        jsFiles.map(async (file) => {
+          const filePath = path.join(providerDir, file);
+          try {
+            const module = await import(filePath);
+            const PluginClass = module.default || module;
+
+            if (typeof PluginClass === 'function') {
+              const instance = new PluginClass();
+              if (this.isValidProviderPlugin(instance)) {
+                await this.registerProvider(instance);
+              } else {
+                logger.warn(`[PluginManager] Invalid provider plugin: ${file}`);
+              }
             }
-          } else if (this.isValidProviderPlugin(module.default)) {
-            await this.registerProvider(module.default);
-            logger.info(`[PluginManager] Registered provider plugin: ${module.default.name}`);
+          } catch (err: unknown) {
+            logger.error(`[PluginManager] Failed to load provider plugin ${file}:`, err instanceof Error ? err.message : String(err));
           }
-        } catch (error) {
-          logger.error(`[PluginManager] Failed to load provider plugin: ${file}`, error);
-        }
-      }
+        })
+      );
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
         logger.error('[PluginManager] Error reading provider plugins directory', error);
@@ -107,29 +110,26 @@ export class PluginManager {
         !file.endsWith('.d.ts')
       );
       
-      for (const file of jsFiles) {
-        const filePath = path.join(toolDir, file);
-        try {
-          const module = await import(filePath);
-          
-          // Look for a default export that implements IToolPlugin
-          if (module.default && typeof module.default === 'function') {
-            const pluginInstance = new module.default();
-            
-            if (this.isValidToolPlugin(pluginInstance)) {
-              await this.registerTool(pluginInstance);
-              logger.info(`[PluginManager] Registered tool plugin: ${pluginInstance.name}`);
-            } else {
-              logger.warn(`[PluginManager] Invalid tool plugin in file: ${file}`);
+      await Promise.allSettled(
+        jsFiles.map(async (file) => {
+          const filePath = path.join(toolDir, file);
+          try {
+            const module = await import(filePath);
+            const PluginClass = module.default || module;
+
+            if (typeof PluginClass === 'function') {
+              const instance = new PluginClass();
+              if (this.isValidToolPlugin(instance)) {
+                await this.registerTool(instance);
+              } else {
+                logger.warn(`[PluginManager] Invalid tool plugin: ${file}`);
+              }
             }
-          } else if (this.isValidToolPlugin(module.default)) {
-            await this.registerTool(module.default);
-            logger.info(`[PluginManager] Registered tool plugin: ${module.default.name}`);
+          } catch (err: unknown) {
+            logger.error(`[PluginManager] Failed to load tool plugin ${file}:`, err instanceof Error ? err.message : String(err));
           }
-        } catch (error) {
-          logger.error(`[PluginManager] Failed to load tool plugin: ${file}`, error);
-        }
-      }
+        })
+      );
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
         logger.error('[PluginManager] Error reading tool plugins directory', error);

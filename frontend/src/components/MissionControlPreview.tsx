@@ -15,7 +15,7 @@ export const MissionControlPreview = () => {
           <GripHorizontal size={10} className="text-slate-700" />
           <div className="flex items-center gap-1.5">
             <Terminal size={12} className="text-jb-purple" />
-            <span className="text-[8px] font-black text-white uppercase tracking-widest">Mission Control</span>
+            <span className="text-[11px] font-black text-white uppercase tracking-widest">Mission Control</span>
           </div>
         </div>
         
@@ -56,13 +56,13 @@ export const MissionControlPreview = () => {
         {/* Live Context Plans */}
         <div className="flex-1 space-y-3">
            <div className="space-y-1.5">
-              <p className="text-[7px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Active Directives</p>
+              <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Active Directives</p>
               
               <div className="space-y-1">
                  <div className="p-2 rounded-lg bg-white/[0.03] border border-white/5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                        <Sparkles size={10} className="text-jb-purple" />
-                       <span className="text-[9px] font-bold text-slate-300">Solvent UI Refactor</span>
+                       <span className="text-[11px] font-bold text-slate-300">Solvent UI Refactor</span>
                     </div>
                     <span className="text-[6px] font-mono text-jb-purple">STABLE</span>
                  </div>
@@ -70,7 +70,7 @@ export const MissionControlPreview = () => {
                  <div className="p-2 rounded-lg bg-white/[0.03] border border-white/5 flex items-center justify-between opacity-60">
                     <div className="flex items-center gap-2">
                        <Globe size={10} className="text-jb-cyan" />
-                       <span className="text-[9px] font-bold text-slate-300">Trip to Paris - Logic</span>
+                       <span className="text-[11px] font-bold text-slate-300">Trip to Paris - Logic</span>
                     </div>
                     <span className="text-[6px] font-mono text-slate-600">DRAFT</span>
                  </div>
@@ -78,7 +78,7 @@ export const MissionControlPreview = () => {
                  <div className="p-2 rounded-lg bg-white/[0.03] border border-white/5 flex items-center justify-between opacity-40">
                     <div className="flex items-center gap-2">
                        <Network size={10} className="text-jb-accent" />
-                       <span className="text-[9px] font-bold text-slate-300">Vector Knowledge Map</span>
+                       <span className="text-[11px] font-bold text-slate-300">Vector Knowledge Map</span>
                     </div>
                  </div>
               </div>
@@ -99,9 +99,9 @@ export const MissionControlPreview = () => {
         <div className="flex justify-between items-center pt-2 border-t border-white/5 shrink-0">
            <div className="flex items-center gap-1.5">
               <Smartphone size={8} className="text-jb-accent" />
-              <span className="text-[7px] font-black text-jb-accent uppercase tracking-widest">PiP Mode Detachable</span>
+              <span className="text-[11px] font-black text-jb-accent uppercase tracking-widest">PiP Mode Detachable</span>
            </div>
-           <span className="text-[7px] font-mono text-slate-700">KERNEL_SYNC_OK</span>
+           <span className="text-[11px] font-mono text-slate-700">KERNEL_SYNC_OK</span>
         </div>
       </div>
 
@@ -110,10 +110,10 @@ export const MissionControlPreview = () => {
          <div className="space-y-4">
             <div className="space-y-1">
                <p className="text-white font-black text-sm uppercase tracking-[0.2em]">Try the Solvent Command Center</p>
-               <p className="text-jb-purple text-[8px] font-bold uppercase tracking-widest">Live Context & Data Sync</p>
+               <p className="text-jb-purple text-[11px] font-bold uppercase tracking-widest">Live Context & Data Sync</p>
             </div>
             <div className="h-[1px] w-12 bg-jb-purple mx-auto" />
-            <p className="text-[9px] text-slate-400 max-w-[200px] mx-auto leading-relaxed">
+            <p className="text-[11px] text-slate-400 max-w-[200px] mx-auto leading-relaxed">
                Persistent project memory that follows you across your workspace. Detach into PiP to keep directives visible anywhere.
             </p>
          </div>

@@ -55,7 +55,7 @@ export const ImportToast: React.FC<ImportToastProps> = ({
       <button
         type="button"
         onClick={handleOpenInChat}
-        className="flex items-center gap-1 px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-wider bg-jb-accent/15 border border-jb-accent/25 text-jb-accent hover:bg-jb-accent/25 transition-colors shrink-0 whitespace-nowrap"
+        className="flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-black uppercase tracking-wider bg-jb-accent/15 border border-jb-accent/25 text-jb-accent hover:bg-jb-accent/25 transition-colors shrink-0 whitespace-nowrap"
       >
         Open in chat <ArrowRight size={9} />
       </button>

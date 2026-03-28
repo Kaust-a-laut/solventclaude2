@@ -190,7 +190,7 @@ export const SettingsModal = () => {
         <div className="w-64 border-r border-white/5 bg-white/[0.01] p-8 flex flex-col gap-6">
           <div className="flex flex-col gap-1 px-2">
             <h2 className="text-xl font-black text-white tracking-tighter">Settings</h2>
-            <p className="text-[8px] font-black text-slate-600 uppercase tracking-[0.4em]">Configure your workspace</p>
+            <p className="text-[11px] font-black text-slate-600 uppercase tracking-[0.4em]">Configure your workspace</p>
           </div>
 
           {/* Settings Search */}
@@ -200,7 +200,7 @@ export const SettingsModal = () => {
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Find a setting..."
-              className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl pl-8 pr-3 py-2 text-[10px] font-bold text-slate-300 placeholder:text-slate-700 focus:outline-none focus:border-jb-accent/30 transition-colors"
+              className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl pl-8 pr-3 py-2 text-[11px] font-bold text-slate-300 placeholder:text-slate-700 focus:outline-none focus:border-jb-accent/30 transition-colors"
             />
           </div>
 
@@ -213,13 +213,13 @@ export const SettingsModal = () => {
                   onClick={() => navigateToSetting(r.tab, r.id)}
                   className="text-left px-3 py-2 rounded-xl hover:bg-white/[0.05] transition-colors group"
                 >
-                  <span className="text-[10px] font-bold text-slate-300 group-hover:text-white block">{r.label}</span>
-                  <span className="text-[8px] text-slate-600 font-medium">{r.description}</span>
+                  <span className="text-[11px] font-bold text-slate-300 group-hover:text-white block">{r.label}</span>
+                  <span className="text-[11px] text-slate-600 font-medium">{r.description}</span>
                 </button>
               ))}
             </div>
           ) : searchQuery && searchResults.length === 0 ? (
-            <div className="px-3 py-4 text-[10px] text-slate-600 text-center">No results</div>
+            <div className="px-3 py-4 text-[11px] text-slate-600 text-center">No results</div>
           ) : (
             <nav className="flex flex-col gap-2">
               {tabs.map(t => (
@@ -240,7 +240,7 @@ export const SettingsModal = () => {
           <div className="mt-auto space-y-3">
             <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">System Status</span>
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">System Status</span>
                 <span className="relative flex h-2 w-2">
                   <span className={cn(
                     "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75",
@@ -254,17 +254,17 @@ export const SettingsModal = () => {
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between p-2 bg-white/5 rounded-lg border border-white/5">
-                  <span className="text-[9px] font-bold text-slate-400">Local Node (Ollama)</span>
+                  <span className="text-[11px] font-bold text-slate-400">Local Node (Ollama)</span>
                   <span className={cn(
-                    "text-[9px] font-black uppercase tracking-widest",
+                    "text-[11px] font-black uppercase tracking-widest",
                     serviceHealth.ollama === 'connected' ? "text-emerald-400" : "text-rose-400"
                   )}>
                     {serviceHealth.ollama === 'connected' ? 'Online' : 'Offline'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between p-2 bg-white/5 rounded-lg border border-white/5">
-                  <span className="text-[9px] font-bold text-slate-400">Cloud Uplink</span>
-                  <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400">Active</span>
+                  <span className="text-[11px] font-bold text-slate-400">Cloud Uplink</span>
+                  <span className="text-[11px] font-black uppercase tracking-widest text-emerald-400">Active</span>
                 </div>
               </div>
             </div>
@@ -279,7 +279,7 @@ export const SettingsModal = () => {
               <h3 className="text-sm font-black text-white uppercase tracking-[0.3em]">
                 {TAB_TITLES[activeTab]}
               </h3>
-              <p className="text-[10px] font-bold text-slate-500 mt-1">{TAB_SUBTITLES[activeTab]}</p>
+              <p className="text-[11px] font-bold text-slate-500 mt-1">{TAB_SUBTITLES[activeTab]}</p>
             </div>
             <button
               onClick={() => setSettingsOpen(false)}
@@ -311,18 +311,18 @@ export const SettingsModal = () => {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <Key size={14} className="text-slate-700" />
-                <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest">Protocol Protected — Local Session Only</span>
+                <span className="text-[11px] font-black text-slate-700 uppercase tracking-widest">Protocol Protected — Local Session Only</span>
               </div>
               <div className="flex items-center gap-1.5 border-l border-white/5 pl-4">
                 <button
                   onClick={handleExport}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] rounded-xl text-[8px] font-black text-slate-500 hover:text-slate-300 uppercase tracking-widest transition-all"
+                  className="flex items-center gap-1 px-3 py-1.5 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] rounded-xl text-[11px] font-black text-slate-500 hover:text-slate-300 uppercase tracking-widest transition-all"
                 >
                   <Download size={10} /> Export
                 </button>
                 <button
                   onClick={() => importRef.current?.click()}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] rounded-xl text-[8px] font-black text-slate-500 hover:text-slate-300 uppercase tracking-widest transition-all"
+                  className="flex items-center gap-1 px-3 py-1.5 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] rounded-xl text-[11px] font-black text-slate-500 hover:text-slate-300 uppercase tracking-widest transition-all"
                 >
                   <Upload size={10} /> Import
                 </button>

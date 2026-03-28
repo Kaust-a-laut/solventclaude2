@@ -128,10 +128,13 @@ export const createCollaborateSlice: StateCreator<AppState, [], [], CollaborateS
                 );
                 if (existingIdx >= 0) {
                   const msgs = [...collab.messages];
-                  msgs[existingIdx] = {
-                    ...msgs[existingIdx],
-                    streamingContent: (msgs[existingIdx].streamingContent || '') + (data.token as string),
-                  };
+                  const existing = msgs[existingIdx];
+                  if (existing) {
+                    msgs[existingIdx] = {
+                      ...existing,
+                      streamingContent: (existing.streamingContent || '') + (data.token as string),
+                    };
+                  }
                   collab.messages = msgs;
                 } else {
                   collab.messages = [

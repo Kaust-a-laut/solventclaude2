@@ -6,7 +6,7 @@ export interface IStorageProvider {
 
 import fs from 'fs/promises';
 import path from 'path';
-import crypto from 'crypto';
+import { randomBytes } from 'node:crypto';
 
 export class FileStorageProvider implements IStorageProvider {
   private baseDir: string;
@@ -42,7 +42,7 @@ export class FileStorageProvider implements IStorageProvider {
 
   async saveTrace(data: any): Promise<string> {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const traceId = `trace-${timestamp}-${crypto.randomBytes(4).toString('hex')}`;
+    const traceId = `trace-${timestamp}-${randomBytes(4).toString('hex')}`;
     const tracePath = path.join(this.tracesDir, `${traceId}.json`);
     await fs.writeFile(tracePath, JSON.stringify({
         id: traceId,

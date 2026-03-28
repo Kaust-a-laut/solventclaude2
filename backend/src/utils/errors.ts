@@ -1,3 +1,6 @@
+import { randomUUID } from 'node:crypto';
+import { logger } from './logger';
+
 export enum SolventErrorCode {
   // Original error codes
   AI_PROVIDER_ERROR = "AI_PROVIDER_ERROR",
@@ -73,3 +76,35 @@ export class CancelledError extends SolventError {
 // Re-export for backward compatibility with AppError imports
 export const AppError = SolventError;
 export const ErrorType = SolventErrorCode;
+
+export function getSafeErrorMessage(error: unknown, context?: string): string {
+  if (error instanceof SolventError) {
+    return error.message;
+  }
+  if (error instanceof Error) {
+    // In production, don't expose internal error details
+    if (process.env.NODE_ENV === 'production') {
+      logger.error(`[Error]${context ? ` [${context}]` : ''}: ${error.message}`, {
+        stack: error.stack,
+        name: error.name
+      });
+      return 'An unexpected error occurred';
+    }
+    return error.message;
+  }
+  return String(error);
+}
+
+export function logError(context: string, error: unknown, metadata?: Record<string, unknown>) {
+  const id = randomUUID();
+  if (error instanceof Error) {
+    logger.error(`[${context}] Error ${id}`, {
+      message: error.message,
+      stack: error.stack,
+      ...metadata
+    });
+  } else {
+    logger.error(`[${context}] Error ${id}`, { error: String(error), ...metadata });
+  }
+  return id;
+}

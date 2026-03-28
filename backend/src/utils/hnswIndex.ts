@@ -52,11 +52,11 @@ export class HNSWIndex {
 
       const results: SearchResult[] = [];
       for (let i = 0; i < neighbors.length && results.length < k; i++) {
-        const label = neighbors[i];
+        const label = neighbors[i]!;
         if (!this.deletedLabels.has(label)) {
           const id = this.labelToId.get(label);
           if (id) {
-            results.push({ id, distance: distances[i] });
+            results.push({ id, distance: distances[i] ?? Infinity });
           }
         }
       }

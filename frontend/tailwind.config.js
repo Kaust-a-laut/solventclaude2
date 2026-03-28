@@ -17,15 +17,27 @@ export default {
     extend: {
       colors: {
         jb: {
-          dark: '#020205',      // Deep Void
-          panel: '#050508',     // Glass Layer
-          hover: '#12141C',     
-          border: 'rgba(255, 255, 255, 0.03)', // Almost invisible
-          text: '#C0C2C8',      
-          accent: '#3C71F7',    // Electric Volt (Logic)
-          purple: '#9D5BD2',    // Neural Purple (Agentic)
-          orange: '#FB923C',    // Neon Amber (Action)
-          cyan: '#06B6D4',      
+          dark: '#020205',
+          panel: '#050508',
+          hover: '#12141C',
+          border: 'rgba(255, 255, 255, 0.06)',  // Was 0.03
+          text: '#C0C2C8',
+          accent: '#3C71F7',
+          'accent-400': '#5B8AF9',
+          'accent-600': '#1d4ed8',
+          'accent-glow': 'rgba(60,113,247,0.3)',
+          purple: '#9D5BD2',
+          'purple-400': '#B47DE0',
+          'purple-600': '#6d28d9',
+          'purple-glow': 'rgba(157,91,210,0.3)',
+          orange: '#FB923C',
+          'orange-400': '#FDAE6B',
+          'orange-600': '#ea580c',
+          'orange-glow': 'rgba(251,146,60,0.3)',
+          cyan: '#06B6D4',
+          'cyan-400': '#22D3EE',
+          'cyan-600': '#0e7490',
+          'cyan-glow': 'rgba(6,182,212,0.3)',
         }
       },
       fontFamily: {
@@ -37,9 +49,9 @@ export default {
         '3xl': '40px',
       },
       animation: {
-        'blob': 'blob 25s infinite',
-        'slow-spin': 'spin 40s linear infinite',
-        'border-flow': 'border-flow 4s linear infinite',
+        'blob': 'blob 12s infinite',
+        'slow-spin': 'spin 20s linear infinite',
+        'border-flow': 'border-flow 3s linear infinite',
       },
       keyframes: {
         blob: {

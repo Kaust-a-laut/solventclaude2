@@ -427,13 +427,13 @@ export const AgentChatPanel: React.FC = () => {
       <div className="px-4 py-2.5 flex items-center justify-between border-b border-white/[0.04] shrink-0">
         <div className="flex items-center gap-2">
           <Sparkles size={14} className="text-jb-accent" />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Agent</span>
-          <span className="text-[10px] text-white/20">·</span>
+          <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white/60">Agent</span>
+          <span className="text-[11px] text-white/20">·</span>
           <div className="relative">
             <button
               type="button"
               onClick={() => setShowModelMenu((v) => !v)}
-              className="flex items-center gap-1 text-[10px] text-white/30 hover:text-white/60 transition-colors"
+              className="flex items-center gap-1 text-[11px] text-white/30 hover:text-white/60 transition-colors"
               aria-label="Select model"
             >
               <span className="truncate max-w-[100px]">
@@ -464,7 +464,7 @@ export const AgentChatPanel: React.FC = () => {
                         <Icon size={12} className={m.color} aria-hidden="true" />
                         <div className="flex flex-col min-w-0">
                           <span className={cn('text-[11px] font-medium leading-tight', m.color)}>{m.displayName}</span>
-                          <span className="text-[9px] text-white/30 leading-tight">{m.sublabel}</span>
+                          <span className="text-[11px] text-white/30 leading-tight">{m.sublabel}</span>
                         </div>
                       </button>
                     );
@@ -490,7 +490,7 @@ export const AgentChatPanel: React.FC = () => {
         {agentMessages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full opacity-20 gap-3">
             <Sparkles size={28} strokeWidth={1} />
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Ask the agent anything</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em]">Ask the agent anything</p>
           </div>
         )}
         {agentMessages.map((msg) => (
@@ -505,7 +505,7 @@ export const AgentChatPanel: React.FC = () => {
           >
             {msg.fileContext && (
               <div className="flex items-center gap-1 mb-1.5">
-                <span className="text-[9px] bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-white/40 font-mono">
+                <span className="text-[11px] bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-white/40 font-mono">
                   {msg.fileContext.split('/').pop()}
                 </span>
               </div>
@@ -544,7 +544,7 @@ export const AgentChatPanel: React.FC = () => {
               )}
             >
               <span className="text-[11px] font-mono text-jb-accent font-bold w-20 shrink-0">{cmd.label}</span>
-              <span className="text-[10px] text-white/40">{cmd.description}</span>
+              <span className="text-[11px] text-white/40">{cmd.description}</span>
             </button>
           ))}
         </div>
@@ -559,7 +559,7 @@ export const AgentChatPanel: React.FC = () => {
               type="button"
               onClick={() => setFileContextActive(!fileContextActive)}
               className={cn(
-                'flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-mono transition-colors border',
+                'flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-mono transition-colors border',
                 fileContextActive
                   ? 'bg-jb-accent/10 border-jb-accent/20 text-jb-accent/80'
                   : 'bg-white/5 border-white/10 text-white/30 line-through'
@@ -607,7 +607,7 @@ export const AgentChatPanel: React.FC = () => {
               key={cmd}
               type="button"
               onClick={() => { setInput(cmd + ' '); inputRef.current?.focus(); }}
-              className="px-2 py-0.5 rounded-md bg-white/[0.03] border border-white/[0.06] text-[9px] font-mono text-white/30 hover:text-white/60 hover:bg-white/5 transition-colors"
+              className="px-2 py-0.5 rounded-md bg-white/[0.03] border border-white/[0.06] text-[11px] font-mono text-white/30 hover:text-white/60 hover:bg-white/5 transition-colors"
             >
               {cmd}
             </button>

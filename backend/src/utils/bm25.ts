@@ -65,6 +65,62 @@ export class BM25Index {
   }
 
   /**
+   * Add a single document to the index (or replace if same id exists).
+   */
+  addDocument(doc: { id: string; text: string }): void {
+    if (this.docs.has(doc.id)) {
+      this.removeDocument(doc.id);
+    }
+    const tokens = this.tokenize(doc.text);
+    const termFreqs = new Map<string, number>();
+    for (const token of tokens) {
+      termFreqs.set(token, (termFreqs.get(token) ?? 0) + 1);
+      if (!this.invertedIndex.has(token)) {
+        this.invertedIndex.set(token, new Set());
+      }
+      this.invertedIndex.get(token)!.add(doc.id);
+    }
+    this.docs.set(doc.id, { id: doc.id, termFreqs, length: tokens.length });
+    this.docCount++;
+    this.recalcAvgDocLength();
+  }
+
+  /**
+   * Remove a document from the index by id.
+   */
+  removeDocument(id: string): void {
+    const doc = this.docs.get(id);
+    if (!doc) return;
+    for (const term of doc.termFreqs.keys()) {
+      const docSet = this.invertedIndex.get(term);
+      if (docSet) {
+        docSet.delete(id);
+        if (docSet.size === 0) {
+          this.invertedIndex.delete(term);
+        }
+      }
+    }
+    this.docs.delete(id);
+    this.docCount--;
+    this.recalcAvgDocLength();
+  }
+
+  /**
+   * Recalculate the average document length across all indexed documents.
+   */
+  private recalcAvgDocLength(): void {
+    if (this.docCount === 0) {
+      this.avgDocLength = 1;
+      return;
+    }
+    let total = 0;
+    for (const doc of this.docs.values()) {
+      total += doc.length;
+    }
+    this.avgDocLength = total / this.docCount;
+  }
+
+  /**
    * Compute IDF (Inverse Document Frequency) for a term.
    */
   private idf(term: string): number {
@@ -149,17 +205,19 @@ export function reciprocalRankFusion(
 ): Array<{ id: string; rrfScore: number }> {
   const rrfScores = new Map<string, number>();
 
-  // Add vector rank contributions
-  for (let rank = 0; rank < vectorResults.length; rank++) {
-    const { id } = vectorResults[rank];
-    rrfScores.set(id, (rrfScores.get(id) || 0) + 1 / (k + rank + 1));
-  }
+    // Add vector rank contributions
+    for (let rank = 0; rank < vectorResults.length; rank++) {
+      const result = vectorResults[rank]!;
+      const { id } = result;
+      rrfScores.set(id, (rrfScores.get(id) || 0) + 1 / (k + rank + 1));
+    }
 
-  // Add BM25 rank contributions
-  for (let rank = 0; rank < bm25Results.length; rank++) {
-    const { id } = bm25Results[rank];
-    rrfScores.set(id, (rrfScores.get(id) || 0) + 1 / (k + rank + 1));
-  }
+    // Add BM25 rank contributions
+    for (let rank = 0; rank < bm25Results.length; rank++) {
+      const result = bm25Results[rank]!;
+      const { id } = result;
+      rrfScores.set(id, (rrfScores.get(id) || 0) + 1 / (k + rank + 1));
+    }
 
   const merged = Array.from(rrfScores.entries())
     .map(([id, rrfScore]) => ({ id, rrfScore }))

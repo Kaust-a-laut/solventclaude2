@@ -165,7 +165,7 @@ export const SupervisorHistory = () => {
             <Brain size={16} className="text-jb-purple" />
             <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-jb-purple animate-pulse" />
           </div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-white">
+          <span className="text-[11px] font-black uppercase tracking-widest text-white">
             {totalCount} {totalCount === 1 ? 'Item' : 'Items'}
           </span>
           <ChevronUp size={14} className="text-slate-500 group-hover:text-white transition-colors" />
@@ -192,7 +192,7 @@ export const SupervisorHistory = () => {
               <Brain size={18} className="text-jb-purple" />
               {(insights.length > 0 || pendingDecisions.length > 0) && (
                 <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-jb-purple flex items-center justify-center">
-                  <span className="text-[8px] font-black text-white">{insights.length + pendingDecisions.length}</span>
+                  <span className="text-[11px] font-black text-white">{insights.length + pendingDecisions.length}</span>
                 </div>
               )}
             </div>
@@ -200,7 +200,7 @@ export const SupervisorHistory = () => {
               <p className="text-[11px] font-black uppercase tracking-widest text-white">
                 Supervisor
               </p>
-              <p className="text-[9px] text-slate-500">
+              <p className="text-[11px] text-slate-500">
                 {pendingDecisions.length > 0 ? `${pendingDecisions.length} pending approval` : insights.length > 0 ? `${insights.length} recorded` : 'Monitoring...'}
               </p>
             </div>
@@ -239,7 +239,7 @@ export const SupervisorHistory = () => {
                 {/* Pending Decisions Section */}
                 {pendingDecisions.length > 0 && (
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-amber-400">
+                    <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-amber-400">
                       <Clock size={10} className="animate-pulse" />
                       Pending Approval
                     </div>
@@ -257,12 +257,12 @@ export const SupervisorHistory = () => {
                           <div className="flex items-start gap-2 mb-2">
                             <Wrench size={12} className="text-amber-400 mt-0.5 shrink-0" />
                             <div className="flex-1 min-w-0">
-                              <p className="text-[10px] text-amber-100 font-medium">{decision.decision}</p>
+                              <p className="text-[11px] text-amber-100 font-medium">{decision.decision}</p>
                               {decision.intervention?.message && (
-                                <p className="text-[9px] text-amber-200/70 mt-1">{decision.intervention.message}</p>
+                                <p className="text-[11px] text-amber-200/70 mt-1">{decision.intervention.message}</p>
                               )}
                               {decision.intervention?.toolToExecute && (
-                                <p className="text-[8px] font-mono text-amber-300/50 mt-1 bg-amber-500/10 px-1.5 py-0.5 rounded inline-block">
+                                <p className="text-[11px] font-mono text-amber-300/50 mt-1 bg-amber-500/10 px-1.5 py-0.5 rounded inline-block">
                                   Tool: {decision.intervention.toolToExecute.name}
                                 </p>
                               )}
@@ -270,7 +270,7 @@ export const SupervisorHistory = () => {
                           </div>
                           <div className="flex items-center justify-between">
                             <span className={cn(
-                              "text-[8px] font-mono",
+                              "text-[11px] font-mono",
                               isExpiring ? "text-rose-400 animate-pulse" : "text-slate-500"
                             )}>
                               {formatTimeRemaining(remaining)}
@@ -302,7 +302,7 @@ export const SupervisorHistory = () => {
                 {insights.length > 0 && (
                   <div className="space-y-2">
                     {pendingDecisions.length > 0 && (
-                      <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-500 pt-2 border-t border-white/5">
+                      <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-500 pt-2 border-t border-white/5">
                         History
                       </div>
                     )}
@@ -330,7 +330,7 @@ export const SupervisorHistory = () => {
                             )}>
                               {insight.message}
                             </p>
-                            <p className="text-[9px] text-slate-500 mt-1.5 font-mono">
+                            <p className="text-[11px] text-slate-500 mt-1.5 font-mono">
                               {insight.timestamp.toLocaleTimeString()}
                             </p>
                           </div>
@@ -342,7 +342,7 @@ export const SupervisorHistory = () => {
 
                 {insights.length === 0 && pendingDecisions.length === 0 && (
                   <div className="text-center py-6">
-                    <p className="text-[10px] text-slate-500">
+                    <p className="text-[11px] text-slate-500">
                       No insights yet. The supervisor is observing...
                     </p>
                   </div>

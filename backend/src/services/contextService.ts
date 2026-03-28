@@ -6,6 +6,8 @@ import { estimateTokens, getContextBudget } from '../utils/tokenEstimator';
 import { BM25Index, reciprocalRankFusion } from '../utils/bm25';
 import { statSync } from 'fs';
 import { join } from 'path';
+import { reranker } from './reranker';
+import { coreMemory } from './coreMemory';
 
 // --- Named Constants ---
 
@@ -105,19 +107,37 @@ const SCORE_PENALTY_STALE_CODE = 0.5;
 const SCORE_BOOST_PER_RETRIEVAL = 0.02;
 const MAX_RETRIEVAL_BOOST_COUNT = 10;
 
-// Shared BM25 index instance — rebuilt when vector memory changes
+/**
+ * Score boost per importance point (1-10 scale)
+ */
+const SCORE_BOOST_PER_IMPORTANCE = 0.04;
+
+// Shared BM25 index instance — incrementally updated when vector memory changes
 const bm25Index = new BM25Index();
-let bm25LastBuildSize = 0;
+let bm25IndexedIds = new Set<string>();
 
 /**
- * Rebuild BM25 index if vector memory has changed.
+ * Incrementally sync the BM25 index with vector memory.
+ * Adds new documents and removes deleted ones instead of full rebuild.
  */
 function ensureBM25Index() {
-  const memorySize = vectorService.getMemorySize();
-  if (memorySize !== bm25LastBuildSize) {
-    const docs = vectorService.getAllTexts();
-    bm25Index.build(docs);
-    bm25LastBuildSize = memorySize;
+  const allDocs = vectorService.getAllTexts();
+  const currentIds = new Set(allDocs.map(d => d.id));
+
+  // Remove deleted documents
+  for (const id of bm25IndexedIds) {
+    if (!currentIds.has(id)) {
+      bm25Index.removeDocument(id);
+      bm25IndexedIds.delete(id);
+    }
+  }
+
+  // Add new documents
+  for (const doc of allDocs) {
+    if (!bm25IndexedIds.has(doc.id)) {
+      bm25Index.addDocument(doc);
+      bm25IndexedIds.add(doc.id);
+    }
   }
 }
 
@@ -265,7 +285,7 @@ function formatMemoryContext(activeItems: ProvenanceItem[]): string {
 
   if (rules.length > 0) {
     const ruleText = rules.length === 1
-      ? `There is a standing rule here: ${cleanText(rules[0].text)}.`
+      ? `There is a standing rule here: ${cleanText(rules[0]!.text)}.`
       : `Standing rules in effect: ${rules.map(r => cleanText(r.text)).join('; ')}.`;
     parts.push(ruleText);
   }
@@ -318,7 +338,7 @@ function computeVectorSignature(vector: number[], buckets: number = 16): string 
     const start = i * bucketSize;
     const end = Math.min(start + bucketSize, vector.length);
     for (let j = start; j < end; j++) {
-      sum += vector[j];
+      sum += vector[j]!;
     }
     signature.push(sum > 0 ? 1 : 0);
   }
@@ -390,9 +410,11 @@ function cosineSimilarity(vecA: number[], vecB: number[]): number {
   let magA = 0;
   let magB = 0;
   for (let i = 0; i < vecA.length; i++) {
-    dotProduct += vecA[i] * vecB[i];
-    magA += vecA[i] * vecA[i];
-    magB += vecB[i] * vecB[i];
+    const a = vecA[i] ?? 0;
+    const b = vecB[i] ?? 0;
+    dotProduct += a * b;
+    magA += a * a;
+    magB += b * b;
   }
   const magnitude = Math.sqrt(magA) * Math.sqrt(magB);
   return magnitude === 0 ? 0 : dotProduct / magnitude;
@@ -506,7 +528,11 @@ export class ContextService {
       }
     }
 
-    // 2b. Traversal of Links for top candidates
+    // 2b. Cross-encoder reranking for top candidates via LLM
+    const reranked = await reranker.rerank(lastMessage, relevantEntries.slice(0, 20));
+    const rerankerScoreMap = new Map(reranked.map(r => [r.id, r.rerankerScore]));
+
+    // 2c. Traversal of Links for top candidates
     const topCandidates = relevantEntries.slice(0, 5);
     const linkedMemories: any[] = [];
     for (const cand of topCandidates) {
@@ -567,7 +593,13 @@ export class ContextService {
       // RRF hybrid score boost (replaces simple keyword match boost)
       const rrfBoost = rrfScoreMap.get(e.id);
       if (rrfBoost) {
-        finalScore += rrfBoost * 10; // normalize RRF range to meaningful boost
+        finalScore += rrfBoost * 10;
+      }
+      
+      // Reranker boost (cross-encoder LLM scoring)
+      const rerankerBoost = rerankerScoreMap.get(e.id);
+      if (rerankerBoost !== undefined) {
+        finalScore += rerankerBoost * 0.05;
       }
 
       // Tag match boost
@@ -578,6 +610,10 @@ export class ContextService {
       if (entryRetrievalCount > 0) {
         finalScore += SCORE_BOOST_PER_RETRIEVAL * Math.min(entryRetrievalCount, MAX_RETRIEVAL_BOOST_COUNT);
       }
+
+      // Importance score boost (1-10 scale from LLM rating at write time)
+      const importance = e.metadata.importance || 5;
+      finalScore += importance * SCORE_BOOST_PER_IMPORTANCE;
 
       return { ...e, finalScore };
     }).sort((a, b) => b.finalScore - a.finalScore);
@@ -783,6 +819,11 @@ ${provenance.workspaceFiles.length > 0
   ? provenance.workspaceFiles.map(f => `• ${f}${data.activeFile && f === data.activeFile ? ' ← **Active tab**' : ''}`).join('\n')
   : '• No files currently open in the workspace.'}
 ${getBrowserContextBlock(data.browserContext)}
+
+${(() => {
+  const coreBlock = coreMemory.toContextBlock();
+  return coreBlock ? `\n[CORE MEMORY — Always Available]\n${coreBlock}\n` : '';
+})()}
 
 **[PROJECT MEMORY — RETRIEVED CONTEXT]**
 ${formatMemoryContext(activeItems)}

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import fs from 'fs/promises';
 import path from 'path';
 import { logger } from '../utils/logger';
@@ -183,7 +184,7 @@ export class ConversationStorageService {
    */
   toStoredMessages(messages: Message[]): StoredMessage[] {
     return messages.map(m => ({
-      id: m.id || crypto.randomUUID(),
+      id: m.id || randomUUID(),
       role: m.role,
       content: m.content,
       model: m.model,

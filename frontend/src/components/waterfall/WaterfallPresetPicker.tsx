@@ -53,28 +53,28 @@ const PresetCard = ({
       )}
       onClick={onSelect}
     >
-      <div className="px-3.5 py-3 flex flex-col gap-2">
+      <div className="px-4 py-3.5 flex flex-col gap-2.5">
         {/* Top row: name + score */}
         <div className="flex items-center justify-between gap-2">
           <span className={cn(
-            'text-[11px] font-extrabold tracking-tight',
+            'text-[13px] font-extrabold tracking-tight',
             isSelected ? 'text-white' : 'text-slate-300',
           )}>
             {preset.name}
           </span>
-          <div className={cn('px-1.5 py-0.5 rounded-md border text-[9px] font-black tabular-nums', badge.bg, badge.border, badge.text)}>
+          <div className={cn('px-2 py-0.5 rounded-md border text-[12px] font-black tabular-nums', badge.bg, badge.border, badge.text)}>
             {badge.label}
           </div>
         </div>
 
         {/* Description + speed */}
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[11px] text-slate-400 leading-tight line-clamp-1 flex-1">
+          <span className="text-[12px] text-slate-300 leading-tight line-clamp-1 flex-1">
             {preset.description}
           </span>
-          <div className="flex items-center gap-1 shrink-0">
-            <SpdIcon size={9} className={spd.color} />
-            <span className={cn('text-[8px] font-mono', spd.color)}>{preset.speed}</span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <SpdIcon size={11} className={spd.color} />
+            <span className={cn('text-[12px] font-mono', spd.color)}>{preset.speed}</span>
           </div>
         </div>
 
@@ -82,9 +82,9 @@ const PresetCard = ({
         {isSelected && (
           <button
             onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}
-            className="flex items-center gap-1 text-[8px] font-bold text-slate-600 hover:text-slate-400 transition-colors pt-0.5"
+            className="flex items-center gap-1.5 text-[12px] font-bold text-slate-600 hover:text-slate-400 transition-colors pt-0.5"
           >
-            <ChevronDown size={10} className={cn('transition-transform', isExpanded && 'rotate-180')} />
+            <ChevronDown size={12} className={cn('transition-transform', isExpanded && 'rotate-180')} />
             {isExpanded ? 'Hide models' : 'Show models'}
           </button>
         )}
@@ -100,20 +100,20 @@ const PresetCard = ({
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-3.5 pb-3 pt-1 border-t border-white/[0.04] space-y-1.5">
+            <div className="px-4 pb-3.5 pt-1.5 border-t border-white/[0.04] space-y-2">
               {STAGE_ORDER.map((stage) => {
                 const cfg = STAGE_CONFIGS[stage];
                 const Icon = cfg.icon;
                 const label = preset.stageLabels[stage];
                 return (
-                  <div key={stage} className="flex items-center gap-2">
-                    <div className={cn('w-4 h-4 rounded flex items-center justify-center', cfg.bgColor)}>
-                      <Icon size={9} className={cfg.textColor} />
+                  <div key={stage} className="flex items-center gap-2.5">
+                    <div className={cn('w-5 h-5 rounded flex items-center justify-center', cfg.bgColor)}>
+                      <Icon size={10} className={cfg.textColor} />
                     </div>
-                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-wider w-16">
+                    <span className="text-[12px] font-black text-slate-600 uppercase tracking-wider w-20">
                       {cfg.displayName}
                     </span>
-                    <span className="text-[9px] text-slate-400 font-medium">{label}</span>
+                    <span className="text-[12px] text-slate-400 font-medium">{label}</span>
                   </div>
                 );
               })}
@@ -176,22 +176,22 @@ const CustomStageRow = ({
 
   return (
     <div className="flex items-center gap-3">
-      <div className="flex items-center gap-2 w-24 shrink-0">
-        <div className={cn('w-5 h-5 rounded-lg flex items-center justify-center', cfg.bgColor)}>
-          <Icon size={10} className={cfg.textColor} />
+      <div className="flex items-center gap-2.5 w-28 shrink-0">
+        <div className={cn('w-6 h-6 rounded-lg flex items-center justify-center', cfg.bgColor)}>
+          <Icon size={12} className={cfg.textColor} />
         </div>
-        <span className="text-[8px] font-black text-slate-500 uppercase tracking-wider">
+        <span className="text-[12px] font-black text-slate-500 uppercase tracking-wider">
           {cfg.displayName}
         </span>
       </div>
       <select
         value={currentKey}
         onChange={(e) => {
-          const [provider, ...modelParts] = e.target.value.split(':');
+          const [provider = '', ...modelParts] = e.target.value.split(':');
           const model = modelParts.join(':');
           onChange(model, provider);
         }}
-        className="flex-1 bg-white/[0.03] border border-white/[0.08] rounded-xl px-3 py-1.5 text-[10px] text-slate-300 font-medium outline-none focus:border-jb-purple/30 transition-colors appearance-none cursor-pointer"
+        className="flex-1 bg-white/[0.03] border border-white/[0.08] rounded-xl px-3.5 py-2 text-[12px] text-slate-300 font-medium outline-none focus:border-jb-purple/30 transition-colors appearance-none cursor-pointer"
       >
         {groups.map((group) => (
           <optgroup key={group} label={group} className="bg-[#0a0a0f]">
@@ -236,32 +236,32 @@ export const WaterfallPresetPicker = () => {
 
   return (
     <div className="glass-panel rounded-[2rem] overflow-hidden">
-      <div className="p-5 space-y-4">
+      <div className="p-6 space-y-5">
 
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Layers size={12} className="text-slate-500" />
-            <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">
+          <div className="flex items-center gap-2.5">
+            <Layers size={14} className="text-slate-500" />
+            <span className="text-[12px] font-black text-slate-600 uppercase tracking-widest">
               Pipeline Preset
             </span>
           </div>
           <button
             onClick={handleCustomToggle}
             className={cn(
-              'flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[8px] font-bold uppercase tracking-wider transition-all',
+              'flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[12px] font-bold uppercase tracking-wider transition-all',
               showCustom
                 ? 'bg-jb-purple/10 border-jb-purple/25 text-jb-purple'
                 : 'bg-white/[0.03] border-white/[0.08] text-slate-600 hover:text-slate-400 hover:border-white/15',
             )}
           >
-            <SlidersHorizontal size={9} />
+            <SlidersHorizontal size={11} />
             Custom
           </button>
         </div>
 
         {/* Top preset cards */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2.5">
           {topPresets.map((preset) => (
             <PresetCard
               key={preset.key}
@@ -276,7 +276,7 @@ export const WaterfallPresetPicker = () => {
 
         {/* Other presets — collapsed row */}
         {otherPresets.length > 0 && !showCustom && (
-          <div className="flex gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
+          <div className="flex gap-2 overflow-x-auto scrollbar-none pb-0.5">
             {otherPresets.map((preset) => {
               const badge = scoreBadge(preset.score, preset.tier);
               const isSelected = waterfallPresetKey === preset.key;
@@ -285,14 +285,14 @@ export const WaterfallPresetPicker = () => {
                   key={preset.key}
                   onClick={() => handleSelect(preset.key)}
                   className={cn(
-                    'shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all text-[9px] font-bold',
+                    'shrink-0 flex items-center gap-2.5 px-3.5 py-2 rounded-xl border transition-all text-[12px] font-bold',
                     isSelected
                       ? 'bg-jb-purple/[0.08] border-jb-purple/30 text-white'
                       : 'bg-white/[0.02] border-white/[0.06] text-slate-500 hover:text-slate-300 hover:border-white/15',
                   )}
                 >
                   {preset.name}
-                  <span className={cn('text-[8px] font-mono', badge.text)}>{badge.label}</span>
+                  <span className={cn('text-[12px] font-mono', badge.text)}>{badge.label}</span>
                 </button>
               );
             })}
@@ -309,8 +309,8 @@ export const WaterfallPresetPicker = () => {
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
-              <div className="pt-3 border-t border-white/[0.04] space-y-2.5">
-                <span className="text-[8px] text-slate-700 font-mono block">Select a model for each pipeline stage</span>
+              <div className="pt-3 border-t border-white/[0.04] space-y-3">
+                <span className="text-[12px] text-slate-700 font-mono block">Select a model for each pipeline stage</span>
                 {STAGE_ORDER.map((stage) => (
                   <CustomStageRow
                     key={stage}
@@ -326,10 +326,10 @@ export const WaterfallPresetPicker = () => {
 
         {/* Footer hint */}
         <div className="pt-2 border-t border-white/[0.04]">
-          <div className="flex items-center gap-1.5">
-            <Trophy size={9} className="text-slate-700" />
-            <span className="text-[8px] text-slate-700 font-mono">
-              Scores from 60 pipeline runs · MiMo V2 reviewer · Hard prompt
+          <div className="flex items-center gap-2">
+            <Trophy size={11} className="text-slate-700" />
+            <span className="text-[12px] text-slate-700 font-mono">
+              Scores from automated pipeline benchmarks · results may vary
             </span>
           </div>
         </div>

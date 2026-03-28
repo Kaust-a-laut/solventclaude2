@@ -25,10 +25,10 @@ export const CodingTerminal: React.FC<Props> = ({ lines, onClear }) => {
 
   return (
     <div className="h-[180px] flex flex-col border-t border-white/[0.04] bg-black/30 shrink-0">
-      <div className="px-4 py-1.5 flex items-center justify-between border-b border-white/[0.03] shrink-0">
+      <div className="px-4 py-1.5 flex items-center justify-between border-b border-white/[0.06] shrink-0">
         <div className="flex items-center gap-2">
           <TerminalIcon size={12} className="text-white/30" />
-          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30">Console</span>
+          <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30">Console</span>
         </div>
         <button onClick={onClear} className="p-0.5 hover:bg-white/10 rounded text-white/20 hover:text-white/50">
           <Trash2 size={11} />

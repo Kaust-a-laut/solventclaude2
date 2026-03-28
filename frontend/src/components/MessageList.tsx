@@ -1,5 +1,7 @@
 import React from 'react';
 import { MessageItem } from './MessageItem';
+import { EmptyState } from './ui/EmptyState';
+import { MessageCircle } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import { cn } from '../lib/utils';
@@ -58,25 +60,18 @@ export const MessageList = ({ compact }: MessageListProps) => {
     )} ref={scrollRef}>
 
       {messages.length === 0 && !isProcessing && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-6 py-24 pointer-events-none select-none">
-          <div className="relative">
-            <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center">
-              <div className="w-2 h-2 rounded-full bg-jb-accent/60 animate-pulse" />
-            </div>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-sm font-bold text-slate-400">Ready when you are</p>
-            <p className="text-[10px] text-slate-600 max-w-xs text-center leading-relaxed">
-              Ask a question, share an idea, or drop in a file to get started.
-            </p>
-          </div>
-        </div>
+        <EmptyState
+          icon={MessageCircle}
+          title="Ready when you are"
+          description="Ask a question, share an idea, or drop in a file to get started."
+        />
       )}
 
       {messages.length > 0 && (
         <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
           {virtualizer.getVirtualItems().map((virtualItem: { key: React.Key; index: number; start: number }) => {
             const m = messages[virtualItem.index];
+            if (!m) return null;
             const isNew = virtualItem.index >= messages.length - 2;
             return (
               <div
@@ -113,7 +108,7 @@ export const MessageList = ({ compact }: MessageListProps) => {
               <span className="w-1.5 h-1.5 rounded-full bg-jb-accent/50 animate-bounce" style={{ animationDelay: '150ms' }} />
               <span className="w-1.5 h-1.5 rounded-full bg-jb-accent/30 animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
-            <span className="text-[10px] font-bold text-slate-600">
+            <span className="text-[11px] font-bold text-slate-600">
               {activeModel} is thinking
             </span>
          </div>

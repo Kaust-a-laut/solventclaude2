@@ -50,7 +50,7 @@ export const ToolActivityFeed: React.FC<Props> = ({ events }) => {
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-1.5 text-[10px] text-white/40 hover:text-white/60 transition-colors"
+        className="flex items-center gap-1.5 text-[11px] text-white/40 hover:text-white/60 transition-colors"
       >
         {expanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
         <Wrench size={10} />
@@ -81,7 +81,7 @@ export const ToolActivityFeed: React.FC<Props> = ({ events }) => {
               <div
                 key={start.callId}
                 className={cn(
-                  'flex items-center gap-1.5 text-[10px] py-0.5',
+                  'flex items-center gap-1.5 text-[11px] py-0.5',
                   isFailed ? 'text-rose-400/70' : isDone ? 'text-emerald-400/60' : 'text-white/40'
                 )}
               >

@@ -133,7 +133,7 @@ export const ChatImportButton: React.FC<ChatImportButtonProps> = ({ onAttach, on
       {warning && (
         <div className="absolute bottom-full left-0 right-0 mb-1 mx-3 flex items-start gap-1.5 p-2 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400">
           <AlertCircle size={11} className="shrink-0 mt-0.5" />
-          <span className="text-[9px] leading-relaxed">{warning}</span>
+          <span className="text-[11px] leading-relaxed">{warning}</span>
         </div>
       )}
 

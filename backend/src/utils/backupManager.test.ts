@@ -41,7 +41,7 @@ describe('BackupManager', () => {
     await backupManager.createBackup();
 
     const files = await fs.readdir(testDir);
-    const backupPath = path.join(testDir, files[0]);
+    const backupPath = path.join(testDir, files[0]!);
     const isValid = await backupManager.validateBackup(backupPath);
 
     expect(isValid).toBe(true);
@@ -51,7 +51,7 @@ describe('BackupManager', () => {
     await backupManager.createBackup();
 
     const files = await fs.readdir(testDir);
-    const backupPath = path.join(testDir, files[0]);
+    const backupPath = path.join(testDir, files[0]!);
 
     await fs.writeFile(backupPath, 'corrupted{{{');
 

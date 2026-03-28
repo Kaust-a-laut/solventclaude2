@@ -9,6 +9,7 @@ import sharp from 'sharp';
 import { validatePath, PROJECT_ROOT } from '../utils/fileSystem';
 import { transactionService } from './transactionService';
 import { appEventBus } from '../utils/eventBus';
+import { coreMemory } from './coreMemory';
 
 // Security: Explicit allowlist of permitted command prefixes
 // This replaces the insecure denylist approach which was trivially bypassed
@@ -136,6 +137,31 @@ export class ToolService {
         case 'get_image_info': result = await this.getImageInfo(args.path); break;
         case 'crystallize_memory': result = await this.crystallizeMemory(args.content, args.type, args.tags); break;
         case 'invalidate_memory': result = await this.invalidateMemory(args.memoryId, args.reason, args.replacementId); break;
+        case 'read_core_memory':
+          result = JSON.stringify(coreMemory.getAll());
+          break;
+        case 'write_core_memory': {
+          const { key, value } = args as { key: string; value: string };
+          if (!key || !value) {
+            throw new Error('Error: key and value are required');
+          }
+          try {
+            coreMemory.set(key, value);
+            result = `Core memory updated: ${key} = ${value}`;
+          } catch (err: unknown) {
+            throw new Error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+          }
+          break;
+        }
+        case 'delete_core_memory': {
+          const { key } = args as { key: string };
+          if (!key) {
+            throw new Error('Error: key is required');
+          }
+          const deleted = coreMemory.delete(key);
+          result = deleted ? `Deleted core memory key: ${key}` : `Key not found: ${key}`;
+          break;
+        }
         default:
           throw new Error(`Unknown tool: ${toolName}`);
       }
@@ -365,13 +391,25 @@ export class ToolService {
   }
 
   private async webSearch(query: string) {
-    const apiKey = process.env.SERPER_API_KEY;
-    if (!apiKey) throw new Error("SERPER_API_KEY not configured.");
-    
-    const response = await axios.post('https://google.serper.dev/search', { q: query }, {
-      headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' }
-    });
-    return response.data;
+    // Prefer Brave Search API, fall back to Serper
+    const braveKey = process.env.BRAVE_SEARCH_API_KEY;
+    if (braveKey) {
+      const response = await axios.get('https://api.search.brave.com/res/v1/web/search', {
+        params: { q: query, count: 20 },
+        headers: { 'Accept': 'application/json', 'X-Subscription-Token': braveKey }
+      });
+      return response.data;
+    }
+
+    const serperKey = process.env.SERPER_API_KEY;
+    if (serperKey) {
+      const response = await axios.post('https://google.serper.dev/search', { q: query }, {
+        headers: { 'X-API-KEY': serperKey, 'Content-Type': 'application/json' }
+      });
+      return response.data;
+    }
+
+    throw new Error("No search API key configured. Set BRAVE_SEARCH_API_KEY or SERPER_API_KEY.");
   }
 
   private async fetchWebContent(url: string) {
@@ -457,32 +495,43 @@ export class ToolService {
     // This avoids shell interpolation vulnerabilities
     const parts = command.trim().split(/\s+/);
     const executable = parts[0];
+    if (!executable) return Promise.reject(new Error('Empty command'));
     const args = parts.slice(1);
 
     return new Promise((resolve, reject) => {
-      const child = spawn(executable, args, {
-        cwd: PROJECT_ROOT,
-        env: { ...process.env, NO_COLOR: '1' },
-        shell: false, // Security: Never use shell when spawning
+      const proc = spawn(executable, args, {
+        cwd: PROJECT_ROOT as string,
+        env: { ...process.env as NodeJS.ProcessEnv, NO_COLOR: '1' },
+        shell: false,
         stdio: ['pipe', 'pipe', 'pipe']
       });
+
+      if (!proc.stdout || !proc.stderr) {
+        return reject(new Error('Failed to open stdio streams'));
+      }
+
+      const child = {
+        stdout: proc.stdout,
+        stderr: proc.stderr,
+        on: proc.on.bind(proc)
+      };
 
       let stdout = '';
       let stderr = '';
 
-      child.stdout.on('data', (data) => {
+      child.stdout.on('data', (data: Buffer) => {
         stdout += data.toString();
       });
 
-      child.stderr.on('data', (data) => {
+      child.stderr.on('data', (data: Buffer) => {
         stderr += data.toString();
       });
 
-      child.on('error', (err) => {
+      child.on('error', (err: Error) => {
         reject(new Error(`Command execution failed: ${err.message}`));
       });
 
-      child.on('close', (code) => {
+      child.on('close', (code: number | null) => {
         if (code === 0) {
           resolve({ stdout, stderr });
         } else {

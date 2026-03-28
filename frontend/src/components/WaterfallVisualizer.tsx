@@ -83,10 +83,10 @@ const StagePreview = ({ id, data }: { id: StageId; data: any }) => {
   if (id === 'architect') {
     return (
       <div className="space-y-1.5">
-        {data.logic && <p className="text-[9px] text-slate-400 leading-relaxed line-clamp-3">{data.logic}</p>}
+        {data.logic && <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-3">{data.logic}</p>}
         {data.complexity && (
           <span className={cn(
-            'inline-block px-1.5 py-0.5 rounded text-[7px] font-black uppercase border',
+            'inline-block px-1.5 py-0.5 rounded text-[11px] font-black uppercase border',
             data.complexity === 'low' ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' :
             data.complexity === 'high' ? 'text-rose-400 bg-rose-500/10 border-rose-500/20' :
             'text-amber-400 bg-amber-500/10 border-amber-500/20',
@@ -97,7 +97,7 @@ const StagePreview = ({ id, data }: { id: StageId; data: any }) => {
         {data.techStack?.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {data.techStack.slice(0, 5).map((t: string, i: number) => (
-              <span key={i} className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[7px] font-mono text-slate-500">{t}</span>
+              <span key={i} className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[11px] font-mono text-slate-500">{t}</span>
             ))}
           </div>
         )}
@@ -108,9 +108,9 @@ const StagePreview = ({ id, data }: { id: StageId; data: any }) => {
   if (id === 'reasoner') {
     return (
       <div className="space-y-1.5">
-        {data.plan && <p className="text-[9px] text-slate-400 leading-relaxed line-clamp-3">{data.plan}</p>}
+        {data.plan && <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-3">{data.plan}</p>}
         {data.steps?.length > 0 && (
-          <span className="text-[8px] text-slate-600 font-mono">{data.steps.length} steps planned</span>
+          <span className="text-[11px] text-slate-600 font-mono">{data.steps.length} steps planned</span>
         )}
       </div>
     );
@@ -119,11 +119,11 @@ const StagePreview = ({ id, data }: { id: StageId; data: any }) => {
   if (id === 'executor') {
     return (
       <div className="space-y-1.5">
-        {data.explanation && <p className="text-[9px] text-slate-400 leading-relaxed line-clamp-2">{data.explanation}</p>}
+        {data.explanation && <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{data.explanation}</p>}
         {data.files?.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {data.files.slice(0, 4).map((f: string, i: number) => (
-              <span key={i} className="px-1.5 py-0.5 rounded bg-jb-orange/10 border border-jb-orange/20 text-[7px] font-mono text-jb-orange/70">{f}</span>
+              <span key={i} className="px-1.5 py-0.5 rounded bg-jb-orange/10 border border-jb-orange/20 text-[11px] font-mono text-jb-orange/70">{f}</span>
             ))}
           </div>
         )}
@@ -137,12 +137,12 @@ const StagePreview = ({ id, data }: { id: StageId; data: any }) => {
         {data.score != null && (
           <div className="flex items-center gap-2">
             <span className={cn('text-lg font-black tabular-nums', scoreColor(data.score))}>{data.score}</span>
-            <span className="text-[8px] text-slate-600 font-black uppercase">/100</span>
+            <span className="text-[11px] text-slate-600 font-black uppercase">/100</span>
           </div>
         )}
-        {data.summary && <p className="text-[9px] text-slate-400 leading-relaxed line-clamp-2">{data.summary}</p>}
+        {data.summary && <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{data.summary}</p>}
         {data.issues?.length > 0 && (
-          <span className="text-[8px] text-rose-400/60 font-mono">{data.issues.length} issue{data.issues.length !== 1 ? 's' : ''} found</span>
+          <span className="text-[11px] text-rose-400/60 font-mono">{data.issues.length} issue{data.issues.length !== 1 ? 's' : ''} found</span>
         )}
       </div>
     );
@@ -166,10 +166,10 @@ const CompactPresetPicker = () => {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">Preset</span>
+        <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Preset</span>
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-1 text-[7px] font-bold text-slate-600 hover:text-slate-400 transition-colors"
+          className="flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-400 transition-colors"
         >
           {selected?.name || 'Select'}
           <ChevronDown size={8} className={cn('transition-transform', expanded && 'rotate-180')} />
@@ -199,13 +199,13 @@ const CompactPresetPicker = () => {
                     )}
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className={cn('text-[9px] font-bold', isActive ? 'text-white' : 'text-slate-400')}>{p.name}</span>
-                      <span className="text-[7px] text-slate-600 truncate">{p.description}</span>
+                      <span className={cn('text-[11px] font-bold', isActive ? 'text-white' : 'text-slate-400')}>{p.name}</span>
+                      <span className="text-[11px] text-slate-600 truncate">{p.description}</span>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       {p.speed === '~30s' ? <Zap size={8} className="text-emerald-400" /> : <Clock size={8} className="text-slate-600" />}
                       <span className={cn(
-                        'text-[8px] font-black tabular-nums',
+                        'text-[11px] font-black tabular-nums',
                         p.score && p.score >= 90 ? 'text-emerald-400' : p.score && p.score >= 85 ? 'text-sky-400' : 'text-slate-500',
                       )}>
                         {p.score ?? '—'}
@@ -221,7 +221,7 @@ const CompactPresetPicker = () => {
                       key={p.key}
                       onClick={() => { setWaterfallPreset(p.key); setExpanded(false); }}
                       className={cn(
-                        'px-2 py-1 rounded-md border text-[7px] font-bold transition-all',
+                        'px-2 py-1 rounded-md border text-[11px] font-bold transition-all',
                         waterfallPresetKey === p.key
                           ? 'bg-jb-purple/10 border-jb-purple/25 text-white'
                           : 'bg-white/[0.02] border-white/[0.05] text-slate-600 hover:text-slate-400',
@@ -264,7 +264,7 @@ export const WaterfallVisualizer = () => {
         {/* Header */}
         <div className="flex items-center gap-2">
           <FlaskConical size={13} className="text-jb-purple" />
-          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/70">Pipeline</span>
+          <span className="text-[11px] font-black uppercase tracking-[0.3em] text-white/70">Pipeline</span>
         </div>
 
         {/* Prompt input */}
@@ -280,14 +280,14 @@ export const WaterfallVisualizer = () => {
             }}
             placeholder="Describe the task for the pipeline..."
             rows={3}
-            className="w-full bg-transparent px-3 py-2.5 text-[10px] font-mono text-slate-300 placeholder:text-slate-700 resize-none outline-none leading-relaxed"
+            className="w-full bg-transparent px-3 py-2.5 text-[11px] font-mono text-slate-300 placeholder:text-slate-700 resize-none outline-none leading-relaxed"
           />
           <div className="flex items-center justify-between px-3 py-2 border-t border-white/[0.04]">
-            <span className="text-[7px] text-slate-700 font-mono">⌘↩ to launch</span>
+            <span className="text-[11px] text-slate-700 font-mono">⌘↩ to launch</span>
             <button
               onClick={handleSubmit}
               disabled={!prompt.trim()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-jb-purple/15 border border-jb-purple/25 text-jb-purple text-[9px] font-black uppercase tracking-wider hover:bg-jb-purple/25 disabled:opacity-30 transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-jb-purple/15 border border-jb-purple/25 text-jb-purple text-[11px] font-black uppercase tracking-wider hover:bg-jb-purple/25 disabled:opacity-30 transition-all"
             >
               <Sparkles size={10} />
               Initiate
@@ -301,7 +301,7 @@ export const WaterfallVisualizer = () => {
         {/* Link to full view */}
         <button
           onClick={() => setCurrentMode('waterfall' as any)}
-          className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/5 text-slate-600 text-[8px] font-black uppercase tracking-wider hover:bg-white/[0.06] hover:text-slate-400 transition-all"
+          className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/5 text-slate-600 text-[11px] font-black uppercase tracking-wider hover:bg-white/[0.06] hover:text-slate-400 transition-all"
         >
           <ExternalLink size={9} />
           Open Full View
@@ -317,16 +317,16 @@ export const WaterfallVisualizer = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FlaskConical size={13} className="text-jb-purple" />
-          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/70">Pipeline</span>
+          <span className="text-[11px] font-black uppercase tracking-[0.3em] text-white/70">Pipeline</span>
         </div>
         <div className="flex items-center gap-1.5">
           {waterfall.currentStep && !allCompleted && (
-            <span className="px-2 py-0.5 rounded-full bg-jb-accent/10 border border-jb-accent/20 text-jb-accent text-[7px] font-black uppercase animate-pulse">
+            <span className="px-2 py-0.5 rounded-full bg-jb-accent/10 border border-jb-accent/20 text-jb-accent text-[11px] font-black uppercase animate-pulse">
               {waterfall.currentStep}
             </span>
           )}
           {allCompleted && (
-            <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[7px] font-black uppercase">
+            <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-black uppercase">
               Complete
             </span>
           )}
@@ -336,7 +336,7 @@ export const WaterfallVisualizer = () => {
       {/* Prompt preview */}
       {waterfall.prompt && (
         <div className="px-3 py-2 rounded-lg bg-white/[0.02] border border-white/5">
-          <p className="text-[9px] text-slate-500 line-clamp-2 font-mono leading-relaxed">{waterfall.prompt}</p>
+          <p className="text-[11px] text-slate-500 line-clamp-2 font-mono leading-relaxed">{waterfall.prompt}</p>
         </div>
       )}
 
@@ -359,7 +359,7 @@ export const WaterfallVisualizer = () => {
                   step.status === 'completed' && 'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04]',
                   step.status === 'error' && 'bg-rose-500/5 border-rose-500/15',
                   step.status === 'paused' && 'bg-amber-500/5 border-amber-500/15',
-                  step.status === 'idle' && 'bg-black/20 border-white/[0.03] opacity-40',
+                  step.status === 'idle' && 'bg-black/20 border-white/[0.06] opacity-40',
                   hasData && 'cursor-pointer',
                 )}
               >
@@ -367,7 +367,7 @@ export const WaterfallVisualizer = () => {
                   <Icon size={12} className={stage.textColor} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className={cn('text-[10px] font-black uppercase tracking-wider', step.status === 'idle' ? 'text-slate-700' : 'text-slate-300')}>
+                  <span className={cn('text-[11px] font-black uppercase tracking-wider', step.status === 'idle' ? 'text-slate-700' : 'text-slate-300')}>
                     {stage.label}
                   </span>
                 </div>
@@ -404,8 +404,8 @@ export const WaterfallVisualizer = () => {
             {waterfall.steps.reviewer.data.score}
           </span>
           <div>
-            <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest block">Quality Score</span>
-            <span className="text-[7px] text-slate-700 font-mono">
+            <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest block">Quality Score</span>
+            <span className="text-[11px] text-slate-700 font-mono">
               {waterfall.steps.reviewer.data.issues?.length || 0} issues
             </span>
           </div>
@@ -415,7 +415,7 @@ export const WaterfallVisualizer = () => {
       {/* Open in main app */}
       <button
         onClick={() => setCurrentMode('waterfall' as any)}
-        className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/5 text-slate-500 text-[8px] font-black uppercase tracking-wider hover:bg-white/[0.06] hover:text-white transition-all"
+        className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/5 text-slate-500 text-[11px] font-black uppercase tracking-wider hover:bg-white/[0.06] hover:text-white transition-all"
       >
         <ExternalLink size={9} />
         View Full Results

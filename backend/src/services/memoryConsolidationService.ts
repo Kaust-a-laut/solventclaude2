@@ -106,6 +106,7 @@ export class MemoryConsolidationService {
       Output JSON ONLY:
       {
         "isWorthRemembering": boolean,
+        "importance": <1-10 integer — 1=trivial detail, 5=useful fact, 8=critical rule, 10=project-defining decision>,
         "category": "technical_fact" | "project_rule" | "user_preference" | "architectural_decision" | null,
         "conciseStatement": "The exact rule or fact to store",
         "tags": ["tag1", "tag2"],
@@ -134,13 +135,15 @@ export class MemoryConsolidationService {
 
       // 2. Crystallize New Memory
       if (analysis.isWorthRemembering && analysis.conciseStatement) {
+        const importance = Math.max(1, Math.min(10, analysis.importance || 5));
         newMemoryId = await vectorService.addEntry(analysis.conciseStatement, {
           type: analysis.category || 'technical_fact',
           tier: 'crystallized',
           tags: analysis.tags || [],
           links: analysis.links || [],
           confidence: 'HIGH',
-          source: 'chat'
+          source: 'chat',
+          importance
         });
         logger.info(`[Memory] Crystallized: ${analysis.conciseStatement.substring(0, 40)}... with ID: ${newMemoryId}`);
       }
