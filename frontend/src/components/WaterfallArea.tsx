@@ -8,6 +8,7 @@ import type { StageKey } from './waterfall/WaterfallStageCard';
 import { WaterfallConnector } from './waterfall/WaterfallConnector';
 import { WaterfallScore } from './waterfall/WaterfallScore';
 import { WaterfallPresetPicker } from './waterfall/WaterfallPresetPicker';
+import { WaterfallFlowPreview } from './waterfall/WaterfallFlowPreview';
 import { WaterfallDetailPanel } from './waterfall/WaterfallDetailPanel';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -213,191 +214,249 @@ export const WaterfallArea = () => {
             ? 'w-[440px] shrink-0 p-6 border-r border-white/[0.04]'
             : 'flex-1 p-12',
         )}>
-          <div className={cn(!isActive && 'max-w-3xl w-full mx-auto', 'flex flex-col gap-6')}>
+          <div className={cn(isActive ? 'flex flex-col gap-6' : 'flex flex-col gap-6 w-full')}>
 
-            {/* ── Mission Directive textarea ─────────────────────────────────── */}
-            <div className={cn('rounded-[2rem]', isStreaming && 'vibrant-border')}>
-              <div className="glass-panel rounded-[2rem] overflow-hidden">
-                <div className="flex flex-col gap-4 p-5">
-                  <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest">
-                    Mission Directive
-                  </span>
-                  <textarea
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && e.metaKey) {
-                        e.preventDefault();
-                        handleSubmit();
-                      }
-                    }}
-                    placeholder="Describe the complex task for the pipeline to orchestrate..."
-                    rows={isActive ? 2 : 3}
-                    disabled={isStreaming}
-                    className="w-full bg-transparent text-[14px] font-medium text-white placeholder:text-slate-800 resize-none outline-none leading-relaxed input-focus-ring disabled:opacity-50 transition-opacity"
-                  />
-                  <div className="flex items-center justify-between pt-1 border-t border-white/[0.04]">
-                    <span className="text-[11px] text-slate-700 font-mono">⌘↩ to submit</span>
-                    <button
-                      onClick={handleSubmit}
-                      disabled={!input.trim() || isStreaming}
-                      className="flex items-center gap-2 px-5 py-2 rounded-full bg-jb-purple/15 border border-jb-purple/25 text-jb-purple text-[11px] font-black uppercase tracking-widest hover:bg-jb-purple/25 disabled:opacity-30 transition-all shadow-lg"
-                    >
-                      <Sparkles size={13} className={isStreaming ? 'animate-pulse' : ''} />
-                      {isStreaming ? 'Processing...' : 'Initiate'}
-                    </button>
+            {/* ── Idle: two-column layout ────────────────────────────────────── */}
+            {!isActive && !isStreaming && (
+              <div className="grid grid-cols-[1fr,300px] gap-8 items-start">
+                {/* Left: directive + preset picker + idle hint */}
+                <div className="flex flex-col gap-6">
+                  {/* Mission Directive textarea */}
+                  <div className="rounded-[2rem]">
+                    <div className="glass-panel rounded-[2rem] overflow-hidden">
+                      <div className="flex flex-col gap-4 p-5">
+                        <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest">
+                          Mission Directive
+                        </span>
+                        <textarea
+                          value={input}
+                          onChange={(e) => setInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && e.metaKey) {
+                              e.preventDefault();
+                              handleSubmit();
+                            }
+                          }}
+                          placeholder="Describe the complex task for the pipeline to orchestrate..."
+                          rows={3}
+                          disabled={isStreaming}
+                          className="w-full bg-transparent text-[14px] font-medium text-white placeholder:text-slate-800 resize-none outline-none leading-relaxed input-focus-ring disabled:opacity-50 transition-opacity"
+                        />
+                        <div className="flex items-center justify-between pt-1 border-t border-white/[0.04]">
+                          <span className="text-[11px] text-slate-700 font-mono">⌘↩ to submit</span>
+                          <button
+                            onClick={handleSubmit}
+                            disabled={!input.trim() || isStreaming}
+                            className="flex items-center gap-2 px-5 py-2 rounded-full bg-jb-purple/15 border border-jb-purple/25 text-jb-purple text-[11px] font-black uppercase tracking-widest hover:bg-jb-purple/25 disabled:opacity-30 transition-all shadow-lg"
+                          >
+                            <Sparkles size={13} />
+                            Initiate
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Reviewer score ring */}
+                  <AnimatePresence>
+                    {reviewerScore != null && (
+                      <motion.div
+                        key="score-ring"
+                        initial={{ opacity: 0, scale: 0.8, y: 8 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ type: 'spring', stiffness: 200, damping: 22 }}
+                        className="flex justify-center py-2"
+                      >
+                        <WaterfallScore score={reviewerScore} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Preset Picker */}
+                  <motion.div
+                    key="model-selector"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <WaterfallPresetPicker />
+                  </motion.div>
+
+                  {/* Idle dots */}
+                  <div className="flex flex-col items-center gap-8 py-12">
+                    <div className="flex items-end gap-3">
+                      {IDLE_DOTS.map((dot, i) => (
+                        <motion.div
+                          key={i}
+                          animate={{ y: [0, -8, 0], opacity: [0.25, 0.65, 0.25] }}
+                          transition={{
+                            repeat: Infinity,
+                            duration: 3,
+                            delay: dot.delay,
+                            ease: 'easeInOut',
+                          }}
+                          className={cn('w-2.5 h-2.5 rounded-full', dot.color)}
+                          style={{ boxShadow: `0 0 8px ${dot.glow}` }}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.45em] text-slate-700 text-center max-w-xs">
+                      Enter a mission directive to begin the cascade
+                    </p>
                   </div>
                 </div>
+
+                {/* Right: pipeline flow preview */}
+                <motion.div
+                  initial={{ opacity: 0, x: 16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.1 }}
+                >
+                  <WaterfallFlowPreview />
+                </motion.div>
               </div>
-            </div>
+            )}
 
-            {/* ── Reviewer score ring ────────────────────────────────────────── */}
-            <AnimatePresence>
-              {reviewerScore != null && (
-                <motion.div
-                  key="score-ring"
-                  initial={{ opacity: 0, scale: 0.8, y: 8 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ type: 'spring', stiffness: 200, damping: 22 }}
-                  className="flex justify-center py-2"
-                >
-                  <WaterfallScore score={reviewerScore} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* ── Preset Picker (visible when pipeline is idle) ────────────── */}
-            <AnimatePresence>
-              {!isActive && !isStreaming && (
-                <motion.div
-                  key="model-selector"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <WaterfallPresetPicker />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* ── Pipeline / Idle / Initializing ────────────────────────────── */}
-            <AnimatePresence mode="wait">
-
-              {/* Initializing */}
-              {isInitializing && (
-                <motion.div
-                  key="initializing"
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  className="flex flex-col items-center gap-6 py-24"
-                >
-                  <div className="flex items-center gap-4">
-                    {INIT_DOTS.map((dot, i) => (
-                      <motion.div
-                        key={i}
-                        animate={{ scale: [1, 1.65, 1], opacity: [0.35, 1, 0.35] }}
-                        transition={{ repeat: Infinity, duration: 1.5, delay: dot.delay, ease: 'easeInOut' }}
-                        className={cn('w-4 h-4 rounded-full', dot.color)}
-                        style={{ boxShadow: `0 0 18px ${dot.glow}` }}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-600 animate-pulse">
-                    Initializing Pipeline...
-                  </span>
-                </motion.div>
-              )}
-
-              {/* Active: compact stage cards with connectors */}
-              {isActive && (
-                <motion.div
-                  key="pipeline"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col"
-                >
-                  {STAGE_ORDER.map((stageKey, i) => {
-                    const config  = STAGE_CONFIGS[stageKey];
-                    const step    = waterfall.steps[stageKey];
-                    const isLast  = i === STAGE_ORDER.length - 1;
-                    const nextKey = !isLast ? STAGE_ORDER[i + 1] : null;
-                    const isArchitectConnector = stageKey === 'architect';
-
-                    return (
-                      <div key={stageKey}>
-                        <WaterfallStageCard
-                          config={config}
-                          status={step.status}
-                          data={step.data}
-                          error={step.error}
-                          retryCount={stageKey === 'executor' ? retryCount : 0}
-                          isExpanded={false}
-                          onToggleExpand={() => {}}
-                          timing={stageTimings[stageKey]}
-                          compact
-                          isSelected={selectedStage === stageKey}
-                          onSelect={() => setSelectedStage(stageKey)}
-                        />
-
-                        {/* Connector between stages */}
-                        {!isLast && nextKey && (
-                          <WaterfallConnector
-                            fromStatus={step.status}
-                            fromColor={config.color}
-                            toColor={STAGE_CONFIGS[nextKey].color}
-                            showEditPlan={isArchitectConnector}
-                            editPlanDraft={isArchitectConnector ? editPlanDraft : null}
-                            onStartEdit={isArchitectConnector ? handleStartEditPlan : undefined}
-                            onEditChange={isArchitectConnector ? setEditPlanDraft : undefined}
-                            onApplyEdit={isArchitectConnector ? applyEditedPlan : undefined}
-                            onCancelEdit={isArchitectConnector ? () => setEditPlanDraft(null) : undefined}
-                            isPaused={isArchitectConnector ? step.status === 'paused' : false}
-                            onProceed={isArchitectConnector ? proceedWithWaterfall : undefined}
-                            onCancel={isArchitectConnector ? cancelWaterfall : undefined}
-                          />
-                        )}
-                      </div>
-                    );
-                  })}
-                </motion.div>
-              )}
-
-              {/* Idle */}
-              {!isActive && !isStreaming && (
-                <motion.div
-                  key="idle"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col items-center gap-8 py-24"
-                >
-                  <div className="flex items-end gap-3">
-                    {IDLE_DOTS.map((dot, i) => (
-                      <motion.div
-                        key={i}
-                        animate={{ y: [0, -8, 0], opacity: [0.25, 0.65, 0.25] }}
-                        transition={{
-                          repeat: Infinity,
-                          duration: 3,
-                          delay: dot.delay,
-                          ease: 'easeInOut',
+            {/* ── Active / Initializing states ───────────────────────────────── */}
+            {(isActive || isStreaming) && (
+              <>
+                {/* Mission Directive textarea (compact) */}
+                <div className={cn('rounded-[2rem]', isStreaming && 'vibrant-border')}>
+                  <div className="glass-panel rounded-[2rem] overflow-hidden">
+                    <div className="flex flex-col gap-4 p-5">
+                      <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest">
+                        Mission Directive
+                      </span>
+                      <textarea
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && e.metaKey) {
+                            e.preventDefault();
+                            handleSubmit();
+                          }
                         }}
-                        className={cn('w-2.5 h-2.5 rounded-full', dot.color)}
-                        style={{ boxShadow: `0 0 8px ${dot.glow}` }}
+                        placeholder="Describe the complex task for the pipeline to orchestrate..."
+                        rows={2}
+                        disabled={isStreaming}
+                        className="w-full bg-transparent text-[14px] font-medium text-white placeholder:text-slate-800 resize-none outline-none leading-relaxed input-focus-ring disabled:opacity-50 transition-opacity"
                       />
-                    ))}
+                      <div className="flex items-center justify-between pt-1 border-t border-white/[0.04]">
+                        <span className="text-[11px] text-slate-700 font-mono">⌘↩ to submit</span>
+                        <button
+                          onClick={handleSubmit}
+                          disabled={!input.trim() || isStreaming}
+                          className="flex items-center gap-2 px-5 py-2 rounded-full bg-jb-purple/15 border border-jb-purple/25 text-jb-purple text-[11px] font-black uppercase tracking-widest hover:bg-jb-purple/25 disabled:opacity-30 transition-all shadow-lg"
+                        >
+                          <Sparkles size={13} className={isStreaming ? 'animate-pulse' : ''} />
+                          {isStreaming ? 'Processing...' : 'Initiate'}
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.45em] text-slate-700 text-center max-w-xs">
-                    Enter a mission directive to begin the cascade
-                  </p>
-                </motion.div>
-              )}
+                </div>
 
-            </AnimatePresence>
+                {/* Reviewer score ring */}
+                <AnimatePresence>
+                  {reviewerScore != null && (
+                    <motion.div
+                      key="score-ring"
+                      initial={{ opacity: 0, scale: 0.8, y: 8 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ type: 'spring', stiffness: 200, damping: 22 }}
+                      className="flex justify-center py-2"
+                    >
+                      <WaterfallScore score={reviewerScore} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <AnimatePresence mode="wait">
+                  {/* Initializing */}
+                  {isInitializing && (
+                    <motion.div
+                      key="initializing"
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      className="flex flex-col items-center gap-6 py-24"
+                    >
+                      <div className="flex items-center gap-4">
+                        {INIT_DOTS.map((dot, i) => (
+                          <motion.div
+                            key={i}
+                            animate={{ scale: [1, 1.65, 1], opacity: [0.35, 1, 0.35] }}
+                            transition={{ repeat: Infinity, duration: 1.5, delay: dot.delay, ease: 'easeInOut' }}
+                            className={cn('w-4 h-4 rounded-full', dot.color)}
+                            style={{ boxShadow: `0 0 18px ${dot.glow}` }}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-600 animate-pulse">
+                        Initializing Pipeline...
+                      </span>
+                    </motion.div>
+                  )}
+
+                  {/* Active: compact stage cards with connectors */}
+                  {isActive && (
+                    <motion.div
+                      key="pipeline"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex flex-col"
+                    >
+                      {STAGE_ORDER.map((stageKey, i) => {
+                        const config  = STAGE_CONFIGS[stageKey];
+                        const step    = waterfall.steps[stageKey];
+                        const isLast  = i === STAGE_ORDER.length - 1;
+                        const nextKey = !isLast ? STAGE_ORDER[i + 1] : null;
+                        const isArchitectConnector = stageKey === 'architect';
+
+                        return (
+                          <div key={stageKey}>
+                            <WaterfallStageCard
+                              config={config}
+                              status={step.status}
+                              data={step.data}
+                              error={step.error}
+                              retryCount={stageKey === 'executor' ? retryCount : 0}
+                              isExpanded={false}
+                              onToggleExpand={() => {}}
+                              timing={stageTimings[stageKey]}
+                              compact
+                              isSelected={selectedStage === stageKey}
+                              onSelect={() => setSelectedStage(stageKey)}
+                            />
+
+                            {/* Connector between stages */}
+                            {!isLast && nextKey && (
+                              <WaterfallConnector
+                                fromStatus={step.status}
+                                fromColor={config.color}
+                                toColor={STAGE_CONFIGS[nextKey].color}
+                                showEditPlan={isArchitectConnector}
+                                editPlanDraft={isArchitectConnector ? editPlanDraft : null}
+                                onStartEdit={isArchitectConnector ? handleStartEditPlan : undefined}
+                                onEditChange={isArchitectConnector ? setEditPlanDraft : undefined}
+                                onApplyEdit={isArchitectConnector ? applyEditedPlan : undefined}
+                                onCancelEdit={isArchitectConnector ? () => setEditPlanDraft(null) : undefined}
+                                isPaused={isArchitectConnector ? step.status === 'paused' : false}
+                                onProceed={isArchitectConnector ? proceedWithWaterfall : undefined}
+                                onCancel={isArchitectConnector ? cancelWaterfall : undefined}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </>
+            )}
           </div>
         </div>
 
