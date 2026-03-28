@@ -233,7 +233,7 @@
 
   .prose pre::before {
     content: "Source Analysis // Diagnostic Output";
-    @apply block w-full bg-white/5 px-4 py-2 text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] border-b border-white/5;
+    @apply block w-full bg-white/5 px-4 py-2 text-[11px] font-black text-slate-500 uppercase tracking-[0.3em] border-b border-white/5;
   }
 
   .prose code {
@@ -254,7 +254,7 @@
   }
 
   .prose th {
-    @apply px-4 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-white/10;
+    @apply px-4 py-3 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest border-b border-white/10;
   }
 
   .prose td {
