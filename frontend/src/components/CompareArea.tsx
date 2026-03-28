@@ -141,7 +141,7 @@ export const CompareArea = () => {
       )}>
         
         {/* Model A Column */}
-        <BentoItem delay={0.1} className="min-h-[500px] flex flex-col">
+        <BentoItem delay={0.1} className="min-h-[500px] flex flex-col border-t-[3px] border-t-jb-accent">
             <div className="flex items-center justify-between border-b border-white/5 pb-6 mb-6">
                 <div className="flex items-center gap-4">
                     <div className="p-2.5 rounded-xl bg-jb-accent/10 border border-jb-accent/20 text-jb-accent">
@@ -179,7 +179,7 @@ export const CompareArea = () => {
         </BentoItem>
 
         {/* Model B Column */}
-        <BentoItem delay={0.2} className="min-h-[500px] flex flex-col">
+        <BentoItem delay={0.2} className="min-h-[500px] flex flex-col border-t-[3px] border-t-jb-orange">
             <div className="flex items-center justify-between border-b border-white/5 pb-6 mb-6">
                 <div className="flex items-center gap-4">
                     <div className="p-2.5 rounded-xl bg-jb-orange/10 border border-jb-orange/20 text-jb-orange">
