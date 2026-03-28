@@ -391,13 +391,25 @@ export class ToolService {
   }
 
   private async webSearch(query: string) {
-    const apiKey = process.env.SERPER_API_KEY;
-    if (!apiKey) throw new Error("SERPER_API_KEY not configured.");
-    
-    const response = await axios.post('https://google.serper.dev/search', { q: query }, {
-      headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' }
-    });
-    return response.data;
+    // Prefer Brave Search API, fall back to Serper
+    const braveKey = process.env.BRAVE_SEARCH_API_KEY;
+    if (braveKey) {
+      const response = await axios.get('https://api.search.brave.com/res/v1/web/search', {
+        params: { q: query, count: 20 },
+        headers: { 'Accept': 'application/json', 'X-Subscription-Token': braveKey }
+      });
+      return response.data;
+    }
+
+    const serperKey = process.env.SERPER_API_KEY;
+    if (serperKey) {
+      const response = await axios.post('https://google.serper.dev/search', { q: query }, {
+        headers: { 'X-API-KEY': serperKey, 'Content-Type': 'application/json' }
+      });
+      return response.data;
+    }
+
+    throw new Error("No search API key configured. Set BRAVE_SEARCH_API_KEY or SERPER_API_KEY.");
   }
 
   private async fetchWebContent(url: string) {

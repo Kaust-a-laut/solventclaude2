@@ -133,15 +133,15 @@ export const ChatArea = () => {
     <AuraBackground>
       <div className="flex flex-col flex-1 min-h-0 w-full overflow-clip font-sans">
         <TitleBar />
-        <div className="flex flex-1 overflow-clip relative">
+        <div className="flex flex-1 min-h-0 overflow-clip relative">
           <Navigation />
           <AnimatePresence>
              <SettingsModal />
           </AnimatePresence>
 
-          <div className="flex-1 flex h-full overflow-clip relative">
+          <div className="flex-1 flex min-h-0 overflow-clip relative">
              <div className={cn(
-               "flex-1 h-full flex flex-col border-r border-white/5 relative z-10 min-w-0 min-h-0 overflow-clip transition-all duration-500",
+               "flex-1 flex flex-col border-r border-white/5 relative z-10 min-w-0 min-h-0 overflow-clip transition-all duration-500",
                graphPulse && "ring-2 ring-jb-purple/20 ring-inset",
                isProcessing && "intelligence-active"
              )}>

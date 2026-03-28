@@ -15,6 +15,7 @@ const envSchema = z.object({
   GEMINI_API_KEY: z.string().optional(),
   DEFAULT_PROVIDER: z.string().default('groq'),
   SERPER_API_KEY: z.string().optional(),
+  BRAVE_SEARCH_API_KEY: z.string().optional(),
   DEEPSEEK_API_KEY: z.string().optional(),
   GROQ_API_KEY: z.string().optional(),
   OPENROUTER_API_KEY: z.string().optional(),

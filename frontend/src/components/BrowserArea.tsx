@@ -331,12 +331,13 @@ export const BrowserArea = () => {
   const searchResults = activeTab?.searchResults;
   const pageContent = activeTab?.pageContent;
   const isLoading = activeTab?.isLoading || false;
-  const canLoadMore = searchResults && searchResults.results?.length >= 20 && (activeTab?.searchPage || 1) > 0;
+  const canLoadMore = searchResults && searchResults.results?.length >= 10 && (activeTab?.searchPage || 1) > 0;
   const displayUrl = activeTab?.url || '';
   const supportsPiP = typeof window !== 'undefined' && 'documentPictureInPicture' in window;
 
+
   return (
-    <div className="flex-1 flex flex-col bg-[#020205] overflow-hidden font-sans relative">
+    <div className="flex-1 flex flex-col min-h-0 bg-[#020205] font-sans relative">
       <div className="absolute inset-0 neural-grid opacity-[0.03] pointer-events-none" />
 
       {/* Browser Chrome */}
