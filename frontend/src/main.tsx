@@ -22,6 +22,8 @@ const App = () => {
           style: {
             background: 'rgba(23, 23, 23, 0.95)',
             border: '1px solid rgba(255, 255, 255, 0.06)',
+            borderLeft: '3px solid transparent',
+            borderImage: 'linear-gradient(180deg, rgba(60,113,247,0.6), rgba(157,91,210,0.6), rgba(251,146,60,0.5)) 1',
             color: '#e5e5e5',
             backdropFilter: 'blur(12px)',
           },
