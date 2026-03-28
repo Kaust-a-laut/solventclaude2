@@ -4,6 +4,7 @@ import path from 'path';
 import multer from 'multer';
 
 import mammoth from 'mammoth';
+import { handleRouteError } from '../utils/routeErrors';
 
 const router = Router();
 // Allow dynamic project root, but default to a dedicated 'projects' or empty directory
@@ -65,9 +66,8 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       path: `/files/${req.file.filename}`,
       content: content.substring(0, 50000) // Limit content size for prompt safety
     });
-  } catch (error: any) {
-    console.error('Upload processing error:', error);
-    res.status(500).json({ error: 'Failed to process uploaded file' });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'file-upload' });
   }
 });
 
@@ -198,7 +198,7 @@ router.get('/raw', async (req, res) => {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return res.status(404).json({ error: 'File not found' });
     }
-    res.status(500).json({ error: 'Failed to read file' });
+    handleRouteError({ res, error, context: 'file-raw' });
   }
 });
 
@@ -218,7 +218,7 @@ router.get('/read', async (req, res) => {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return res.status(404).json({ error: 'File not found' });
     }
-    res.status(500).json({ error: 'Failed to read file' });
+    handleRouteError({ res, error, context: 'file-read' });
   }
 });
 
@@ -236,7 +236,7 @@ router.post('/write', async (req, res) => {
     if (error.message.includes('Access denied')) {
       return res.status(403).json({ error: 'Access denied' });
     }
-    res.status(500).json({ error: 'Failed to write file' });
+    handleRouteError({ res, error, context: 'file-write' });
   }
 });
 
@@ -247,8 +247,8 @@ router.post('/shell', async (req, res) => {
     const { toolService } = await import('../services/toolService');
     const result = await toolService.executeTool('run_shell', { command });
     res.json(result);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'file-shell' });
   }
 });
 

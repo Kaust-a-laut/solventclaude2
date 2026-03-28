@@ -9,6 +9,13 @@ import { debateService } from '../services/debateService';
 import { supervisorService } from '../services/supervisorService';
 import { orchestrationService } from '../services/orchestrationService';
 import { ConversationStorageService } from '../services/conversationStorageService';
+import { handleRouteError } from '../utils/routeErrors';
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isValidUUID(id: string): boolean {
+  return UUID_REGEX.test(id);
+}
 
 const router = Router();
 const storageService = new ConversationStorageService();
@@ -60,8 +67,8 @@ router.post('/debate', async (req, res) => {
   try {
     const result = await debateService.conductDebate(topic, proponentModel, criticModel, proponentProvider, criticProvider);
     res.json(result);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'debate' });
   }
 });
 
@@ -78,6 +85,9 @@ router.post('/collaborate/synthesize', CollaborateController.synthesizeNow);
 router.post('/collaborate', async (req, res) => {
   const { goal, missionType = 'consultation', async: isAsync, provider, model } = req.body;
   if (!goal) return res.status(400).json({ error: 'Goal is required' });
+  if (typeof goal !== 'string' || goal.length > 5000) {
+    return res.status(400).json({ error: 'Goal must be a string with max 5000 characters' });
+  }
 
   try {
     const result = await orchestrationService.runMission(missionType, goal, {
@@ -92,8 +102,8 @@ router.post('/collaborate', async (req, res) => {
     }
 
     res.json(result);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'collaborate' });
   }
 });
 
@@ -105,8 +115,8 @@ router.get('/tasks/:jobId', async (req, res) => {
     const { taskService } = await import('../services/taskService');
     const status = await taskService.getJobStatus(jobId);
     res.json(status);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'tasks' });
   }
 });
 
@@ -126,8 +136,8 @@ router.post('/analyze', async (req, res) => {
       missionType
     );
     res.json({ analysis });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'analyze' });
   }
 });
 
@@ -194,8 +204,8 @@ router.get('/sessions', async (req, res) => {
     const paginated = sessions.slice(parsedOffset, parsedOffset + parsedLimit);
     
     res.json({ sessions: paginated, total: sessions.length });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'sessions-list' });
   }
 });
 
@@ -207,61 +217,34 @@ router.get('/sessions/search', async (req, res) => {
     }
     const results = await storageService.searchSessions(q as string, parseInt(limit as string, 10));
     res.json({ results });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'sessions-search' });
   }
 });
 
 router.get('/sessions/:id', async (req, res) => {
   try {
-    const session = await storageService.loadSession(req.params.id);
+    const { id } = req.params;
+    if (!isValidUUID(id)) {
+      return res.status(400).json({ error: 'Invalid session ID format' });
+    }
+    const session = await storageService.loadSession(id);
     if (!session) {
       return res.status(404).json({ error: 'Session not found' });
     }
     res.json(session);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-router.post('/sessions', async (req, res) => {
-  try {
-    const { id, mode, title, messages, parentMessageId, parentSessionId } = req.body;
-    
-    if (!id || !mode || !Array.isArray(messages)) {
-      return res.status(400).json({ error: 'id, mode, and messages are required' });
-    }
-    
-    const storedMessages = storageService.toStoredMessages(messages);
-    const now = Date.now();
-    
-    const session = {
-      id,
-      mode,
-      title: title || storageService.generateTitle(messages[0]?.content || 'New Conversation'),
-      messages: storedMessages,
-      createdAt: now,
-      updatedAt: now,
-      parentMessageId,
-      parentSessionId,
-      metadata: {
-        modelsUsed: [...new Set(messages.map(m => m.model).filter(Boolean))],
-        messageCount: messages.length,
-        tokenEstimate: messages.reduce((acc, m) => acc + m.content.length / 4, 0),
-        tags: []
-      }
-    };
-    
-    await storageService.saveSession(session);
-    res.json(session);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'session-get' });
   }
 });
 
 router.put('/sessions/:id', async (req, res) => {
   try {
-    const existing = await storageService.loadSession(req.params.id);
+    const { id } = req.params;
+    if (!isValidUUID(id)) {
+      return res.status(400).json({ error: 'Invalid session ID format' });
+    }
+    const existing = await storageService.loadSession(id);
     if (!existing) {
       return res.status(404).json({ error: 'Session not found' });
     }
@@ -290,10 +273,14 @@ router.put('/sessions/:id', async (req, res) => {
 
 router.delete('/sessions/:id', async (req, res) => {
   try {
-    await storageService.deleteSession(req.params.id);
+    const { id } = req.params;
+    if (!isValidUUID(id)) {
+      return res.status(400).json({ error: 'Invalid session ID format' });
+    }
+    await storageService.deleteSession(id);
     res.json({ success: true, message: 'Session deleted' });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'session-delete' });
   }
 });
 
@@ -302,8 +289,8 @@ router.get('/overseer/pending', async (req, res) => {
   try {
     const pending = supervisorService.getPendingDecisions();
     res.json({ decisions: pending });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'overseer-pending' });
   }
 });
 
@@ -323,8 +310,8 @@ router.get('/overseer/history', async (req, res) => {
     }
 
     res.json({ decisions: history, total: history.length });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'overseer-history' });
   }
 });
 
@@ -341,8 +328,8 @@ router.post('/overseer/approve', async (req, res) => {
     } else {
       res.status(400).json({ error: result.error });
     }
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'overseer-approve' });
   }
 });
 
@@ -359,8 +346,8 @@ router.post('/overseer/reject', async (req, res) => {
     } else {
       res.status(400).json({ error: result.error });
     }
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'overseer-reject' });
   }
 });
 
@@ -381,8 +368,8 @@ router.post('/codebase/index', async (req, res) => {
     await codebaseIndexer.indexProject(resolved);
 
     res.json({ success: true, message: 'Codebase indexing complete' });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'codebase-index' });
   }
 });
 
@@ -391,8 +378,8 @@ router.get('/codebase/status', async (req, res) => {
     const { codebaseIndexer } = await import('../services/codebaseIndexer');
     const status = codebaseIndexer.getStatus();
     res.json(status);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'codebase-status' });
   }
 });
 
@@ -408,8 +395,8 @@ router.post('/codebase/watch', async (req, res) => {
       await codebaseIndexer.stop();
       res.json({ success: true, message: 'File watcher stopped' });
     }
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'codebase-watch' });
   }
 });
 

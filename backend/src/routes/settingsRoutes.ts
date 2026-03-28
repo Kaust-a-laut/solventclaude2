@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { settingsService } from '../services/settingsService';
+import { handleRouteError } from '../utils/routeErrors';
 
 const router = Router();
 
@@ -8,8 +9,8 @@ router.get('/', async (req, res) => {
   try {
     const settings = await settingsService.getSettings();
     res.json(settings);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'settings-get' });
   }
 });
 
@@ -18,8 +19,8 @@ router.post('/', async (req, res) => {
   try {
     const settings = await settingsService.updateSettings(req.body);
     res.json(settings);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'settings-update' });
   }
 });
 
@@ -32,8 +33,8 @@ router.get('/providers/:providerId', async (req, res) => {
       return res.status(404).json({ error: 'Provider not found' });
     }
     res.json(config);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'settings-provider-get' });
   }
 });
 
@@ -43,8 +44,8 @@ router.post('/providers/:providerId', async (req, res) => {
     const { providerId } = req.params;
     const config = await settingsService.updateProviderConfig(providerId, req.body);
     res.json(config);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'settings-provider-update' });
   }
 });
 
@@ -61,8 +62,8 @@ router.get('/providers', async (req, res) => {
       capabilities: p.capabilities,
       isReady: p.isReady()
     })));
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'settings-providers-list' });
   }
 });
 
@@ -72,8 +73,8 @@ router.get('/providers/:providerId/capabilities', async (req, res) => {
     const { providerId } = req.params;
     const capabilities = await settingsService.getProviderCapabilities(providerId);
     res.json(capabilities);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'settings-provider-capabilities' });
   }
 });
 
@@ -89,8 +90,8 @@ router.post('/providers/:providerId/validate-key', async (req, res) => {
     
     const isValid = await settingsService.validateProviderApiKey(providerId, apiKey);
     res.json({ valid: isValid });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    handleRouteError({ res, error, context: 'settings-validate-key' });
   }
 });
 

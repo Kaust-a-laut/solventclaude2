@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import crypto from 'crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
@@ -39,7 +39,7 @@ import { codebaseIndexer } from './services/codebaseIndexer';
 // Timing-safe secret comparison to prevent timing attacks
 function safeCompare(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
-  return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
 }
 
 const app = express();
@@ -199,7 +199,7 @@ app.use(cors(corsOptions));
 
 // Request ID middleware for tracing
 app.use((req, res, next) => {
-  req.id = (req.headers['x-request-id'] as string) || crypto.randomUUID();
+  req.id = (req.headers['x-request-id'] as string) || randomUUID();
   res.setHeader('x-request-id', req.id);
   next();
 });

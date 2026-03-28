@@ -8,11 +8,12 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env'), override: true });
 const OLD_INSECURE_DEFAULT = 'solvent_dev_insecure_default';
 
 const envSchema = z.object({
-  PORT: z.string().transform(Number).default('3001'),
+  PORT: z.string()
+    .transform(Number)
+    .pipe(z.number().min(1).max(65535))
+    .default('3001'),
   GEMINI_API_KEY: z.string().optional(),
-  // Provider configuration
   DEFAULT_PROVIDER: z.string().default('groq'),
-  // Optional keys
   SERPER_API_KEY: z.string().optional(),
   DEEPSEEK_API_KEY: z.string().optional(),
   GROQ_API_KEY: z.string().optional(),
@@ -21,18 +22,22 @@ const envSchema = z.object({
   CEREBRAS_API_KEY: z.string().optional(),
   HUGGINGFACE_API_KEY: z.string().optional(),
   FAL_API_KEY: z.string().optional(),
-  OLLAMA_HOST: z.string().default('http://127.0.0.1:11434'),
-  // Feature flags
+  OLLAMA_HOST: z.string().url().default('http://127.0.0.1:11434'),
   ENABLE_OLLAMA: z.string().transform(v => v === 'true').default('true'),
-  // Security - REQUIRED, no default, must be at least 32 characters
   BACKEND_INTERNAL_SECRET: z.string().min(32, 'BACKEND_INTERNAL_SECRET must be at least 32 characters for security'),
-  // CORS Configuration
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
-  // AI Provider Timeout (milliseconds)
-  AI_PROVIDER_TIMEOUT_MS: z.string().transform(Number).default('120000'),
-  // Memory System
-  MEMORY_CACHE_SIZE: z.string().transform(Number).default('1000'),
-  MEMORY_MAX_ENTRIES: z.string().transform(Number).default('1500'),
+  AI_PROVIDER_TIMEOUT_MS: z.string()
+    .transform(Number)
+    .pipe(z.number().min(1000).max(300000))
+    .default('120000'),
+  MEMORY_CACHE_SIZE: z.string()
+    .transform(Number)
+    .pipe(z.number().min(10).max(10000))
+    .default('1000'),
+  MEMORY_MAX_ENTRIES: z.string()
+    .transform(Number)
+    .pipe(z.number().min(10).max(50000))
+    .default('1500'),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

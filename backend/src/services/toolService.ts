@@ -9,6 +9,7 @@ import sharp from 'sharp';
 import { validatePath, PROJECT_ROOT } from '../utils/fileSystem';
 import { transactionService } from './transactionService';
 import { appEventBus } from '../utils/eventBus';
+import { coreMemory } from './coreMemory';
 
 // Security: Explicit allowlist of permitted command prefixes
 // This replaces the insecure denylist approach which was trivially bypassed
@@ -136,6 +137,31 @@ export class ToolService {
         case 'get_image_info': result = await this.getImageInfo(args.path); break;
         case 'crystallize_memory': result = await this.crystallizeMemory(args.content, args.type, args.tags); break;
         case 'invalidate_memory': result = await this.invalidateMemory(args.memoryId, args.reason, args.replacementId); break;
+        case 'read_core_memory':
+          result = JSON.stringify(coreMemory.getAll());
+          break;
+        case 'write_core_memory': {
+          const { key, value } = args as { key: string; value: string };
+          if (!key || !value) {
+            throw new Error('Error: key and value are required');
+          }
+          try {
+            coreMemory.set(key, value);
+            result = `Core memory updated: ${key} = ${value}`;
+          } catch (err: unknown) {
+            throw new Error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+          }
+          break;
+        }
+        case 'delete_core_memory': {
+          const { key } = args as { key: string };
+          if (!key) {
+            throw new Error('Error: key is required');
+          }
+          const deleted = coreMemory.delete(key);
+          result = deleted ? `Deleted core memory key: ${key}` : `Key not found: ${key}`;
+          break;
+        }
         default:
           throw new Error(`Unknown tool: ${toolName}`);
       }

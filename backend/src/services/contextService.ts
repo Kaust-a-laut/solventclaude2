@@ -7,6 +7,7 @@ import { BM25Index, reciprocalRankFusion } from '../utils/bm25';
 import { statSync } from 'fs';
 import { join } from 'path';
 import { reranker } from './reranker';
+import { coreMemory } from './coreMemory';
 
 // --- Named Constants ---
 
@@ -818,6 +819,11 @@ ${provenance.workspaceFiles.length > 0
   ? provenance.workspaceFiles.map(f => `• ${f}${data.activeFile && f === data.activeFile ? ' ← **Active tab**' : ''}`).join('\n')
   : '• No files currently open in the workspace.'}
 ${getBrowserContextBlock(data.browserContext)}
+
+${(() => {
+  const coreBlock = coreMemory.toContextBlock();
+  return coreBlock ? `\n[CORE MEMORY — Always Available]\n${coreBlock}\n` : '';
+})()}
 
 **[PROJECT MEMORY — RETRIEVED CONTEXT]**
 ${formatMemoryContext(activeItems)}

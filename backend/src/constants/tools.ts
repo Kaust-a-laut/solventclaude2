@@ -153,6 +153,37 @@ export const TOOL_DEFINITIONS = [
       required: ["memoryId", "reason"]
     }
   },
+  {
+    name: "read_core_memory",
+    description: "Read all entries in your persistent core memory. Core memory is always visible to you in the system prompt, but this tool lets you get the raw data.",
+    parameters: {
+      type: "OBJECT",
+      properties: {}
+    }
+  },
+  {
+    name: "write_core_memory",
+    description: "Write a key-value pair to your persistent core memory. Core memory is always included in your context. Use it for facts you need across every conversation: user identity, active project goals, key decisions. Max 10 slots.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        key: { type: "STRING", description: "The memory key (e.g., user_name, active_goal, project_stack)" },
+        value: { type: "STRING", description: "The value to store (keep concise — this consumes context tokens every request)" }
+      },
+      required: ["key", "value"]
+    }
+  },
+  {
+    name: "delete_core_memory",
+    description: "Remove a key from core memory to free a slot.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        key: { type: "STRING", description: "The key to remove" }
+      },
+      required: ["key"]
+    }
+  },
   // --- Frontend-deferred tools (executed in the browser, not on the server) ---
   {
     name: "ide_open_file",

@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import mammoth from 'mammoth';
+import { SolventError, SolventErrorCode } from '../utils/errors';
 
 export class FileService {
   private uploadDir: string;
@@ -78,8 +79,23 @@ export class FileService {
     }
   }
 
+  private validateFileName(fileName: string): string {
+    if (!fileName || typeof fileName !== 'string') {
+      throw new SolventError('Filename is required', SolventErrorCode.VALIDATION_ERROR, { status: 400 });
+    }
+    if (fileName.includes('..') || path.isAbsolute(fileName)) {
+      throw new SolventError('Invalid filename: path traversal detected', SolventErrorCode.VALIDATION_ERROR, { status: 400 });
+    }
+    const sanitized = fileName.replace(/[^\w\-./]/g, '_');
+    const filePath = path.join(this.uploadDir, sanitized);
+    if (!filePath.startsWith(this.uploadDir)) {
+      throw new SolventError('Invalid filename: path escape attempt', SolventErrorCode.VALIDATION_ERROR, { status: 400 });
+    }
+    return filePath;
+  }
+
   async deleteFile(fileName: string) {
-    const filePath = path.join(this.uploadDir, fileName);
+    const filePath = this.validateFileName(fileName);
     await fs.unlink(filePath);
   }
 }

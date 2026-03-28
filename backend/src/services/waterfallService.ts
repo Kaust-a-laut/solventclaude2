@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
-import crypto from 'crypto';
+import { randomUUID } from 'node:crypto';
 import { AIProviderFactory } from './aiProviderFactory';
 import { WATERFALL_CONFIG, WATERFALL_DEFAULT_SELECTION } from '../constants/models';
 import type { WaterfallModelSelection, WaterfallPhaseConfig, WaterfallPhaseSelection } from '../constants/models';
@@ -571,7 +571,7 @@ IMPORTANT: The "code" field must contain COMPLETE source code. Do NOT truncate w
     let compilationStatus = 'Not tested';
     if (executorData.code) {
       if (signal?.aborted) throw new SolventError('Waterfall cancelled by user.', SolventErrorCode.OPERATION_CANCELLED);
-      const tempFile = path.join(os.tmpdir(), `solvent_review_${crypto.randomUUID()}.ts`);
+      const tempFile = path.join(os.tmpdir(), `solvent_review_${randomUUID()}.ts`);
 
       try {
         await fs.writeFile(tempFile, executorData.code, 'utf-8');

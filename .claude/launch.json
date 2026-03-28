@@ -9,8 +9,8 @@
     },
     {
       "name": "Backend (Express)",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev:backend"],
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["scripts/dev-backend.sh"],
       "port": 3001
     }
   ]

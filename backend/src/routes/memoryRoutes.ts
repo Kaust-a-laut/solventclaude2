@@ -5,6 +5,21 @@ import { vectorService } from '../services/vectorService';
 const router = Router();
 
 const MAX_MEMORY_LOAD = 2000;
+const MAX_LIMIT = 100;
+const DEFAULT_LIMIT = 20;
+const MAX_CONTENT_LENGTH = 100 * 1024; // 100KB
+const MAX_SEARCH_LENGTH = 200;
+
+function parseLimit(value: string | undefined, defaultVal: number, max: number): number {
+  const parsed = parseInt(value || '', 10);
+  if (isNaN(parsed) || parsed < 1) return defaultVal;
+  return Math.min(parsed, max);
+}
+
+function parseOffset(value: string | undefined): number {
+  const parsed = parseInt(value || '', 10);
+  return isNaN(parsed) || parsed < 0 ? 0 : parsed;
+}
 
 // GET /api/v1/memory/stats
 router.get('/memory/stats', (req: Request, res: Response) => {
@@ -26,11 +41,15 @@ router.get('/memory/stats', (req: Request, res: Response) => {
 
 // GET /api/v1/memory/entries?limit=20&offset=0&tier=&search=
 router.get('/memory/entries', (req: Request, res: Response) => {
-  const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
-  const offset = parseInt(req.query.offset as string) || 0;
+  const limit = parseLimit(req.query.limit as string, DEFAULT_LIMIT, MAX_LIMIT);
+  const offset = parseOffset(req.query.offset as string);
   const tier = req.query.tier as string | undefined;
   const type = req.query.type as string | undefined;
-  const search = (req.query.search as string | undefined)?.toLowerCase();
+  const rawSearch = req.query.search as string | undefined;
+  if (rawSearch && (typeof rawSearch !== 'string' || rawSearch.length > MAX_SEARCH_LENGTH)) {
+    return res.status(400).json({ error: `search must be a string with max ${MAX_SEARCH_LENGTH} characters` });
+  }
+  const search = rawSearch?.toLowerCase();
 
   let entries = vectorService.getRecentEntries(MAX_MEMORY_LOAD).filter(e => !e.metadata?.deprecated);
 
@@ -86,6 +105,9 @@ router.patch('/memory/entries/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const { content } = req.body as { content?: string };
   if (!content?.trim()) return res.status(400).json({ error: 'content is required' });
+  if (typeof content !== 'string' || content.length > MAX_CONTENT_LENGTH) {
+    return res.status(400).json({ error: `content must be a string with max ${MAX_CONTENT_LENGTH} characters` });
+  }
   const ok = await vectorService.updateEntry(id!, { content: content!.trim(), lastUpdated: new Date().toISOString() });
   if (!ok) return res.status(404).json({ error: 'Entry not found' });
   res.json({ success: true });
