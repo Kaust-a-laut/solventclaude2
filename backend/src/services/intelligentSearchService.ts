@@ -113,16 +113,76 @@ class IntelligentSearchService {
   }
 
   /**
-   * Stage 3: AI Re-rank & Filter (placeholder — implemented in Task 4)
+   * Stage 3: AI Re-rank & Filter
+   * LLM scores each result 0-100 for relevance, removes duplicates and low scores.
    */
   private async rerankResults(query: string, results: any[]): Promise<RankedResult[]> {
-    return results.map((r: any, i: number) => ({
-      title: r.title,
-      link: r.link,
-      snippet: r.snippet,
-      position: i + 1,
-      relevanceScore: 0,
-    }));
+    if (!results.length) return [];
+
+    try {
+      const groq = await AIProviderFactory.getProvider('groq');
+
+      const resultsForLLM = results.map((r: any, i: number) => ({
+        index: i,
+        title: r.title,
+        url: r.link,
+        snippet: r.snippet,
+      }));
+
+      const response = await groq.complete(
+        [
+          {
+            role: 'system',
+            content: `You are a search result ranker. Given a user query and a list of search results, score each result 0-100 for relevance to the user's intent. Remove duplicates (same domain + similar title). Return JSON only.
+
+Output schema:
+{
+  "results": [{ "index": <number>, "score": <number>, "reason": "<brief reason>" }],
+  "removed": <number of removed results>
+}
+
+Sort by score descending. Only include results scoring 40 or above.`,
+          },
+          {
+            role: 'user',
+            content: `Query: "${query}"\n\nResults:\n${JSON.stringify(resultsForLLM, null, 2)}`,
+          },
+        ],
+        {
+          model: 'llama-3.3-70b-versatile',
+          temperature: 0.1,
+          maxTokens: 2048,
+          jsonMode: true,
+        }
+      );
+
+      const parsed = JSON.parse(response);
+      const ranked: RankedResult[] = [];
+
+      for (const item of parsed.results || []) {
+        const original = results[item.index];
+        if (!original) continue;
+        ranked.push({
+          title: original.title,
+          link: original.link,
+          snippet: original.snippet,
+          position: ranked.length + 1,
+          relevanceScore: item.score,
+        });
+      }
+
+      logger.info(`[IntelligentSearch] Re-ranked: ${results.length} → ${ranked.length} results (${parsed.removed || 0} removed)`);
+      return ranked;
+    } catch (error) {
+      logger.warn(`[IntelligentSearch] Re-rank failed, returning raw results: ${error}`);
+      return results.map((r: any, i: number) => ({
+        title: r.title,
+        link: r.link,
+        snippet: r.snippet,
+        position: i + 1,
+        relevanceScore: 0,
+      }));
+    }
   }
 
   /**
