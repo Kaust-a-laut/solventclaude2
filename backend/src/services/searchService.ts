@@ -25,6 +25,70 @@ export class SearchService {
     throw new Error('No search API key configured. Set BRAVE_SEARCH_API_KEY or SERPER_API_KEY.');
   }
 
+  async dualSearch(query: string, page: number = 1) {
+    console.log(`[SearchService] Dual search for: "${query}" (page ${page})`);
+
+    if (!config.BRAVE_SEARCH_API_KEY) {
+      // Fall back to single-endpoint search for non-Brave providers
+      return this.webSearch(query, page);
+    }
+
+    const offset = (page - 1) * 20;
+
+    const fetchEndpoint = async (endpoint: string, resultKey: string) => {
+      try {
+        const response = await axios.get(endpoint, {
+          params: {
+            q: query,
+            count: 20,
+            offset,
+          },
+          headers: {
+            'Accept': 'application/json',
+            'Accept-Encoding': 'gzip',
+            'X-Subscription-Token': config.BRAVE_SEARCH_API_KEY,
+          },
+          timeout: 8000,
+        });
+        const rawResults = response.data[resultKey]?.results || [];
+        return rawResults.map((r: any) => ({
+          title: r.title,
+          link: r.url,
+          snippet: r.description,
+          source: resultKey, // 'web' or 'news' — used for UI badges later
+        }));
+      } catch (error: any) {
+        console.warn(`[SearchService] ${resultKey} endpoint failed: ${error.message}`);
+        return [];
+      }
+    };
+
+    const [webResults, newsResults] = await Promise.all([
+      fetchEndpoint('https://api.search.brave.com/res/v1/web/search', 'web'),
+      fetchEndpoint('https://api.search.brave.com/res/v1/news/search', 'news'),
+    ]);
+
+    // Merge: news first (fresher), then web — deduplicate by normalized URL
+    const seen = new Set<string>();
+    const merged: any[] = [];
+
+    for (const r of [...newsResults, ...webResults]) {
+      const normalizedUrl = r.link.replace(/\/$/, '').toLowerCase();
+      if (!seen.has(normalizedUrl)) {
+        seen.add(normalizedUrl);
+        merged.push(r);
+      }
+    }
+
+    console.log(`[SearchService] Dual search: ${webResults.length} web + ${newsResults.length} news = ${merged.length} unique results`);
+
+    return {
+      results: merged,
+      answerBox: null,
+      relatedSearches: [],
+    };
+  }
+
   private async braveSearch(query: string, page: number = 1) {
     const offset = (page - 1) * 20;
     const isNewsQuery = /news|latest|articles|headlines/i.test(query);
