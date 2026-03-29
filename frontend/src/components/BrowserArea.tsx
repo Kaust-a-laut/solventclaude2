@@ -167,6 +167,7 @@ export const BrowserArea = () => {
       // Search mode with progressive pipeline stages
       setPipelineStage('expanding');
       try {
+        await new Promise(r => setTimeout(r, 400));
         setPipelineStage('searching');
         const results = await ChatService.search(newUrl);
 
@@ -657,6 +658,17 @@ export const BrowserArea = () => {
                   data-result-url={result.link}
                   className="group relative rounded-2xl bg-white/[0.02] border border-white/5 hover:border-jb-accent/20 hover:bg-white/[0.04] transition-all overflow-hidden"
                 >
+                  {result.relevanceScore >= 60 && (
+                    <div
+                      className="absolute left-0 top-0 w-0.5 rounded-r"
+                      style={{
+                        height: `${Math.min(100, result.relevanceScore)}%`,
+                        background: result.relevanceScore >= 85
+                          ? 'linear-gradient(to bottom, #10b981, #10b981)'
+                          : 'linear-gradient(to bottom, #fb923c, #fb923c)',
+                      }}
+                    />
+                  )}
                   <div className="flex items-start gap-5 px-8 py-6">
                     <div className="flex-shrink-0 w-8 flex flex-col items-center gap-1.5 pt-0.5">
                       <span className="text-[11px] font-mono font-black text-white/20">{String(idx + 1).padStart(2, '0')}</span>

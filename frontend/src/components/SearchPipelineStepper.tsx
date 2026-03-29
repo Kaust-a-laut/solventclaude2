@@ -34,7 +34,7 @@ export const SearchPipelineStepper: React.FC<StepperProps> = ({ stage, stats, ex
   const isComplete = stage === 'complete';
 
   return (
-    <div className="w-full max-w-[700px] mx-auto mb-8">
+    <div className={cn("w-full max-w-[700px] mx-auto mb-8 transition-opacity duration-500", isComplete && "opacity-60")}>
       {/* Stepper bar */}
       <div className="flex items-center justify-between gap-0">
         {STAGES.map((s, i) => {
@@ -87,7 +87,7 @@ export const SearchPipelineStepper: React.FC<StepperProps> = ({ stage, stats, ex
                   isPending && 'text-slate-700',
                 )}>
                   {isDone && !isActive && stats
-                    ? i === 1 ? `${stats.totalFound} found` : i === 2 ? `${stats.totalRelevant} relevant` : s.label
+                    ? i === 1 ? `${stats.totalFound} found` : i === 2 ? `${stats.totalRelevant} relevant` : i === 3 ? 'Synthesized' : s.label
                     : isActive && stats && i === 2 ? `Ranking ${stats.totalFound} results` : s.label}
                 </span>
               </div>
