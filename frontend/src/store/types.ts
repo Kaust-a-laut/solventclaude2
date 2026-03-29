@@ -107,6 +107,16 @@ export interface SearchResultSet {
   answerBox?: any;
   relatedSearches?: { query: string }[];
   error?: string;
+  synthesis?: {
+    answer: string;
+    sources: string[];
+  };
+  expandedQuery?: string;
+  stats?: {
+    totalFound: number;
+    totalRelevant: number;
+    pipelineMs: number;
+  };
 }
 
 export interface ActivityEvent {
