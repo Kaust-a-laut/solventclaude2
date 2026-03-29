@@ -195,11 +195,11 @@ export class ChatService {
     return fullImageUrl;
   }
 
-  static async search(query: string, page?: number) {
+  static async search(query: string, page?: number, expandedQuery?: string) {
     const data = await fetchWithRetry(`${API_BASE_URL}/search`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, page }),
+      body: JSON.stringify({ query, page, expandedQuery }),
       retries: 2
     }) as any;
 
