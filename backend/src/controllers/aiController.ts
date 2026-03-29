@@ -47,6 +47,7 @@ const chatRequestSchema = z.object({
 const searchRequestSchema = z.object({
   query: z.string().min(1, 'Query is required'),
   page: z.number().int().min(1).optional(),
+  expandedQuery: z.string().optional(),
 });
 
 const compareRequestSchema = z.object({
@@ -131,13 +132,14 @@ export class AIController {
     try {
       const parseResult = searchRequestSchema.safeParse(req.body);
       if (!parseResult.success) {
-        return res.status(400).json({ 
-          error: 'Invalid request body', 
-          details: parseResult.error.errors 
+        return res.status(400).json({
+          error: 'Invalid request body',
+          details: parseResult.error.errors
         });
       }
-      const { query, page } = parseResult.data;
-      const result = await aiService.performSearch(query, page);
+      const { query, page, expandedQuery } = parseResult.data;
+      const { intelligentSearchService } = await import('../services/intelligentSearchService');
+      const result = await intelligentSearchService.search(query, page, expandedQuery);
       res.json(result);
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));
