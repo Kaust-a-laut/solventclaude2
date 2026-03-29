@@ -65,8 +65,8 @@ describe('IntelligentSearchService', () => {
 
       expect(result.expandedQuery).toBe('react performance optimization rendering 2026');
       expect(result.results).toHaveLength(2);
-      expect(result.results[0].relevanceScore).toBe(92);
-      expect(result.results[1].relevanceScore).toBe(78);
+      expect(result.results[0]!.relevanceScore).toBe(92);
+      expect(result.results[1]!.relevanceScore).toBe(78);
       expect(result.synthesis?.answer).toContain('useMemo');
       expect(result.synthesis?.sources).toContain('https://react.dev/perf');
       expect(result.stats?.totalFound).toBe(2);
@@ -132,7 +132,7 @@ describe('IntelligentSearchService', () => {
       const result = await intelligentSearchService.search('query');
 
       expect(result.results).toHaveLength(2);
-      expect(result.results[0].relevanceScore).toBe(0); // Fallback: no scores
+      expect(result.results[0]!.relevanceScore).toBe(0); // Fallback: no scores
     });
   });
 
