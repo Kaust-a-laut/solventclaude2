@@ -186,10 +186,54 @@ Sort by score descending. Only include results scoring 40 or above.`,
   }
 
   /**
-   * Stage 4: AI Synthesis (placeholder — implemented in Task 5)
+   * Stage 4: AI Synthesis
+   * Generates a concise answer from the top re-ranked results.
    */
   private async synthesize(query: string, results: RankedResult[]): Promise<Synthesis | undefined> {
-    return undefined;
+    if (!results.length) return undefined;
+
+    try {
+      const groq = await AIProviderFactory.getProvider('groq');
+
+      const context = results.map((r, i) => `[${i + 1}] ${r.title} (${r.link})\n${r.snippet}`).join('\n\n');
+
+      const response = await groq.complete(
+        [
+          {
+            role: 'system',
+            content: `You are a search synthesis engine. Given a user query and top search results, generate a concise direct answer (2-4 sentences) that synthesizes information across the results. Include source attribution. Return JSON only.
+
+Output schema:
+{
+  "answer": "<2-4 sentence synthesis with inline technical terms in backticks>",
+  "sources": ["<url1>", "<url2>", ...]
+}
+
+Only include URLs that directly informed the answer.`,
+          },
+          {
+            role: 'user',
+            content: `Query: "${query}"\n\nTop Results:\n${context}`,
+          },
+        ],
+        {
+          model: 'llama-3.3-70b-versatile',
+          temperature: 0.3,
+          maxTokens: 512,
+          jsonMode: true,
+        }
+      );
+
+      const parsed = JSON.parse(response);
+      logger.info(`[IntelligentSearch] Synthesis generated from ${parsed.sources?.length || 0} sources`);
+      return {
+        answer: parsed.answer || '',
+        sources: parsed.sources || [],
+      };
+    } catch (error) {
+      logger.warn(`[IntelligentSearch] Synthesis failed, omitting: ${error}`);
+      return undefined;
+    }
   }
 }
 
