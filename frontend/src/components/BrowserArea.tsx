@@ -12,6 +12,11 @@ import { ChatService } from '../services/ChatService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
 import type { BrowserTab, PageContent, SearchResultSet } from '../store/types';
+import { SearchPipelineStepper } from './SearchPipelineStepper';
+import { SearchSynthesisCard } from './SearchSynthesisCard';
+import { RelevanceBadge } from './RelevanceBadge';
+
+type PipelineStage = 'idle' | 'expanding' | 'searching' | 'ranking' | 'synthesizing' | 'complete';
 
 // ── PiP Component (rendered inside Document PiP window) ──────────────────
 const BrowserPiP = () => {
@@ -35,7 +40,14 @@ const BrowserPiP = () => {
           type: 'search',
           url: query,
           label: query.slice(0, 20),
-          searchResults: { results: items, answerBox: results?.answerBox, relatedSearches: results?.relatedSearches },
+          searchResults: {
+            results: items,
+            answerBox: results?.answerBox,
+            relatedSearches: results?.relatedSearches,
+            synthesis: results?.synthesis,
+            expandedQuery: results?.expandedQuery,
+            stats: results?.stats,
+          },
           pageContent: null,
           searchPage: 1,
           isLoading: false,
@@ -108,6 +120,7 @@ export const BrowserArea = () => {
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [summaryInstruction, setSummaryInstruction] = useState('');
   const [showSummaryInput, setShowSummaryInput] = useState(false);
+  const [pipelineStage, setPipelineStage] = useState<PipelineStage>('idle');
   const pipWindowRef = useRef<Window | null>(null);
   const pipCleanupRef = useRef<(() => void) | null>(null);
 
@@ -138,6 +151,7 @@ export const BrowserArea = () => {
         });
         // Sync legacy store
         setLastSearchResults(null);
+        setPipelineStage('idle');
       } catch (error: any) {
         updateBrowserTab(tabId, {
           type: 'reader',
@@ -147,18 +161,37 @@ export const BrowserArea = () => {
           searchResults: null,
           isLoading: false,
         });
+        setPipelineStage('idle');
       }
     } else {
-      // Search mode
+      // Search mode with progressive pipeline stages
+      setPipelineStage('expanding');
       try {
+        setPipelineStage('searching');
         const results = await ChatService.search(newUrl);
+
+        setPipelineStage('ranking');
+        await new Promise(r => setTimeout(r, 200));
+
+        if (results?.synthesis) {
+          setPipelineStage('synthesizing');
+          await new Promise(r => setTimeout(r, 300));
+        }
+
         const items = results?.results || results?.organic || [];
         const answer = results?.answerBox || null;
         const related = results?.relatedSearches || [];
 
-        const searchData: SearchResultSet = { results: items, answerBox: answer, relatedSearches: related };
+        const searchData: SearchResultSet = {
+          results: items,
+          answerBox: answer,
+          relatedSearches: related,
+          synthesis: results?.synthesis,
+          expandedQuery: results?.expandedQuery,
+          stats: results?.stats,
+        };
         if (!items.length && !answer) {
-          searchData.error = 'Zero matches returned from Serper';
+          searchData.error = 'Zero matches returned';
         }
 
         updateBrowserTab(tabId, {
@@ -170,8 +203,8 @@ export const BrowserArea = () => {
           searchPage: 1,
           isLoading: false,
         });
-        // Sync legacy store
         setLastSearchResults(searchData);
+        setPipelineStage('complete');
       } catch (error: any) {
         updateBrowserTab(tabId, {
           type: 'search',
@@ -179,6 +212,7 @@ export const BrowserArea = () => {
           isLoading: false,
         });
         setLastSearchResults({ results: [], error: error.message });
+        setPipelineStage('idle');
       }
     }
 
@@ -192,7 +226,11 @@ export const BrowserArea = () => {
     updateBrowserTab(tabId, { isLoading: true });
 
     try {
-      const results = await ChatService.search(activeTab.url, nextPage);
+      const results = await ChatService.search(
+        activeTab.url,
+        nextPage,
+        activeTab.searchResults.expandedQuery
+      );
       const newItems = results?.results || results?.organic || [];
 
       if (newItems.length > 0) {
@@ -548,6 +586,25 @@ export const BrowserArea = () => {
         ) : searchResults ? (
           /* Search Results View */
           <div className="max-w-7xl mx-auto space-y-12 pb-24">
+            {/* Pipeline Stepper */}
+            <SearchPipelineStepper
+              stage={pipelineStage}
+              stats={searchResults?.stats}
+              expandedQuery={searchResults?.expandedQuery}
+            />
+
+            {/* AI Synthesis Card */}
+            {(pipelineStage === 'synthesizing' || pipelineStage === 'complete') && searchResults?.synthesis && (
+              <SearchSynthesisCard
+                synthesis={searchResults.synthesis}
+                isLoading={pipelineStage === 'synthesizing'}
+                onSourceClick={(url) => {
+                  const el = document.querySelector(`[data-result-url="${CSS.escape(url)}"]`);
+                  el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }}
+              />
+            )}
+
             {/* Header Stats */}
             <div className="flex items-end justify-between border-b border-white/5 pb-8">
               <div className="space-y-2">
@@ -597,6 +654,7 @@ export const BrowserArea = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.02 }}
                   key={idx}
+                  data-result-url={result.link}
                   className="group relative rounded-2xl bg-white/[0.02] border border-white/5 hover:border-jb-accent/20 hover:bg-white/[0.04] transition-all overflow-hidden"
                 >
                   <div className="flex items-start gap-5 px-8 py-6">
@@ -611,6 +669,7 @@ export const BrowserArea = () => {
                         <span className="text-[11px] font-black text-jb-accent uppercase tracking-widest flex-shrink-0">
                           {(() => { try { return new URL(result.link).hostname; } catch { return ''; } })()}
                         </span>
+                        {result.relevanceScore > 0 && <RelevanceBadge score={result.relevanceScore} />}
                         <span className="text-[11px] text-slate-700 truncate min-w-0">· {result.link}</span>
                       </div>
                       <h3 className="text-[15px] font-black text-white group-hover:text-jb-accent/90 transition-colors tracking-tight leading-snug">
