@@ -40,17 +40,27 @@ class IntelligentSearchService {
         [
           {
             role: 'system',
-            content: `You are a search query optimizer. Given a user query, rewrite it to be more specific and comprehensive for web search. Add relevant technical terms, synonyms, and the current year (2026) for temporal context. Do NOT answer the question — return ONLY the refined search query string. Keep it under 150 characters.`,
+            content: `You are a search query optimizer. Rewrite the user's query to get better search results. Rules:
+- Keep it SHORT (under 8 words)
+- Do NOT add filler words or long keyword lists
+- Add ONE specific term if it helps focus the intent
+- If the query mentions "latest" or "news", keep those words
+- Return ONLY the query string, nothing else
+
+Examples:
+"ai stuff" → "latest AI breakthroughs 2026"
+"how does react work" → "React fundamentals tutorial"
+"new papers on transformers" → "transformer research papers 2026"`,
           },
           { role: 'user', content: query },
         ],
         {
           model: 'llama-3.3-70b-versatile',
           temperature: 0.2,
-          maxTokens: 150,
+          maxTokens: 60,
         }
       );
-      const expanded = response.trim();
+      const expanded = response.trim().replace(/^["']|["']$/g, ''); // Strip quotes LLMs sometimes add
       logger.info(`[IntelligentSearch] Expanded query: "${query}" → "${expanded}"`);
       return expanded || query;
     } catch (error) {
@@ -65,9 +75,28 @@ class IntelligentSearchService {
     // Stage 1: Query Expansion (skip on pagination if cached)
     const expandedQuery = cachedExpandedQuery || await this.expandQuery(query);
 
-    // Stage 2: Brave Search
-    const rawResults = await searchService.webSearch(expandedQuery, page);
-    const totalFound = rawResults.results?.length || 0;
+    // Stage 2: Dual Search (web + news in parallel)
+    // Use dualSearch for page 1, webSearch for pagination
+    let rawResults;
+    if (page === 1) {
+      rawResults = await searchService.dualSearch(expandedQuery, page);
+    } else {
+      rawResults = await searchService.webSearch(expandedQuery, page);
+    }
+    let totalFound = rawResults.results?.length || 0;
+
+    // Fallback: if expanded query yields < 3 results, retry with original
+    if (totalFound < 3 && expandedQuery !== query) {
+      logger.info(`[IntelligentSearch] Only ${totalFound} results from expanded query, retrying with original: "${query}"`);
+      const fallbackResults = page === 1
+        ? await searchService.dualSearch(query, page)
+        : await searchService.webSearch(query, page);
+      const fallbackCount = fallbackResults.results?.length || 0;
+      if (fallbackCount > totalFound) {
+        rawResults = fallbackResults;
+        totalFound = fallbackCount;
+      }
+    }
 
     // On pagination (page > 1), skip re-ranking and synthesis
     if (page > 1) {
@@ -90,16 +119,28 @@ class IntelligentSearchService {
       };
     }
 
-    // Stage 3: AI Re-rank
-    const rankedResults = await this.rerankResults(query, rawResults.results || []);
+    // Stage 3: AI Re-rank (skip if pool is small — re-ranking can't add results)
+    let rankedResults: RankedResult[];
+    if (totalFound <= 5) {
+      logger.info(`[IntelligentSearch] Small result pool (${totalFound}), skipping re-rank`);
+      rankedResults = (rawResults.results || []).map((r: any, i: number) => ({
+        title: r.title,
+        link: r.link,
+        snippet: r.snippet,
+        position: i + 1,
+        relevanceScore: 70, // Default decent score for small pools
+      }));
+    } else {
+      rankedResults = await this.rerankResults(query, rawResults.results || []);
+    }
     const totalRelevant = rankedResults.length;
 
-    // Stage 4: AI Synthesis
-    const synthesis = await this.synthesize(query, rankedResults.slice(0, 8));
+    // Stage 4: AI Synthesis (use top 10 for richer answers)
+    const synthesis = await this.synthesize(query, rankedResults.slice(0, 10));
 
     const pipelineMs = Date.now() - startTime;
-    if (pipelineMs > 5000) {
-      logger.warn(`[IntelligentSearch] Pipeline exceeded 5s budget: ${pipelineMs}ms`);
+    if (pipelineMs > 8000) {
+      logger.warn(`[IntelligentSearch] Pipeline exceeded 8s budget: ${pipelineMs}ms`);
     }
 
     return {
@@ -135,13 +176,22 @@ class IntelligentSearchService {
             role: 'system',
             content: `You are a search result ranker. Given a user query and a list of search results, score each result 0-100 for relevance to the user's intent. Remove duplicates (same domain + similar title). Return JSON only.
 
+Scoring guidelines:
+- 80-100: Directly answers the query or is highly relevant to the main intent
+- 60-79: Clearly relevant topic-wise, contains useful information
+- 40-59: Somewhat relevant, tangentially related, or partial match
+- 20-39: Weak relevance but may have some useful context
+- 0-19: Irrelevant, spam, or unrelated
+
+IMPORTANT: Score ALL results — do NOT omit any. For broad/general queries (e.g., "latest ai news", "tech updates"), most results should score 50+. Be generous with scoring — users prefer seeing more results over fewer.
+
 Output schema:
 {
   "results": [{ "index": <number>, "score": <number>, "reason": "<brief reason>" }],
-  "removed": <number of removed results>
+  "removed": <number of duplicate results removed (same domain + near-identical title)>
 }
 
-Sort by score descending. Only include results scoring 40 or above.`,
+Sort by score descending. Include ALL results — the UI handles visual differentiation by score.`,
           },
           {
             role: 'user',
@@ -160,15 +210,31 @@ Sort by score descending. Only include results scoring 40 or above.`,
       const ranked: RankedResult[] = [];
 
       for (const item of parsed.results || []) {
-        const original = results[item.index];
+        // Handle both 0-based and 1-based indices from LLM
+        let original = results[item.index];
+        if (!original && item.index > 0) original = results[item.index - 1];
         if (!original) continue;
         ranked.push({
           title: original.title,
           link: original.link,
           snippet: original.snippet,
           position: ranked.length + 1,
-          relevanceScore: item.score,
+          relevanceScore: typeof item.score === 'number' ? item.score : 50,
         });
+      }
+
+      // If all results were filtered out (too strict), fall back to showing raw results
+      // This handles general queries like "latest ai news" where strict relevance filtering
+      // would show zero results
+      if (ranked.length === 0 && results.length > 0) {
+        logger.info(`[IntelligentSearch] All results filtered by relevance, falling back to raw results`);
+        return results.map((r: any, i: number) => ({
+          title: r.title,
+          link: r.link,
+          snippet: r.snippet,
+          position: i + 1,
+          relevanceScore: 50, // Neutral score for fallback
+        }));
       }
 
       logger.info(`[IntelligentSearch] Re-ranked: ${results.length} → ${ranked.length} results (${parsed.removed || 0} removed)`);
@@ -180,7 +246,7 @@ Sort by score descending. Only include results scoring 40 or above.`,
         link: r.link,
         snippet: r.snippet,
         position: i + 1,
-        relevanceScore: 0,
+        relevanceScore: 50, // Neutral score when re-ranking fails
       }));
     }
   }
