@@ -228,6 +228,17 @@ export class ChatService {
     return data;
   }
 
+  static async askAboutPage(content: string, question: string) {
+    const data = await fetchWithRetry(`${API_BASE_URL}/browse/ask`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content, question }),
+      retries: 1
+    }) as any;
+
+    return data;
+  }
+
   static async deprecateMemory(id: string, reason: string) {
     const data = await fetchWithRetry(`${API_BASE_URL}/memory/deprecate`, {
       method: 'POST',
