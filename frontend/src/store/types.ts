@@ -140,4 +140,18 @@ export interface BrowserTab {
   isLoading?: boolean;
 }
 
+export interface IntelPanelContent {
+  type: 'idle' | 'search' | 'reader';
+  searchResults?: SearchResultSet | null;
+  pageContent?: PageContent | null;
+  query?: string;
+  isLoading?: boolean;
+}
+
+export interface IntelQAEntry {
+  question: string;
+  answer: string;
+  timestamp: number;
+}
+
 export type AppState = ChatSlice & SettingsSlice & GraphSlice & ActionSlice & WaterfallSlice & CodingSlice & CollaborateSlice & PerformanceSlice;

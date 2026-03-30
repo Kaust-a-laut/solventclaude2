@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import { AppState, DeviceInfo, BrowserTab } from './types';
+import { AppState, DeviceInfo, BrowserTab, IntelPanelContent, IntelQAEntry } from './types';
 import { APP_CONFIG } from '../lib/config';
 
 export interface ProviderConfig {
@@ -54,6 +54,10 @@ export interface SettingsSlice {
   browserPiPOpen: boolean;
   browserInjectedContext: string | null;
   browserPinnedUrls: Array<{ url: string; title: string; summary?: string }>;
+  intelPanelContent: IntelPanelContent;
+  intelAmbientContext: boolean;
+  intelQAHistory: IntelQAEntry[];
+  intelRecentSearches: string[];
   availableProviders: ProviderInfo[];
   providerConfigs: Record<string, ProviderConfig>;
 
@@ -93,6 +97,11 @@ export interface SettingsSlice {
   setBrowserPinnedUrls: (urls: Array<{ url: string; title: string; summary?: string }>) => void;
   addBrowserPinnedUrl: (url: string, title: string, summary?: string) => void;
   removeBrowserPinnedUrl: (url: string) => void;
+  setIntelPanelContent: (content: IntelPanelContent) => void;
+  setIntelAmbientContext: (enabled: boolean) => void;
+  addIntelQAEntry: (entry: IntelQAEntry) => void;
+  clearIntelQAHistory: () => void;
+  addIntelRecentSearch: (query: string) => void;
   setAvailableProviders: (providers: ProviderInfo[]) => void;
   setProviderConfigs: (configs: Record<string, ProviderConfig>) => void;
   updateProviderConfig: (providerId: string, config: Partial<ProviderConfig>) => void;
@@ -139,6 +148,10 @@ export const createSettingsSlice: StateCreator<AppState, [], [], SettingsSlice> 
   browserPiPOpen: false,
   browserInjectedContext: null,
   browserPinnedUrls: [],
+  intelPanelContent: { type: 'idle' } as IntelPanelContent,
+  intelAmbientContext: true,
+  intelQAHistory: [],
+  intelRecentSearches: [],
   availableProviders: [],
   providerConfigs: {},
 
@@ -201,6 +214,15 @@ export const createSettingsSlice: StateCreator<AppState, [], [], SettingsSlice> 
   })),
   removeBrowserPinnedUrl: (url) => set((state) => ({
     browserPinnedUrls: state.browserPinnedUrls.filter(p => p.url !== url)
+  })),
+  setIntelPanelContent: (intelPanelContent) => set({ intelPanelContent }),
+  setIntelAmbientContext: (intelAmbientContext) => set({ intelAmbientContext }),
+  addIntelQAEntry: (entry) => set((state) => ({
+    intelQAHistory: [...state.intelQAHistory.slice(-9), entry],
+  })),
+  clearIntelQAHistory: () => set({ intelQAHistory: [] }),
+  addIntelRecentSearch: (query) => set((state) => ({
+    intelRecentSearches: [query, ...state.intelRecentSearches.filter(q => q !== query)].slice(0, 5),
   })),
   setAvailableProviders: (availableProviders) => set({ availableProviders }),
   setProviderConfigs: (providerConfigs) => set({ providerConfigs }),
