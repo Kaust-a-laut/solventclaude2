@@ -85,8 +85,8 @@ Examples:
     }
     let totalFound = rawResults.results?.length || 0;
 
-    // Fallback: if expanded query yields < 3 results, retry with original
-    if (totalFound < 3 && expandedQuery !== query) {
+    // Fallback: if expanded query yields < 2 results on page 1, retry with original
+    if (page === 1 && totalFound < 2 && expandedQuery !== query) {
       logger.info(`[IntelligentSearch] Only ${totalFound} results from expanded query, retrying with original: "${query}"`);
       const fallbackResults = page === 1
         ? await searchService.dualSearch(query, page)

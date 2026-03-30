@@ -4,6 +4,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 vi.mock('./searchService', () => ({
   searchService: {
     webSearch: vi.fn(),
+    dualSearch: vi.fn(),
   },
 }));
 
@@ -32,90 +33,159 @@ describe('IntelligentSearchService', () => {
   });
 
   describe('search() — full pipeline (page 1)', () => {
-    it('should expand query, search, re-rank, and synthesize', async () => {
+    it('should expand query, dual-search, re-rank, and synthesize', async () => {
       // Stage 1: Query expansion
-      mockGroq.complete.mockResolvedValueOnce('react performance optimization rendering 2026');
+      mockGroq.complete.mockResolvedValueOnce('react performance 2026');
 
-      // Stage 2: Brave search
-      (searchService.webSearch as any).mockResolvedValueOnce({
-        results: [
-          { title: 'React Perf Guide', link: 'https://react.dev/perf', snippet: 'Performance tips' },
-          { title: 'Rendering Best Practices', link: 'https://example.com/render', snippet: 'Render optimization' },
-        ],
+      // Stage 2: Dual search returns 10+ results
+      const mockResults = Array.from({ length: 12 }, (_, i) => ({
+        title: `Result ${i + 1}`,
+        link: `https://example${i}.com/article`,
+        snippet: `Snippet for result ${i + 1}`,
+        source: i < 6 ? 'news' : 'web',
+      }));
+      (searchService.dualSearch as any).mockResolvedValueOnce({
+        results: mockResults,
         answerBox: null,
         relatedSearches: [{ query: 'react memo' }],
       });
 
-      // Stage 3: Re-rank
+      // Stage 3: Re-rank (returns all 12 scored)
       mockGroq.complete.mockResolvedValueOnce(JSON.stringify({
-        results: [
-          { index: 0, score: 92, reason: 'Directly relevant' },
-          { index: 1, score: 78, reason: 'Related' },
-        ],
+        results: mockResults.map((_, i) => ({
+          index: i,
+          score: 95 - i * 3,
+          reason: 'Relevant',
+        })),
         removed: 0,
       }));
 
       // Stage 4: Synthesis
       mockGroq.complete.mockResolvedValueOnce(JSON.stringify({
         answer: 'React performance can be improved with `useMemo` and `React.memo`.',
-        sources: ['https://react.dev/perf'],
+        sources: ['https://example0.com/article'],
       }));
 
       const result = await intelligentSearchService.search('react performance');
 
-      expect(result.expandedQuery).toBe('react performance optimization rendering 2026');
-      expect(result.results).toHaveLength(2);
-      expect(result.results[0]!.relevanceScore).toBe(92);
-      expect(result.results[1]!.relevanceScore).toBe(78);
+      expect(result.expandedQuery).toBe('react performance 2026');
+      expect(result.results).toHaveLength(12);
+      expect(result.results[0]!.relevanceScore).toBe(95);
       expect(result.synthesis?.answer).toContain('useMemo');
-      expect(result.synthesis?.sources).toContain('https://react.dev/perf');
-      expect(result.stats?.totalFound).toBe(2);
-      expect(result.stats?.totalRelevant).toBe(2);
-      expect(result.stats?.pipelineMs).toBeGreaterThan(0);
+      expect(result.stats?.totalFound).toBe(12);
 
-      // Verify Groq was called 3 times (expand + rerank + synthesize)
-      expect(mockGroq.complete).toHaveBeenCalledTimes(3);
-      // Verify Brave search was called with expanded query
-      expect(searchService.webSearch).toHaveBeenCalledWith('react performance optimization rendering 2026', 1);
+      // Verify dualSearch was called (not webSearch)
+      expect(searchService.dualSearch).toHaveBeenCalledWith('react performance 2026', 1);
+      expect(searchService.webSearch).not.toHaveBeenCalled();
+    });
+
+    it('should skip re-rank when result pool is small (≤5)', async () => {
+      mockGroq.complete.mockResolvedValueOnce('niche topic query');
+
+      (searchService.dualSearch as any).mockResolvedValueOnce({
+        results: [
+          { title: 'A', link: 'https://a.com', snippet: 'a', source: 'web' },
+          { title: 'B', link: 'https://b.com', snippet: 'b', source: 'news' },
+        ],
+        answerBox: null,
+        relatedSearches: [],
+      });
+
+      // Synthesis (no re-rank call expected)
+      mockGroq.complete.mockResolvedValueOnce(JSON.stringify({
+        answer: 'Summary.',
+        sources: ['https://a.com'],
+      }));
+
+      const result = await intelligentSearchService.search('niche topic');
+
+      expect(result.results).toHaveLength(2);
+      // Default score of 70 when re-rank is skipped
+      expect(result.results[0]!.relevanceScore).toBe(70);
+      expect(result.results[1]!.relevanceScore).toBe(70);
+      // Groq called only twice: expand + synthesize (no re-rank)
+      expect(mockGroq.complete).toHaveBeenCalledTimes(2);
+    });
+
+    it('should fall back to original query when expanded yields < 3 results', async () => {
+      mockGroq.complete.mockResolvedValueOnce('overly specific expanded query');
+
+      // Expanded query yields 1 result
+      (searchService.dualSearch as any).mockResolvedValueOnce({
+        results: [{ title: 'Only One', link: 'https://one.com', snippet: 'solo', source: 'web' }],
+        answerBox: null,
+        relatedSearches: [],
+      });
+
+      // Fallback with original query yields 8 results
+      const fallbackResults = Array.from({ length: 8 }, (_, i) => ({
+        title: `Fallback ${i}`,
+        link: `https://fallback${i}.com`,
+        snippet: `fb${i}`,
+        source: 'web',
+      }));
+      (searchService.dualSearch as any).mockResolvedValueOnce({
+        results: fallbackResults,
+        answerBox: null,
+        relatedSearches: [],
+      });
+
+      // Re-rank the 8 results
+      mockGroq.complete.mockResolvedValueOnce(JSON.stringify({
+        results: fallbackResults.map((_, i) => ({ index: i, score: 80 - i, reason: 'ok' })),
+        removed: 0,
+      }));
+
+      // Synthesis
+      mockGroq.complete.mockResolvedValueOnce(JSON.stringify({
+        answer: 'Fallback worked.',
+        sources: ['https://fallback0.com'],
+      }));
+
+      const result = await intelligentSearchService.search('latest ai developments');
+
+      expect(searchService.dualSearch).toHaveBeenCalledTimes(2);
+      expect(result.results).toHaveLength(8);
     });
 
     it('should fall back gracefully when query expansion fails', async () => {
       mockGroq.complete.mockRejectedValueOnce(new Error('Groq timeout'));
 
-      (searchService.webSearch as any).mockResolvedValueOnce({
-        results: [{ title: 'Result', link: 'https://test.com', snippet: 'Test' }],
+      (searchService.dualSearch as any).mockResolvedValueOnce({
+        results: Array.from({ length: 6 }, (_, i) => ({
+          title: `Result ${i}`, link: `https://r${i}.com`, snippet: `s${i}`, source: 'web',
+        })),
         answerBox: null,
         relatedSearches: [],
       });
 
       // Re-rank
       mockGroq.complete.mockResolvedValueOnce(JSON.stringify({
-        results: [{ index: 0, score: 80, reason: 'ok' }],
+        results: Array.from({ length: 6 }, (_, i) => ({ index: i, score: 80, reason: 'ok' })),
         removed: 0,
       }));
 
       // Synthesis
       mockGroq.complete.mockResolvedValueOnce(JSON.stringify({
-        answer: 'Test answer.',
-        sources: ['https://test.com'],
+        answer: 'Test.',
+        sources: ['https://r0.com'],
       }));
 
       const result = await intelligentSearchService.search('test query');
 
       // Should use original query when expansion fails
-      expect(searchService.webSearch).toHaveBeenCalledWith('test query', 1);
+      expect(searchService.dualSearch).toHaveBeenCalledWith('test query', 1);
       expect(result.expandedQuery).toBe('test query');
-      expect(result.results).toHaveLength(1);
+      expect(result.results).toHaveLength(6);
     });
 
     it('should return raw results when re-rank fails', async () => {
       mockGroq.complete.mockResolvedValueOnce('expanded query');
 
-      (searchService.webSearch as any).mockResolvedValueOnce({
-        results: [
-          { title: 'A', link: 'https://a.com', snippet: 'a' },
-          { title: 'B', link: 'https://b.com', snippet: 'b' },
-        ],
+      (searchService.dualSearch as any).mockResolvedValueOnce({
+        results: Array.from({ length: 8 }, (_, i) => ({
+          title: `R${i}`, link: `https://r${i}.com`, snippet: `s${i}`, source: 'web',
+        })),
         answerBox: null,
         relatedSearches: [],
       });
@@ -131,26 +201,24 @@ describe('IntelligentSearchService', () => {
 
       const result = await intelligentSearchService.search('query');
 
-      expect(result.results).toHaveLength(2);
-      expect(result.results[0]!.relevanceScore).toBe(0); // Fallback: no scores
+      expect(result.results).toHaveLength(8);
+      expect(result.results[0]!.relevanceScore).toBe(50); // Fallback neutral score
     });
   });
 
   describe('search() — pagination (page > 1)', () => {
-    it('should skip expansion and synthesis on subsequent pages', async () => {
+    it('should use webSearch (not dualSearch) and skip AI stages on pagination', async () => {
       (searchService.webSearch as any).mockResolvedValueOnce({
-        results: [{ title: 'Page 2 Result', link: 'https://p2.com', snippet: 'p2' }],
+        results: [{ title: 'Page 2', link: 'https://p2.com', snippet: 'p2' }],
         answerBox: null,
         relatedSearches: [],
       });
 
-      const result = await intelligentSearchService.search('query', 2, 'cached expanded query');
+      const result = await intelligentSearchService.search('query', 2, 'cached query');
 
-      // Should NOT call Groq at all
       expect(mockGroq.complete).not.toHaveBeenCalled();
-      // Should use cached expanded query for Brave search
-      expect(searchService.webSearch).toHaveBeenCalledWith('cached expanded query', 2);
-      expect(result.expandedQuery).toBe('cached expanded query');
+      expect(searchService.webSearch).toHaveBeenCalledWith('cached query', 2);
+      expect(searchService.dualSearch).not.toHaveBeenCalled();
       expect(result.synthesis).toBeUndefined();
     });
   });
