@@ -54,6 +54,7 @@ router.post('/search', AIController.search);
 // ── Browse (Page Extraction + Summarization) ─────────────────────────────
 router.post('/browse', BrowseController.extractContent);
 router.post('/browse/summarize', BrowseController.summarize);
+router.post('/browse/ask', BrowseController.askAboutPage);
 
 // ── Model / Health Discovery ──────────────────────────────────────────────
 router.get('/models', AIController.listModels);

@@ -127,6 +127,29 @@ class BrowseService {
 
     return result;
   }
+
+  async askAboutPage(content: string, question: string): Promise<string> {
+    const provider = await AIProviderFactory.getProvider(config.DEFAULT_PROVIDER || 'groq');
+
+    const messages = [
+      {
+        role: 'system' as const,
+        content: 'You are a helpful assistant answering questions about web page content. Answer concisely and accurately based only on the provided content. If the content does not contain enough information to answer, say so.',
+      },
+      {
+        role: 'user' as const,
+        content: `Page content:\n\n${content.slice(0, 30_000)}\n\nQuestion: ${question}`,
+      },
+    ];
+
+    const result = await provider.complete(messages, {
+      model: provider.defaultModel || 'llama-3.3-70b-versatile',
+      temperature: 0.3,
+      maxTokens: 512,
+    });
+
+    return result;
+  }
 }
 
 export const browseService = new BrowseService();
