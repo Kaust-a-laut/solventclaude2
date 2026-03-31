@@ -138,6 +138,21 @@ export function getHarnessSnapshot() {
   } as const;
 }
 
+/**
+ * Per-mode adjustments applied on top of the model-based retrieval parameters.
+ * countDelta: added to maxRetrievalCount (positive = fetch more, negative = fetch fewer).
+ * minScoreDelta: added to minScore threshold (positive = stricter, negative = broader).
+ */
+const MODE_RETRIEVAL_PROFILES: Partial<Record<string, { countDelta: number; minScoreDelta: number }>> = {
+  coding:  { countDelta: +2, minScoreDelta: -0.05 }, // More precision context; lower bar for local memories
+  browser: { countDelta: -2, minScoreDelta: +0.05 }, // Current page dominates; fewer background memories
+  vision:  { countDelta: -2, minScoreDelta: +0.05 }, // Same rationale as browser
+};
+
+export function getModeRetrievalProfile(mode?: string): { countDelta: number; minScoreDelta: number } {
+  return MODE_RETRIEVAL_PROFILES[mode ?? ''] ?? { countDelta: 0, minScoreDelta: 0 };
+}
+
 // Shared BM25 index instance — incrementally updated when vector memory changes
 const bm25Index = new BM25Index();
 let bm25IndexedIds = new Set<string>();
@@ -522,7 +537,9 @@ export class ContextService {
     // Token budget for memory retrieval (replaces fixed entry counts as primary limit)
     const budget = getContextBudget(data.model, data.maxTokens || 2048);
     // Keep fixed counts as secondary safety cap
-    const maxRetrievalCount = isMassiveContext ? RETRIEVAL_COUNT_MASSIVE : (isConstrained ? RETRIEVAL_COUNT_CONSTRAINED : RETRIEVAL_COUNT_DEFAULT);
+    const baseRetrievalCount = isMassiveContext ? RETRIEVAL_COUNT_MASSIVE : (isConstrained ? RETRIEVAL_COUNT_CONSTRAINED : RETRIEVAL_COUNT_DEFAULT);
+    const modeProfile = getModeRetrievalProfile(data.mode);
+    const maxRetrievalCount = Math.max(1, baseRetrievalCount + modeProfile.countDelta);
     const rulesCount = isMassiveContext ? RULES_COUNT_MASSIVE : RULES_COUNT_DEFAULT;
 
     const keywords = lastMessage.match(/\b([a-zA-Z0-9_-]{5,})\b/g) || [];
@@ -657,7 +674,7 @@ export class ContextService {
     const dedupedEntries = deduplicateEntries(scoredEntries, suppressedItems);
 
     // 3. Process Logic: Active vs Suppressed — token-budget-aware selection
-    const minScore = isMassiveContext ? MIN_SCORE_MASSIVE_CONTEXT : MIN_SCORE_STANDARD_CONTEXT;
+    const minScore = Math.max(0, (isMassiveContext ? MIN_SCORE_MASSIVE_CONTEXT : MIN_SCORE_STANDARD_CONTEXT) + modeProfile.minScoreDelta);
     let memoryTokensUsed = 0;
 
     for (const entry of dedupedEntries) {

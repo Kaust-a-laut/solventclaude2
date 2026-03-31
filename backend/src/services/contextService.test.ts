@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
-import { contextService } from './contextService';
+import { contextService, getModeRetrievalProfile } from './contextService';
 import { vectorService } from './vectorService';
 import { ChatRequestData } from '../types/ai';
 
@@ -146,5 +146,43 @@ describe('Importance scoring in retrieval', () => {
 
     expect(scoreHigh).toBeGreaterThan(scoreLow);
     expect(scoreHigh - scoreLow).toBeCloseTo(0.36, 2);
+  });
+});
+
+describe('getModeRetrievalProfile', () => {
+  it('returns +2 count delta for coding mode', () => {
+    expect(getModeRetrievalProfile('coding').countDelta).toBe(2);
+  });
+
+  it('returns negative minScoreDelta for coding mode', () => {
+    expect(getModeRetrievalProfile('coding').minScoreDelta).toBeLessThan(0);
+  });
+
+  it('returns -2 count delta for browser mode', () => {
+    expect(getModeRetrievalProfile('browser').countDelta).toBe(-2);
+  });
+
+  it('returns positive minScoreDelta for browser mode', () => {
+    expect(getModeRetrievalProfile('browser').minScoreDelta).toBeGreaterThan(0);
+  });
+
+  it('returns -2 count delta for vision mode', () => {
+    expect(getModeRetrievalProfile('vision').countDelta).toBe(-2);
+  });
+
+  it('returns zero deltas for chat mode', () => {
+    const p = getModeRetrievalProfile('chat');
+    expect(p.countDelta).toBe(0);
+    expect(p.minScoreDelta).toBe(0);
+  });
+
+  it('returns zero deltas for undefined', () => {
+    expect(getModeRetrievalProfile(undefined).countDelta).toBe(0);
+    expect(getModeRetrievalProfile(undefined).minScoreDelta).toBe(0);
+  });
+
+  it('returns zero deltas for unknown mode', () => {
+    expect(getModeRetrievalProfile('debate').countDelta).toBe(0);
+    expect(getModeRetrievalProfile('debate').minScoreDelta).toBe(0);
   });
 });
