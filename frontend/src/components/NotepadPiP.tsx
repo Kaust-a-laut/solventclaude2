@@ -3,7 +3,7 @@ import { useAppStore } from '../store/useAppStore';
 import {
   PenLine, X, Shield,
   Database, LayoutGrid, ExternalLink,
-  Code2, Settings,
+  Code2, Settings, Search,
   Layers, Trash2, ChevronDown, Sparkles,
   Brain, FlaskConical,
   Play, Loader2, CheckCircle2, XCircle,
@@ -15,6 +15,7 @@ import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChatView } from './ChatView';
 import { WaterfallVisualizer } from './WaterfallVisualizer';
+import { IntelPanel } from './IntelPanel';
 import { fetchWithRetry } from '../lib/api-client';
 import { API_BASE_URL } from '../lib/config';
 import { socket } from '../lib/socket';
@@ -154,7 +155,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
     terminalVisible, setTerminalVisible,
   } = useAppStore();
 
-  const [view, setView] = useState<'dash' | 'notes' | 'overseer' | 'missions' | 'waterfall' | 'code'>('dash');
+  const [view, setView] = useState<'dash' | 'notes' | 'overseer' | 'missions' | 'waterfall' | 'code' | 'intel'>('dash');
   const [isCompact, setIsCompact] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -422,9 +423,12 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
               className="flex-1 flex flex-col gap-3 p-3 overflow-y-auto no-scrollbar"
             >
               {/* Overseer Card */}
-              <button
+              <div
                 onClick={() => openLocalView('overseer')}
-                className="group relative p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-emerald-500/20 transition-all text-left overflow-hidden flex-shrink-0"
+                role="button"
+                tabIndex={0}
+                onKeyDown={e => e.key === 'Enter' && openLocalView('overseer')}
+                className="group relative p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-emerald-500/20 transition-all text-left overflow-hidden flex-shrink-0 cursor-pointer"
               >
                 <div className="absolute top-0 right-0 w-12 h-[1px] bg-white/[0.05] group-hover:bg-emerald-500/20 transition-colors" />
                 <div className="absolute top-0 right-0 w-[1px] h-12 bg-white/[0.05] group-hover:bg-emerald-500/20 transition-colors" />
@@ -468,7 +472,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                 <div className="mt-3 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.3em] text-white/10 group-hover:text-emerald-400/40 transition-all">
                   Open Overseer <ChevronDown size={10} className="rotate-[-90deg]" />
                 </div>
-              </button>
+              </div>
 
               {/* Pipeline Status Card */}
               {(() => {
@@ -481,9 +485,12 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
 
                 if (!pipelineIdle) {
                   return (
-                    <button
+                    <div
+                      role="button"
+                      tabIndex={0}
                       onClick={() => openLocalView('waterfall')}
-                      className="group relative p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-jb-purple/20 transition-all text-left overflow-hidden flex-shrink-0"
+                      onKeyDown={e => e.key === 'Enter' && openLocalView('waterfall')}
+                      className="group relative p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-jb-purple/20 transition-all text-left overflow-hidden flex-shrink-0 cursor-pointer"
                     >
                       <div className="absolute top-0 right-0 w-12 h-[1px] bg-white/[0.05] group-hover:bg-jb-purple/20 transition-colors" />
                       <div className="absolute top-0 right-0 w-[1px] h-12 bg-white/[0.05] group-hover:bg-jb-purple/20 transition-colors" />
@@ -540,7 +547,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                       <div className="mt-3 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.3em] text-white/10 group-hover:text-jb-purple/40 transition-all">
                         {pipelineComplete ? 'View Results' : 'Monitor Pipeline'} <ChevronDown size={10} className="rotate-[-90deg]" />
                       </div>
-                    </button>
+                    </div>
                   );
                 }
                 return null;
@@ -549,6 +556,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
               {/* Action Grid */}
               <div className="grid grid-cols-2 gap-2 flex-shrink-0">
                 <ActionButton icon={Users}  label="MISSIONS" onClick={() => openLocalView('missions')}     color="text-indigo-400" desc="Multi-agent war room" />
+                <ActionButton icon={Search} label="INTEL"     onClick={() => openLocalView('intel')}        color="text-cyan-400"   desc="Research terminal" />
                 <ActionButton icon={PenLine} label="NOTES"   onClick={() => openLocalView('notes')}        color="text-amber-400"  desc="Context &amp; directives" />
                 <ActionButton icon={Code2}  label="CODE"     onClick={() => openLocalView('code')}         color="text-jb-accent"  desc="IDE control panel" />
                 <ActionButton icon={Layers} label="FLOW"     onClick={() => openLocalView('waterfall')}    color="text-jb-purple"  desc="Pipeline monitor" />
@@ -1096,6 +1104,17 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                   </div>
                 )}
               </div>
+            </motion.div>
+          )}
+
+          {/* ─── INTEL ─── */}
+          {view === 'intel' && (
+            <motion.div
+              key="intel"
+              initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
+              className="flex-1 flex flex-col overflow-hidden"
+            >
+              <IntelPanel />
             </motion.div>
           )}
 
