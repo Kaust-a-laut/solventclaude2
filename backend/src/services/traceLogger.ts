@@ -1,4 +1,4 @@
-import { appendFile, stat, rename, unlink, access } from 'fs/promises';
+import { appendFile, stat, rename, unlink, access, readFile } from 'fs/promises';
 import path from 'path';
 import { logger } from '../utils/logger';
 import { ContextProvenance } from './contextService';
@@ -41,6 +41,13 @@ export interface RetrievalTrace {
   outcome: null | 'correction' | 'crystallized' | 'rerequested' | 'accepted';
 }
 
+interface OutcomePatch {
+  type: 'outcome_patch';
+  traceId: string;
+  outcome: RetrievalTrace['outcome'];
+  ts: string;
+}
+
 const TRACE_FILE = path.join(process.cwd(), '.solvent_retrieval_traces.jsonl');
 const ROTATE_1 = path.join(process.cwd(), '.solvent_retrieval_traces.1.jsonl');
 const ROTATE_2 = path.join(process.cwd(), '.solvent_retrieval_traces.2.jsonl');
@@ -68,6 +75,54 @@ class TraceLogger {
     } catch (err) {
       // Fire-and-forget: never let trace logging crash the main request
       logger.warn(`[TraceLogger] Failed to write trace: ${err}`);
+    }
+  }
+
+  async updateOutcome(traceId: string, outcome: NonNullable<RetrievalTrace['outcome']>): Promise<void> {
+    try {
+      await rotateIfNeeded();
+      const patch: OutcomePatch = {
+        type: 'outcome_patch',
+        traceId,
+        outcome,
+        ts: new Date().toISOString(),
+      };
+      await appendFile(TRACE_FILE, JSON.stringify(patch) + '\n', 'utf-8');
+    } catch (err) {
+      logger.warn(`[TraceLogger] Failed to write outcome patch: ${err}`);
+    }
+  }
+
+  async readTraces(filePath: string = TRACE_FILE): Promise<RetrievalTrace[]> {
+    try {
+      const content = await readFile(filePath, 'utf-8');
+      const lines = content.trim().split('\n').filter(Boolean);
+
+      const traces = new Map<string, RetrievalTrace>();
+      const patches = new Map<string, RetrievalTrace['outcome']>();
+
+      for (const line of lines) {
+        try {
+          const record = JSON.parse(line);
+          if (record.type === 'outcome_patch') {
+            patches.set(record.traceId, record.outcome);
+          } else if (record.id) {
+            traces.set(record.id, record as RetrievalTrace);
+          }
+        } catch {
+          // Skip malformed lines
+        }
+      }
+
+      // Apply patches — last patch for a given traceId wins
+      for (const [traceId, outcome] of patches) {
+        const trace = traces.get(traceId);
+        if (trace) trace.outcome = outcome;
+      }
+
+      return [...traces.values()];
+    } catch {
+      return [];
     }
   }
 }

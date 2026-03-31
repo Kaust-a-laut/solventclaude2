@@ -92,3 +92,89 @@ describe('TraceLogger', () => {
     })).resolves.toBeUndefined();
   });
 });
+
+describe('TraceLogger.updateOutcome', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAccess.mockRejectedValue(new Error('ENOENT'));
+    mockStat.mockRejectedValue(new Error('ENOENT'));
+    mockAppendFile.mockResolvedValue(undefined);
+    mockRename.mockResolvedValue(undefined);
+    mockUnlink.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    vi.resetModules();
+  });
+
+  it('should append an outcome_patch JSON line', async () => {
+    mockStat.mockResolvedValue({ size: 100 } as any);
+    mockAccess.mockResolvedValue(undefined);
+    mockAppendFile.mockResolvedValue(undefined);
+
+    const { traceLogger } = await import('./traceLogger');
+    await traceLogger.updateOutcome('trace-abc', 'correction');
+
+    expect(mockAppendFile).toHaveBeenCalledOnce();
+    const writtenLine = mockAppendFile.mock.calls[0]![1] as string;
+    const patch = JSON.parse(writtenLine.trim());
+    expect(patch.type).toBe('outcome_patch');
+    expect(patch.traceId).toBe('trace-abc');
+    expect(patch.outcome).toBe('correction');
+    expect(patch.ts).toBeDefined();
+  });
+});
+
+describe('TraceLogger.readTraces', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAccess.mockRejectedValue(new Error('ENOENT'));
+    mockStat.mockRejectedValue(new Error('ENOENT'));
+    mockAppendFile.mockResolvedValue(undefined);
+    mockRename.mockResolvedValue(undefined);
+    mockUnlink.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    vi.resetModules();
+  });
+
+  it('should return parsed traces from file content', async () => {
+    const mockReadFile = vi.mocked(fs.readFile);
+    mockReadFile.mockResolvedValue(JSON.stringify({
+      id: 'trace-1', ts: '2026-01-01T00:00:00Z', responseId: 'r1',
+      sessionId: 'sess-1', mode: 'chat', provider: 'groq', model: 'llama',
+      query: 'hello', harnessSnapshot: {} as any, active: [], suppressed: [],
+      promptTokens: { memory: 0, rules: 0, workspace: 0, conversationHistory: 0, systemPrompt: 0, total: 0, budget: 0 },
+      counts: { workspace: 0, local: 0, global: 0, rules: 0 },
+      pipelineMs: 100, outcome: null,
+    }) as any);
+
+    const { traceLogger } = await import('./traceLogger');
+    const traces = await traceLogger.readTraces('/fake/path.jsonl');
+    expect(traces).toHaveLength(1);
+    expect(traces[0]!.id).toBe('trace-1');
+    expect(traces[0]!.outcome).toBeNull();
+  });
+
+  it('should merge outcome_patch records into the corresponding trace', async () => {
+    const mockReadFile = vi.mocked(fs.readFile);
+    const traceLine = JSON.stringify({
+      id: 'trace-2', ts: '2026-01-01T00:00:00Z', responseId: 'r2',
+      sessionId: 'sess-2', mode: 'chat', provider: 'groq', model: 'llama',
+      query: 'test', harnessSnapshot: {} as any, active: [], suppressed: [],
+      promptTokens: { memory: 0, rules: 0, workspace: 0, conversationHistory: 0, systemPrompt: 0, total: 0, budget: 0 },
+      counts: { workspace: 0, local: 0, global: 0, rules: 0 },
+      pipelineMs: 50, outcome: null,
+    });
+    const patchLine = JSON.stringify({
+      type: 'outcome_patch', traceId: 'trace-2', outcome: 'correction', ts: '2026-01-01T00:01:00Z'
+    });
+    mockReadFile.mockResolvedValue((traceLine + '\n' + patchLine) as any);
+
+    const { traceLogger } = await import('./traceLogger');
+    const traces = await traceLogger.readTraces('/fake/path.jsonl');
+    expect(traces).toHaveLength(1);
+    expect(traces[0]!.outcome).toBe('correction');
+  });
+});
