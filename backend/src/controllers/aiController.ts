@@ -3,9 +3,10 @@ import { aiService } from '../services/aiService';
 import { WaterfallStep } from '../services/waterfallService';
 import { metaMemoryService } from '../services/metaMemoryService';
 import { taskService } from '../services/taskService';
+import { traceLogger } from '../services/traceLogger';
 import { z } from 'zod';
 import { createReadStream } from 'fs';
-import { readFile, access } from 'fs/promises';
+import { access } from 'fs/promises';
 import path from 'path';
 
 // Zod schemas for request validation
@@ -44,7 +45,8 @@ const chatRequestSchema = z.object({
       link: z.string(),
       snippet: z.string().optional()
     })).nullable().optional()
-  }).optional()
+  }).optional(),
+  sessionId: z.string().optional()
 });
 
 const searchRequestSchema = z.object({
@@ -346,11 +348,40 @@ export class AIController {
     }
   }
 
+  static async updateTraceOutcome(req: Request, res: Response) {
+    const ip = req.ip || req.socket?.remoteAddress || '';
+    const isLocal = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+    if (!isLocal) {
+      res.status(403).json({ error: 'This endpoint is only accessible from localhost.' });
+      return;
+    }
+
+    const id = req.params['id'];
+    if (!id) {
+      res.status(400).json({ error: 'Missing trace id parameter.' });
+      return;
+    }
+    const validOutcomes = ['correction', 'crystallized', 'rerequested', 'accepted'] as const;
+    const schema = z.object({ outcome: z.enum(validOutcomes) });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: `outcome must be one of: ${validOutcomes.join(', ')}` });
+      return;
+    }
+
+    try {
+      await traceLogger.updateOutcome(id, parsed.data.outcome);
+      res.json({ success: true });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      res.status(500).json({ error: err.message });
+    }
+  }
+
   static async getTraces(req: Request, res: Response) {
     const TRACE_FILE_PATH = path.join(process.cwd(), '..', 'backend', '.solvent_retrieval_traces.jsonl');
     const ALT_TRACE_FILE_PATH = path.join(process.cwd(), '.solvent_retrieval_traces.jsonl');
 
-    // Localhost-only gate — this endpoint exposes internal memory content
     const ip = req.ip || req.socket?.remoteAddress || '';
     const isLocal = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
     if (!isLocal) {
@@ -363,8 +394,8 @@ export class AIController {
     const modeFilter = (req.query.mode as string || '');
     const sinceFilter = req.query.since ? new Date(req.query.since as string).getTime() : 0;
     const outcomeFilter = req.query.outcome as string || '';
+    const sessionFilter = req.query.sessionId as string || '';
 
-    // Try both possible file locations
     let filePath = TRACE_FILE_PATH;
     try {
       await access(filePath);
@@ -379,29 +410,21 @@ export class AIController {
     }
 
     try {
-      const content = await readFile(filePath, 'utf-8');
-      const lines = content.trim().split('\n').filter(Boolean);
+      const allTraces = await traceLogger.readTraces(filePath);
+      // Newest first
+      const reversed = [...allTraces].reverse();
 
-      // Newest first — reverse the lines
-      const reversed = lines.reverse();
-
-      const results: any[] = [];
-      for (const line of reversed) {
-        if (results.length >= limit) break;
-        try {
-          const trace = JSON.parse(line);
-          if (queryFilter && !trace.query?.toLowerCase().includes(queryFilter)) continue;
-          if (modeFilter && trace.mode !== modeFilter) continue;
-          if (sinceFilter && new Date(trace.ts).getTime() < sinceFilter) continue;
-          if (outcomeFilter && trace.outcome !== outcomeFilter) continue;
-          results.push(trace);
-        } catch {
-          // Skip malformed lines
-        }
-      }
+      const results = reversed.filter(trace => {
+        if (queryFilter && !trace.query?.toLowerCase().includes(queryFilter)) return false;
+        if (modeFilter && trace.mode !== modeFilter) return false;
+        if (sinceFilter && new Date(trace.ts).getTime() < sinceFilter) return false;
+        if (outcomeFilter && trace.outcome !== outcomeFilter) return false;
+        if (sessionFilter && trace.sessionId !== sessionFilter) return false;
+        return true;
+      }).slice(0, limit);
 
       res.json(results);
-    } catch (err) {
+    } catch {
       res.status(500).json({ error: 'Failed to read trace file.' });
     }
   }

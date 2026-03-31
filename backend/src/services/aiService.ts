@@ -75,6 +75,7 @@ interface CompletionResponse {
   provenance?: any;
   isGeneratedImage?: boolean;
   imageUrl?: string;
+  traceId?: string;
 }
 
 interface EnrichedContextResult {
@@ -86,6 +87,9 @@ interface EnrichedContextResult {
 
 export class AIService {
   private waterfallService = new WaterfallService();
+  // Maps sessionId → last trace id for that session (used for auto-accepted signal).
+  // Ephemeral: cleared on backend restart. Phase C will persist this.
+  private lastTraceBySession = new Map<string, string>();
 
   async performSearch(query: string, page?: number) {
     return searchService.webSearch(query, page);
@@ -122,6 +126,14 @@ export class AIService {
       const { messages: enrichedMessages, provenance } = await this.enrichContext(data);
       const pipelineMs = Date.now() - enrichStart;
       const normalizedMessages = normalizeMessages(enrichedMessages);
+
+      // Auto-signal: if this session already has a pending trace, mark it accepted.
+      // The user sending a new message is implicit acceptance of the prior response.
+      const sessionId = data.sessionId || 'unknown';
+      const prevTraceId = this.lastTraceBySession.get(sessionId);
+      if (prevTraceId) {
+        traceLogger.updateOutcome(prevTraceId, 'accepted').catch(() => {});
+      }
 
       // 2.1 Log retrieval trace (fire-and-forget — never blocks the response)
       const trace: RetrievalTrace = {
@@ -161,6 +173,7 @@ export class AIService {
         outcome: null,
       };
       traceLogger.appendTrace(trace).catch(() => {}); // fire-and-forget
+      this.lastTraceBySession.set(sessionId, trace.id);
 
       // 2.5. Fit conversation to token budget (sliding window with summarization)
       const contextBudget = getContextBudget(model, maxTokens || 2048);
@@ -189,7 +202,7 @@ export class AIService {
       }
 
       // 5. Attach Provenance
-      responseData = this.attachProvenance(responseData, provenance);
+      responseData = { ...this.attachProvenance(responseData, provenance), traceId: trace.id };
 
       // 6. Consolidate Memory (fire-and-forget)
       this.consolidateMemory(mode, data.messages, responseData);
