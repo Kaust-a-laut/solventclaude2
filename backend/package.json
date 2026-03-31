@@ -13,7 +13,7 @@
     "lint:fix": "eslint src --ext ts --fix"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.21.0",
+    "@google/generative-ai": "^0.24.1",
     "@types/socket.io": "^3.0.1",
     "axios": "^1.7.9",
     "bullmq": "^5.67.1",

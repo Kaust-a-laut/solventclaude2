@@ -61,11 +61,20 @@ export class OllamaService implements AIProvider {
    * Generate embeddings using Ollama's nomic-embed-text model
    * Fallback when Gemini embeddings are unavailable
    */
+  /**
+   * Truncate text to stay within nomic-embed-text's ~8192 token context.
+   * Rough heuristic: 1 token ≈ 4 chars, leave margin.
+   */
+  private truncateForEmbedding(text: string, maxChars = 30000): string {
+    return text.length > maxChars ? text.slice(0, maxChars) : text;
+  }
+
   async embed(text: string): Promise<number[]> {
     try {
+      const truncated = this.truncateForEmbedding(text);
       const response = await withTimeout(ollama.embed({
         model: this.EMBEDDING_MODEL,
-        input: text
+        input: truncated
       }), OLLAMA_TIMEOUT_MS, 'Ollama embed');
       
       if (!response.embeddings || response.embeddings.length === 0) {

@@ -5,7 +5,8 @@
       "name": "Frontend (Vite)",
       "runtimeExecutable": "bash",
       "runtimeArgs": ["scripts/dev-frontend.sh"],
-      "port": 5173
+      "port": 5173,
+      "autoPort": true
     },
     {
       "name": "Backend (Express)",

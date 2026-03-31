@@ -13,6 +13,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
 import type { BrowserTab, PageContent, SearchResultSet } from '../store/types';
 import { SearchPipelineStepper } from './SearchPipelineStepper';
+
+const stripHtml = (text: string) => {
+  if (!text) return '';
+  const doc = new DOMParser().parseFromString(text, 'text/html');
+  return doc.body.textContent || '';
+};
 import { SearchSynthesisCard } from './SearchSynthesisCard';
 import { RelevanceBadge } from './RelevanceBadge';
 
@@ -560,14 +566,33 @@ export const BrowserArea = () => {
                       <Send size={10} /> Send to Chat
                     </button>
                   </div>
-                  <div className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{summary}</div>
+                  <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap">{summary}</div>
                 </motion.div>
               )}
             </AnimatePresence>
 
             {/* Page Content */}
-            <div className="text-[14px] text-slate-400 leading-[1.8] whitespace-pre-wrap">
-              {pageContent.content}
+            <div className="p-8 rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-0">
+              {pageContent.content
+                .split(/\n{2,}/)
+                .filter((block: string) => block.trim().length > 0)
+                .map((paragraph: string, idx: number) => {
+                  const trimmed = paragraph.trim();
+                  // Detect heading-like lines (short, no period at end, often ALL CAPS or Title Case)
+                  const isHeading = trimmed.length < 120 && !trimmed.endsWith('.') && !trimmed.endsWith(',') && trimmed.split('\n').length === 1;
+                  if (isHeading && trimmed.length < 80) {
+                    return (
+                      <h3 key={idx} className="text-[17px] font-bold text-white pt-6 pb-2 border-t border-white/[0.04] first:border-t-0 first:pt-0">
+                        {trimmed}
+                      </h3>
+                    );
+                  }
+                  return (
+                    <p key={idx} className="text-[15px] text-white/85 leading-[1.9] py-2">
+                      {trimmed}
+                    </p>
+                  );
+                })}
             </div>
           </div>
 
@@ -643,7 +668,7 @@ export const BrowserArea = () => {
                   </button>
                 </div>
                 <h3 className="text-2xl font-black text-white mb-4 tracking-tight">{searchResults.answerBox.title}</h3>
-                <p className="text-slate-400 leading-relaxed text-base font-medium">{searchResults.answerBox.answer || searchResults.answerBox.snippet}</p>
+                <p className="text-slate-400 leading-relaxed text-[19px] font-medium">{stripHtml(searchResults.answerBox.answer || searchResults.answerBox.snippet)}</p>
               </motion.div>
             )}
 
@@ -678,17 +703,17 @@ export const BrowserArea = () => {
                     <div className="flex-1 min-w-0 space-y-2 cursor-pointer" onClick={() => { setInputUrl(result.link); handleNavigate(result.link); }}>
                       <div className="flex items-center gap-2 min-w-0">
                         <Network size={10} className="text-jb-accent/70 flex-shrink-0" />
-                        <span className="text-[11px] font-black text-jb-accent uppercase tracking-widest flex-shrink-0">
+                        <span className="text-[14px] font-black text-jb-accent uppercase tracking-widest flex-shrink-0">
                           {(() => { try { return new URL(result.link).hostname; } catch { return ''; } })()}
                         </span>
                         {result.relevanceScore > 0 && <RelevanceBadge score={result.relevanceScore} />}
-                        <span className="text-[11px] text-slate-700 truncate min-w-0">· {result.link}</span>
+                        <span className="text-[14px] text-slate-700 truncate min-w-0">· {result.link}</span>
                       </div>
-                      <h3 className="text-[15px] font-black text-white group-hover:text-jb-accent/90 transition-colors tracking-tight leading-snug">
-                        {result.title}
+                      <h3 className="text-[18px] font-black text-white group-hover:text-jb-accent/90 transition-colors tracking-tight leading-snug">
+                        {stripHtml(result.title)}
                       </h3>
-                      <p className="text-[13px] text-slate-500 font-medium leading-relaxed line-clamp-4 group-hover:text-slate-400 transition-colors">
-                        {result.snippet}
+                      <p className="text-[16px] text-slate-500 font-medium leading-relaxed line-clamp-4 group-hover:text-slate-400 transition-colors">
+                        {stripHtml(result.snippet)}
                       </p>
                     </div>
 
@@ -736,7 +761,7 @@ export const BrowserArea = () => {
                     <button
                       key={i}
                       onClick={() => { setInputUrl(rs.query); handleNavigate(rs.query); }}
-                      className="px-4 py-2 bg-white/[0.03] border border-white/5 text-slate-400 text-[11px] font-bold rounded-full hover:bg-jb-accent/10 hover:border-jb-accent/20 hover:text-jb-accent transition-all"
+                      className="px-4 py-2 bg-white/[0.03] border border-white/5 text-slate-400 text-[14px] font-bold rounded-full hover:bg-jb-accent/10 hover:border-jb-accent/20 hover:text-jb-accent transition-all"
                     >
                       <Search size={10} className="inline mr-1.5 -mt-0.5" />
                       {rs.query}

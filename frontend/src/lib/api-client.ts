@@ -101,14 +101,35 @@ export async function fetchWithRetry<T = unknown>(
 
       if (!response.ok) {
         let errorBody: ApiErrorResponse | string;
+        let errorMessage = `Request failed with status ${response.status}`;
+        
         try {
-          errorBody = await response.json();
+          // Clone the response so we can read the body without consuming the original
+          const clonedResponse = response.clone();
+          try {
+            errorBody = await clonedResponse.json();
+          } catch {
+            errorBody = await clonedResponse.text();
+          }
+          
+          // Extract error message from the body if available
+          if (typeof errorBody === 'object' && errorBody !== null) {
+            const bodyObj = errorBody as Record<string, unknown>;
+            if (typeof bodyObj.message === 'string') {
+              errorMessage = bodyObj.message;
+            } else if (typeof bodyObj.error === 'string') {
+              errorMessage = bodyObj.error;
+            }
+          } else if (typeof errorBody === 'string') {
+            errorMessage = errorBody;
+          }
         } catch {
-          errorBody = await response.text();
+          // If we can't read the body at all, use a generic message
+          errorBody = { message: errorMessage };
         }
 
         const error = new APIError(
-          `Request failed with status ${response.status}`,
+          errorMessage,
           response.status,
           response.statusText,
           errorBody
@@ -148,4 +169,35 @@ export async function fetchWithRetry<T = unknown>(
   }
 
   throw lastError;
+}
+
+export interface TraceFilter {
+  limit?: number;
+  query?: string;
+  mode?: string;
+  since?: string;
+  outcome?: string;
+}
+
+export async function getTraces(filter: TraceFilter = {}): Promise<any[]> {
+  const { API_BASE_URL } = await import('./config');
+  const params = new URLSearchParams();
+  if (filter.limit) params.set('limit', String(filter.limit));
+  if (filter.query) params.set('query', filter.query);
+  if (filter.mode) params.set('mode', filter.mode);
+  if (filter.since) params.set('since', filter.since);
+  if (filter.outcome) params.set('outcome', filter.outcome);
+
+  const url = `${API_BASE_URL}/debug/traces${params.toString() ? '?' + params.toString() : ''}`;
+  try {
+    const secret = await getSecret();
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 'X-Solvent-Secret': secret }
+    });
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
 }

@@ -267,15 +267,21 @@ Sort by score descending. Include ALL results — the UI handles visual differen
         [
           {
             role: 'system',
-            content: `You are a search synthesis engine. Given a user query and top search results, generate a concise direct answer (2-4 sentences) that synthesizes information across the results. Include source attribution. Return JSON only.
+            content: `You are a search synthesis engine. Given a user query and top search results, generate a rich, in-depth overview (8-12 sentences) that synthesizes information across the results. Structure your response as a mini-briefing:
+- Open with a high-level summary of the landscape
+- Cover key developments, breakthroughs, and announcements with specific details
+- Mention names, companies, models, papers, dates, and numbers when available
+- Note emerging trends or implications
+- Use inline technical terms in backticks
+Return JSON only.
 
 Output schema:
 {
-  "answer": "<2-4 sentence synthesis with inline technical terms in backticks>",
+  "answer": "<8-12 sentence in-depth synthesis briefing with specific details, technical terms in backticks, and trend analysis>",
   "sources": ["<url1>", "<url2>", ...]
 }
 
-Only include URLs that directly informed the answer.`,
+Include all URLs that informed the answer (up to 8).`,
           },
           {
             role: 'user',
@@ -285,7 +291,7 @@ Only include URLs that directly informed the answer.`,
         {
           model: 'llama-3.3-70b-versatile',
           temperature: 0.3,
-          maxTokens: 512,
+          maxTokens: 1200,
           jsonMode: true,
         }
       );

@@ -26,6 +26,17 @@ export interface ContextProvenance {
     local: number;
     global: number;
     rules: number;
+    tokenBudget?: number;
+    tokensUsed?: number;
+  };
+  promptTokens?: {
+    memory: number;
+    rules: number;
+    workspace: number;
+    conversationHistory: number;
+    systemPrompt: number;
+    total: number;
+    budget: number;
   };
 }
 

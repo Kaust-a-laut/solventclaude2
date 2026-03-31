@@ -463,7 +463,10 @@ export class VectorService {
     // Try Gemini first
     try {
       const genAI = this.getGenAI();
-      const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
+      const model = genAI.getGenerativeModel(
+        { model: "text-embedding-004" },
+        { apiVersion: "v1" }
+      );
       const result = await model.embedContent(text);
       const values = result.embedding.values;
 
@@ -514,7 +517,10 @@ export class VectorService {
       // Try Gemini batch first
       try {
         const genAI = this.getGenAI();
-        const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
+        const model = genAI.getGenerativeModel(
+          { model: "text-embedding-004" },
+          { apiVersion: "v1" }
+        );
 
         // Google SDK batchEmbedContents
         const batchSize = 100; // API limit usually

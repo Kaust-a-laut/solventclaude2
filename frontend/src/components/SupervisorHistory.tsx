@@ -79,13 +79,13 @@ export const SupervisorHistory = () => {
 
   const loadPendingDecisions = async () => {
     try {
-      const response = await api.get('/overseer/pending');
+      const response = await api.get('/overseer/pending', { retries: 0 } as any);
       setPendingDecisions(response.data.decisions);
       response.data.decisions.forEach((d: PendingDecision) => {
         setTimeRemaining(prev => ({ ...prev, [d.id]: d.expiresAt }));
       });
-    } catch (error) {
-      console.error('[SupervisorHistory] Failed to load pending decisions:', error);
+    } catch {
+      // Silently ignore — overseer endpoint may not be available
     }
   };
 

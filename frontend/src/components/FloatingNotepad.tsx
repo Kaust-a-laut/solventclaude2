@@ -100,7 +100,9 @@ export const FloatingNotepad = () => {
         minWidth={320}
         minHeight={400}
         dragHandleClassName="drag-handle"
+        cancel="button, input, textarea, select, a, [role='button']"
         bounds="parent"
+        enableUserSelectHack={false}
         style={{ pointerEvents: 'auto' }}
       >
         <NotepadPiP

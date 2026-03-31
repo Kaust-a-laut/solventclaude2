@@ -4,6 +4,9 @@ import { WaterfallStep } from '../services/waterfallService';
 import { metaMemoryService } from '../services/metaMemoryService';
 import { taskService } from '../services/taskService';
 import { z } from 'zod';
+import { createReadStream } from 'fs';
+import { readFile, access } from 'fs/promises';
+import path from 'path';
 
 // Zod schemas for request validation
 const chatMessageSchema = z.object({
@@ -40,7 +43,7 @@ const chatRequestSchema = z.object({
       title: z.string(),
       link: z.string(),
       snippet: z.string().optional()
-    })).optional()
+    })).nullable().optional()
   }).optional()
 });
 
@@ -340,6 +343,66 @@ export class AIController {
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));
       res.status(500).json({ error: err.message });
+    }
+  }
+
+  static async getTraces(req: Request, res: Response) {
+    const TRACE_FILE_PATH = path.join(process.cwd(), '..', 'backend', '.solvent_retrieval_traces.jsonl');
+    const ALT_TRACE_FILE_PATH = path.join(process.cwd(), '.solvent_retrieval_traces.jsonl');
+
+    // Localhost-only gate — this endpoint exposes internal memory content
+    const ip = req.ip || req.socket?.remoteAddress || '';
+    const isLocal = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+    if (!isLocal) {
+      res.status(403).json({ error: 'This endpoint is only accessible from localhost.' });
+      return;
+    }
+
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+    const queryFilter = (req.query.query as string || '').toLowerCase();
+    const modeFilter = (req.query.mode as string || '');
+    const sinceFilter = req.query.since ? new Date(req.query.since as string).getTime() : 0;
+    const outcomeFilter = req.query.outcome as string || '';
+
+    // Try both possible file locations
+    let filePath = TRACE_FILE_PATH;
+    try {
+      await access(filePath);
+    } catch {
+      try {
+        await access(ALT_TRACE_FILE_PATH);
+        filePath = ALT_TRACE_FILE_PATH;
+      } catch {
+        res.json([]);
+        return;
+      }
+    }
+
+    try {
+      const content = await readFile(filePath, 'utf-8');
+      const lines = content.trim().split('\n').filter(Boolean);
+
+      // Newest first — reverse the lines
+      const reversed = lines.reverse();
+
+      const results: any[] = [];
+      for (const line of reversed) {
+        if (results.length >= limit) break;
+        try {
+          const trace = JSON.parse(line);
+          if (queryFilter && !trace.query?.toLowerCase().includes(queryFilter)) continue;
+          if (modeFilter && trace.mode !== modeFilter) continue;
+          if (sinceFilter && new Date(trace.ts).getTime() < sinceFilter) continue;
+          if (outcomeFilter && trace.outcome !== outcomeFilter) continue;
+          results.push(trace);
+        } catch {
+          // Skip malformed lines
+        }
+      }
+
+      res.json(results);
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to read trace file.' });
     }
   }
 }

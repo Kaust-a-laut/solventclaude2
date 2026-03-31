@@ -85,7 +85,8 @@ export interface ChatRequestData {
   codingHistory?: ChatMessage[];
   browserContext?: {
     history: string[];
-    lastSearchResults?: SearchResult[];
+    lastSearchResults?: SearchResult[] | null;
   };
   signal?: AbortSignal;
+  sessionId?: string;
 }

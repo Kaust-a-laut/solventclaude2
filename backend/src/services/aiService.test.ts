@@ -9,9 +9,27 @@ vi.mock('./contextService', () => ({
   contextService: {
     enrichContext: vi.fn().mockImplementation(async (data) => ({
       messages: data.messages,
-      provenance: { active: [], suppressed: [] }
+      provenance: { active: [], suppressed: [], counts: { workspace: 0, local: 0, global: 0, rules: 0 }, promptTokens: { memory: 0, rules: 0, workspace: 0, conversationHistory: 0, systemPrompt: 0, total: 0, budget: 0 } }
     }))
-  }
+  },
+  getHarnessSnapshot: vi.fn().mockReturnValue({
+    RETRIEVAL_COUNT_DEFAULT: 8,
+    RETRIEVAL_COUNT_MASSIVE: 15,
+    RETRIEVAL_COUNT_CONSTRAINED: 3,
+    MIN_SCORE_STANDARD: 0.6,
+    MIN_SCORE_MASSIVE: 0.5,
+    SCORE_BOOST_UNIVERSAL: 0.35,
+    SCORE_BOOST_META_SUMMARY: 0.30,
+    SCORE_BOOST_CRYSTALLIZED: 0.25,
+    SCORE_BOOST_PERMANENT_RULE: 0.20,
+    SCORE_BOOST_KEYWORD_MATCH: 0.15,
+    SCORE_BOOST_TAG_MATCH: 0.20,
+    SCORE_BOOST_PER_RETRIEVAL: 0.02,
+    SCORE_BOOST_PER_IMPORTANCE: 0.04,
+    DEDUP_SIMILARITY_THRESHOLD: 0.92,
+    LINKED_MEMORY_SCORE_MULTIPLIER: 0.9,
+    SCORE_PENALTY_STALE_CODE: 0.5,
+  })
 }));
 vi.mock('./pollinationsService', () => ({
   pollinationsService: {

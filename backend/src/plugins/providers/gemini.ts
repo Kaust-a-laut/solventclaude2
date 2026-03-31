@@ -177,7 +177,10 @@ export class GeminiProviderPlugin implements IProviderPlugin {
       throw new Error('Gemini provider not initialized');
     }
 
-    const model = this.genAI.getGenerativeModel({ model: "text-embedding-004" });
+    const model = this.genAI.getGenerativeModel(
+      { model: "text-embedding-004" },
+      { apiVersion: "v1" }
+    );
     const result = await model.embedContent(text);
     return result.embedding.values;
   }

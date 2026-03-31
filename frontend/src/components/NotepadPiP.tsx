@@ -5,9 +5,9 @@ import {
   Database, LayoutGrid, ExternalLink,
   Code2, Settings, Search,
   Layers, Trash2, ChevronDown, Sparkles,
-  Brain, FlaskConical,
+  Brain, FlaskConical, Users,
   Play, Loader2, CheckCircle2, XCircle,
-  Users, Terminal as TerminalIcon, FileText,
+  Terminal as TerminalIcon, FileText,
   Wrench, Check, AlertCircle, FolderOpen,
   Eye, EyeOff, MessageSquare, Diff, ArrowRight,
 } from 'lucide-react';
@@ -564,11 +564,10 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
 
               {/* Action Grid */}
               <div className="grid grid-cols-2 gap-2 flex-shrink-0">
-                <ActionButton icon={Users}  label="MISSIONS" onClick={() => openLocalView('missions')}     color="text-indigo-400" desc="Multi-agent war room" />
-                <ActionButton icon={Search} label="INTEL"     onClick={() => openLocalView('intel')}        color="text-cyan-400"   desc="Research terminal" />
-                <ActionButton icon={PenLine} label="NOTES"   onClick={() => openLocalView('notes')}        color="text-amber-400"  desc="Context &amp; directives" />
-                <ActionButton icon={Code2}  label="CODE"     onClick={() => openLocalView('code')}         color="text-jb-accent"  desc="IDE control panel" />
-                <ActionButton icon={Layers} label="FLOW"     onClick={() => openLocalView('waterfall')}    color="text-jb-purple"  desc="Pipeline monitor" />
+                <ActionButton icon={Search}  label="WEB"     onClick={() => openLocalView('intel')}        color="text-cyan-400"   desc="Search & browse" />
+                <ActionButton icon={PenLine} label="NOTES"   onClick={() => openLocalView('notes')}        color="text-amber-400"  desc="Context & directives" />
+                <ActionButton icon={Code2}   label="CODE"    onClick={() => openLocalView('code')}         color="text-jb-accent"  desc="IDE control panel" />
+                <ActionButton icon={Layers}  label="FLOW"    onClick={() => openLocalView('waterfall')}    color="text-jb-purple"  desc="Pipeline monitor" />
               </div>
 
               {/* Activity Feed */}

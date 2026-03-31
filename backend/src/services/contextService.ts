@@ -14,103 +14,129 @@ import { coreMemory } from './coreMemory';
 /**
  * Number of entries to fetch for massive context models (100k+ tokens)
  */
-const RETRIEVAL_COUNT_MASSIVE = 15;
+export const RETRIEVAL_COUNT_MASSIVE = 15;
 
 /**
  * Number of entries to fetch for constrained context models (<16k tokens)
  */
-const RETRIEVAL_COUNT_CONSTRAINED = 3;
+export const RETRIEVAL_COUNT_CONSTRAINED = 3;
 
 /**
  * Default number of entries to fetch for standard models
  */
-const RETRIEVAL_COUNT_DEFAULT = 8;
+export const RETRIEVAL_COUNT_DEFAULT = 8;
 
 /**
  * Number of global rules to fetch for massive context models
  */
-const RULES_COUNT_MASSIVE = 10;
+export const RULES_COUNT_MASSIVE = 10;
 
 /**
  * Number of global rules to fetch for standard/constrained models
  */
-const RULES_COUNT_DEFAULT = 3;
+export const RULES_COUNT_DEFAULT = 3;
 
 /**
  * Cosine similarity threshold above which entries are considered duplicates
  */
-const DEDUP_SIMILARITY_THRESHOLD = 0.92;
+export const DEDUP_SIMILARITY_THRESHOLD = 0.92;
 
 /**
  * Minimum score for an entry to be considered active (massive context)
  */
-const MIN_SCORE_MASSIVE_CONTEXT = 0.50;
+export const MIN_SCORE_MASSIVE_CONTEXT = 0.50;
 
 /**
  * Minimum score for an entry to be considered active (standard/constrained context)
  */
-const MIN_SCORE_STANDARD_CONTEXT = 0.60;
+export const MIN_SCORE_STANDARD_CONTEXT = 0.60;
 
 /**
  * Maximum number of suppressed items to show in UI
  */
-const MAX_SUPPRESSED_ITEMS_UI = 10;
+export const MAX_SUPPRESSED_ITEMS_UI = 10;
 
 /**
  * Score boost for universal patterns
  */
-const SCORE_BOOST_UNIVERSAL = 0.35;
+export const SCORE_BOOST_UNIVERSAL = 0.35;
 
 /**
  * Score boost for meta summaries
  */
-const SCORE_BOOST_META_SUMMARY = 0.30;
+export const SCORE_BOOST_META_SUMMARY = 0.30;
 
 /**
  * Score boost for crystallized memories
  */
-const SCORE_BOOST_CRYSTALLIZED = 0.25;
+export const SCORE_BOOST_CRYSTALLIZED = 0.25;
 
 /**
  * Score boost for permanent rules
  */
-const SCORE_BOOST_PERMANENT_RULE = 0.20;
+export const SCORE_BOOST_PERMANENT_RULE = 0.20;
 
 /**
  * Score boost for keyword matches
  */
-const SCORE_BOOST_KEYWORD_MATCH = 0.15;
+export const SCORE_BOOST_KEYWORD_MATCH = 0.15;
 
 /**
  * Score boost for tag index matches
  */
-const SCORE_BOOST_TAG_MATCH = 0.20;
+export const SCORE_BOOST_TAG_MATCH = 0.20;
 
 /**
  * Score decay rate for code blocks (per day)
  */
-const SCORE_DECAY_CODE_BLOCK_PER_DAY = 0.01;
+export const SCORE_DECAY_CODE_BLOCK_PER_DAY = 0.01;
 
 /**
  * Score multiplier for linked memories
  */
-const LINKED_MEMORY_SCORE_MULTIPLIER = 0.9;
+export const LINKED_MEMORY_SCORE_MULTIPLIER = 0.9;
 
 /**
  * Score penalty for stale code blocks (file modified since indexing)
  */
-const SCORE_PENALTY_STALE_CODE = 0.5;
+export const SCORE_PENALTY_STALE_CODE = 0.5;
 
 /**
  * Score boost per retrieval (capped at 10 retrievals)
  */
-const SCORE_BOOST_PER_RETRIEVAL = 0.02;
-const MAX_RETRIEVAL_BOOST_COUNT = 10;
+export const SCORE_BOOST_PER_RETRIEVAL = 0.02;
+export const MAX_RETRIEVAL_BOOST_COUNT = 10;
 
 /**
  * Score boost per importance point (1-10 scale)
  */
-const SCORE_BOOST_PER_IMPORTANCE = 0.04;
+export const SCORE_BOOST_PER_IMPORTANCE = 0.04;
+
+/**
+ * Returns a snapshot of all current harness scoring parameters.
+ * Used in retrieval traces so the Phase C automated proposer can correlate
+ * parameter configurations with retrieval outcomes.
+ */
+export function getHarnessSnapshot() {
+  return {
+    RETRIEVAL_COUNT_DEFAULT,
+    RETRIEVAL_COUNT_MASSIVE,
+    RETRIEVAL_COUNT_CONSTRAINED,
+    MIN_SCORE_STANDARD: MIN_SCORE_STANDARD_CONTEXT,
+    MIN_SCORE_MASSIVE: MIN_SCORE_MASSIVE_CONTEXT,
+    SCORE_BOOST_UNIVERSAL,
+    SCORE_BOOST_META_SUMMARY,
+    SCORE_BOOST_CRYSTALLIZED,
+    SCORE_BOOST_PERMANENT_RULE,
+    SCORE_BOOST_KEYWORD_MATCH,
+    SCORE_BOOST_TAG_MATCH,
+    SCORE_BOOST_PER_RETRIEVAL,
+    SCORE_BOOST_PER_IMPORTANCE,
+    DEDUP_SIMILARITY_THRESHOLD,
+    LINKED_MEMORY_SCORE_MULTIPLIER,
+    SCORE_PENALTY_STALE_CODE,
+  } as const;
+}
 
 // Shared BM25 index instance — incrementally updated when vector memory changes
 const bm25Index = new BM25Index();
@@ -320,6 +346,15 @@ export interface ContextProvenance {
     rules: number;
     tokenBudget?: number;
     tokensUsed?: number;
+  };
+  promptTokens?: {
+    memory: number;
+    rules: number;
+    workspace: number;
+    conversationHistory: number;
+    systemPrompt: number;
+    total: number;
+    budget: number;
   };
 }
 
@@ -840,6 +875,26 @@ ${rulesContext || '• No permanent rules set yet. Rules are added via the cryst
 - **For ambiguous requests**: Ask one clarifying question. Do not guess and produce the wrong thing.
 - **For errors in your own previous responses**: Correct directly. Provide the complete corrected version, not a patch.
 - **For greetings/casual chat**: No special format needed — just respond naturally.`
+    };
+
+    // Compute per-section token breakdown for trace logging and HUD display.
+    // Must be computed after systemPrompt is assembled.
+    const systemPromptTokens = estimateTokens(systemPrompt.content);
+    const rulesTokens = estimateTokens(rulesContext || '');
+    const workspaceTokens = data.openFiles?.reduce(
+      (acc, f) => acc + estimateTokens(f.content), 0
+    ) || 0;
+    const historyTokens = data.messages.reduce(
+      (acc, m) => acc + estimateTokens(typeof m.content === 'string' ? m.content : ''), 0
+    );
+    provenance.promptTokens = {
+      memory: memoryTokensUsed,
+      rules: rulesTokens,
+      workspace: workspaceTokens,
+      conversationHistory: historyTokens,
+      systemPrompt: systemPromptTokens,
+      total: memoryTokensUsed + rulesTokens + workspaceTokens + historyTokens + systemPromptTokens,
+      budget: budget.total || (budget.memory + budget.history),
     };
 
     return { messages: [systemPrompt, ...data.messages], provenance };

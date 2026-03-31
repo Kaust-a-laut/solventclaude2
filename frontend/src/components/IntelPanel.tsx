@@ -3,6 +3,7 @@ import { useAppStore } from '../store/useAppStore';
 import { ChatService } from '../services/ChatService';
 import { fetchWithRetry } from '../lib/api-client';
 import { API_BASE_URL } from '../lib/config';
+import { TraceList } from './TraceList';
 import {
   Globe, Search, ArrowLeft, Send, ChevronUp, ChevronDown,
   Eye, EyeOff, Loader2, Target, Shield, MessageSquare,
@@ -30,6 +31,8 @@ export const IntelPanel: React.FC = () => {
   const [qaInput, setQaInput] = useState('');
   const [qaOpen, setQaOpen] = useState(false);
   const [qaLoading, setQaLoading] = useState(false);
+  const [injectionFlash, setInjectionFlash] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'search' | 'traces'>('search');
 
   const handleSubmit = useCallback(async () => {
     const query = inputValue.trim();
@@ -51,7 +54,21 @@ export const IntelPanel: React.FC = () => {
       addIntelRecentSearch(query);
       clearIntelQAHistory();
       try {
-        const searchResults = await ChatService.search(query);
+        const results = await ChatService.search(query);
+        const items = results?.results || results?.organic || [];
+        const answer = results?.answerBox || null;
+        const related = results?.relatedSearches || [];
+        const searchResults = {
+          results: items,
+          answerBox: answer,
+          relatedSearches: related,
+          synthesis: results?.synthesis,
+          expandedQuery: results?.expandedQuery,
+          stats: results?.stats,
+        };
+        if (!items.length && !answer) {
+          (searchResults as any).error = 'Zero matches returned';
+        }
         setIntelPanelContent({ type: 'search', searchResults, query });
       } catch {
         setIntelPanelContent({ type: 'search', searchResults: null, query, isLoading: false });
@@ -115,18 +132,25 @@ export const IntelPanel: React.FC = () => {
     return '';
   }, [intelPanelContent]);
 
+  const flashInjection = useCallback((label: string) => {
+    setInjectionFlash(label);
+    setTimeout(() => setInjectionFlash(null), 2000);
+  }, []);
+
   const sendToChat = useCallback(() => {
     const ctx = buildContextString();
     if (!ctx) return;
     setBrowserInjectedContext(ctx);
     setCurrentMode('chat');
-  }, [buildContextString, setBrowserInjectedContext, setCurrentMode]);
+    flashInjection('Sent to Chat');
+  }, [buildContextString, setBrowserInjectedContext, setCurrentMode, flashInjection]);
 
   const sendToMission = useCallback(() => {
     const ctx = buildContextString();
     if (!ctx) return;
     startConversation(ctx, 'consultation');
-  }, [buildContextString, startConversation]);
+    flashInjection('Sent to Mission');
+  }, [buildContextString, startConversation, flashInjection]);
 
   const sendToOverseer = useCallback(async () => {
     const ctx = buildContextString();
@@ -141,8 +165,9 @@ export const IntelPanel: React.FC = () => {
           recentMessages: [],
         }),
       });
+      flashInjection('Sent to Overseer');
     } catch { /* fire-and-forget */ }
-  }, [buildContextString, intelPanelContent.query, notepadContent]);
+  }, [buildContextString, intelPanelContent.query, notepadContent, flashInjection]);
 
   const hasContent = intelPanelContent.type !== 'idle';
   const relevanceColor = (score: number) =>
@@ -150,8 +175,38 @@ export const IntelPanel: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Search/URL Bar */}
-      <div className="px-3 pt-3 pb-2 flex-shrink-0">
+      {/* Tab bar */}
+      <div className="flex border-b border-white/10 flex-shrink-0">
+        <button
+          onClick={() => setActiveTab('search')}
+          className={cn(
+            "flex-1 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors",
+            activeTab === 'search'
+              ? "text-white border-b-2 border-white"
+              : "text-slate-500 hover:text-slate-300"
+          )}
+        >
+          Search
+        </button>
+        <button
+          onClick={() => setActiveTab('traces')}
+          className={cn(
+            "flex-1 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors",
+            activeTab === 'traces'
+              ? "text-white border-b-2 border-white"
+              : "text-slate-500 hover:text-slate-300"
+          )}
+        >
+          Traces
+        </button>
+      </div>
+
+      {activeTab === 'traces' ? (
+        <TraceList />
+      ) : (
+        <>
+          {/* Search/URL Bar */}
+          <div className="px-3 pt-3 pb-2 flex-shrink-0">
         <div className="flex items-center gap-2 bg-black/40 rounded-lg border border-white/5 px-3 py-1.5">
           <Globe size={12} className="text-slate-600 shrink-0" />
           <input
@@ -330,10 +385,26 @@ export const IntelPanel: React.FC = () => {
                 </div>
 
                 {/* Content body */}
-                <div className="text-[11px] text-slate-400 leading-relaxed space-y-2">
-                  {intelPanelContent.pageContent.content.split(/\n{2,}/).map((para, i) => (
-                    <p key={i}>{para}</p>
-                  ))}
+                <div className="space-y-0">
+                  {intelPanelContent.pageContent.content
+                    .split(/\n{2,}/)
+                    .filter((block: string) => block.trim().length > 0)
+                    .map((paragraph: string, idx: number) => {
+                      const trimmed = paragraph.trim();
+                      const isHeading = trimmed.length < 100 && !trimmed.endsWith('.') && !trimmed.endsWith(',') && trimmed.split('\n').length === 1;
+                      if (isHeading && trimmed.length < 60) {
+                        return (
+                          <h3 key={idx} className="text-[12px] font-bold text-white pt-3 pb-1 border-t border-white/[0.04] first:border-t-0 first:pt-0">
+                            {trimmed}
+                          </h3>
+                        );
+                      }
+                      return (
+                        <p key={idx} className="text-[11px] text-slate-400 leading-[1.8] py-1">
+                          {trimmed}
+                        </p>
+                      );
+                    })}
                 </div>
               </div>
             ) : (
@@ -399,6 +470,14 @@ export const IntelPanel: React.FC = () => {
         </div>
       )}
 
+      {/* Injection Flash */}
+      {injectionFlash && (
+        <div className="flex-shrink-0 px-3 py-1.5 bg-emerald-500/10 border-t border-emerald-500/20 flex items-center gap-2 animate-pulse">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.6)]" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">{injectionFlash}</span>
+        </div>
+      )}
+
       {/* Action Bar */}
       {hasContent && (
         <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-t border-white/5 bg-black/20">
@@ -406,23 +485,26 @@ export const IntelPanel: React.FC = () => {
             <button
               onClick={sendToMission}
               title="Send to Mission"
-              className="p-1.5 rounded-md text-slate-600 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all"
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-slate-600 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all"
             >
-              <Target size={12} />
+              <Target size={11} />
+              <span className="text-[9px] font-black uppercase tracking-wider">Mission</span>
             </button>
             <button
               onClick={sendToOverseer}
               title="Send to Overseer"
-              className="p-1.5 rounded-md text-slate-600 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-slate-600 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
             >
-              <Shield size={12} />
+              <Shield size={11} />
+              <span className="text-[9px] font-black uppercase tracking-wider">Overseer</span>
             </button>
             <button
               onClick={sendToChat}
               title="Send to Chat"
-              className="p-1.5 rounded-md text-slate-600 hover:text-blue-400 hover:bg-blue-500/10 transition-all"
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-slate-600 hover:text-blue-400 hover:bg-blue-500/10 transition-all"
             >
-              <MessageSquare size={12} />
+              <MessageSquare size={11} />
+              <span className="text-[9px] font-black uppercase tracking-wider">Chat</span>
             </button>
           </div>
 
@@ -439,6 +521,8 @@ export const IntelPanel: React.FC = () => {
             {intelAmbientContext ? <Eye size={12} /> : <EyeOff size={12} />}
           </button>
         </div>
+      )}
+        </>
       )}
     </div>
   );

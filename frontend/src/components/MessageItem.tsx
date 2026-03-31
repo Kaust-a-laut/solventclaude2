@@ -7,6 +7,22 @@ import { CodeBlock } from './CodeBlock';
 import { cn } from '../lib/utils';
 import { ChatService } from '../services/ChatService';
 
+const ScoreChip = ({ score, signals }: { score: number; signals?: string[] }) => (
+  <span className="flex items-center gap-1 flex-wrap mt-0.5">
+    <span className={cn(
+      "text-[10px] font-mono px-1 py-0.5 rounded",
+      score >= 0.8 ? "bg-emerald-500/20 text-emerald-400" :
+      score >= 0.6 ? "bg-amber-500/20 text-amber-400" :
+      "bg-slate-500/20 text-slate-400"
+    )}>
+      {score.toFixed(2)}
+    </span>
+    {signals?.map((s, i) => (
+      <span key={i} className="text-[9px] text-slate-500 bg-white/5 px-1 rounded">{s}</span>
+    ))}
+  </span>
+);
+
 interface MessageItemProps {
   message: any;
   isUser: boolean;
@@ -198,16 +214,23 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                           <Shield size={10} />
                           <span>{message.provenance.counts.workspace} WORKSPACE</span>
                        </div>
-                       <div className="absolute bottom-full left-0 mb-2 w-64 hidden group-hover/hud:block z-50 animate-in fade-in slide-in-from-bottom-2">
-                          <div className="bg-black/90 border border-white/10 rounded-lg p-3 backdrop-blur-xl shadow-2xl">
-                             <div className="text-[11px] font-black text-slate-400 uppercase tracking-tighter mb-2 border-b border-white/10 pb-1">Active File Context</div>
-                             <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
-                                {message.provenance.workspaceFiles.map((file: string, i: number) => (
-                                   <div key={i} className="text-[11px] font-mono text-slate-300 truncate">/ {file}</div>
-                                ))}
-                             </div>
-                          </div>
-                       </div>
+                        <div className="absolute bottom-full left-0 mb-2 w-72 hidden group-hover/hud:block z-50 animate-in fade-in slide-in-from-bottom-2">
+                           <div className="bg-black/90 border border-white/10 rounded-lg p-3 backdrop-blur-xl shadow-2xl">
+                              <div className="text-[11px] font-black text-slate-400 uppercase tracking-tighter mb-2 border-b border-white/10 pb-1">
+                                 Active File Context
+                                 {message.provenance.promptTokens && (
+                                    <span className="ml-2 font-mono text-slate-500 normal-case">
+                                       {message.provenance.promptTokens.workspace} tok
+                                    </span>
+                                 )}
+                              </div>
+                              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                                 {message.provenance.workspaceFiles.map((file: string, i: number) => (
+                                    <div key={i} className="text-[11px] font-mono text-slate-300 truncate">/ {file}</div>
+                                 ))}
+                              </div>
+                           </div>
+                        </div>
                     </div>
                  )}
 
@@ -222,26 +245,27 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                           <div className="bg-black/90 border border-jb-accent/30 rounded-lg p-3 backdrop-blur-xl shadow-2xl">
                              <div className="text-[11px] font-black text-jb-accent uppercase tracking-tighter mb-2 border-b border-jb-accent/20 pb-1">Crystallized Memories</div>
                              <div className="space-y-2">
-                                {message.provenance.active.filter((p: any) => p.source === 'LOCAL').map((p: any, i: number) => (
-                                   <div key={i} className={cn(
-                                      "text-[11px] text-slate-300 leading-relaxed border-l border-jb-accent/30 pl-2 group/item relative",
-                                      deprecatedIds.has(p.id) && "opacity-40 line-through"
-                                   )}>
-                                      <div className="flex justify-between items-start gap-2">
-                                         <span className="text-jb-accent font-black uppercase text-[11px] block">{p.type}</span>
-                                         {!deprecatedIds.has(p.id) && (
-                                            <button 
-                                               onClick={() => handleDeprecate(p.id, p.text)}
-                                               className="opacity-0 group-hover/item:opacity-100 text-slate-500 hover:text-rose-400 transition-all p-0.5"
-                                               title="Kill this memory"
-                                            >
-                                               <Trash2 size={10} />
-                                            </button>
-                                         )}
-                                      </div>
-                                      {p.text}
-                                   </div>
-                                ))}
+                                 {message.provenance.active.filter((p: any) => p.source === 'LOCAL').map((p: any, i: number) => (
+                                    <div key={i} className={cn(
+                                       "text-[11px] text-slate-300 leading-relaxed border-l border-jb-accent/30 pl-2 group/item relative",
+                                       deprecatedIds.has(p.id) && "opacity-40 line-through"
+                                    )}>
+                                       <div className="flex justify-between items-start gap-2">
+                                          <span className="text-jb-accent font-black uppercase text-[11px] block">{p.type}</span>
+                                          {!deprecatedIds.has(p.id) && (
+                                             <button 
+                                                onClick={() => handleDeprecate(p.id, p.text)}
+                                                className="opacity-0 group-hover/item:opacity-100 text-slate-500 hover:text-rose-400 transition-all p-0.5"
+                                                title="Kill this memory"
+                                             >
+                                                <Trash2 size={10} />
+                                             </button>
+                                          )}
+                                       </div>
+                                       <ScoreChip score={p.score} />
+                                       {p.text}
+                                    </div>
+                                 ))}
                              </div>
                           </div>
                        </div>
@@ -265,30 +289,31 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                              <div className="text-[11px] font-black text-emerald-400 uppercase tracking-tighter mb-2 border-b border-emerald-500/20 pb-1">Universal Engineering Wisdom</div>
                              
                              <div className="space-y-3">
-                                {/* Active Patterns */}
-                                {message.provenance.active.filter((p: any) => p.source === 'GLOBAL').map((p: any, i: number) => (
-                                   <div key={i} className={cn(
-                                      "text-[11px] text-slate-200 leading-relaxed border-l-2 border-emerald-500 pl-2 group/item relative",
-                                      deprecatedIds.has(p.id) && "opacity-40 line-through"
-                                   )}>
-                                      <div className="flex justify-between items-start gap-2">
-                                         <span className="text-emerald-400 font-black uppercase text-[11px] flex items-center gap-1">
-                                            <div className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-                                            Active Pattern
-                                         </span>
-                                         {!deprecatedIds.has(p.id) && (
-                                            <button 
-                                               onClick={() => handleDeprecate(p.id, p.text)}
-                                               className="opacity-0 group-hover/item:opacity-100 text-slate-500 hover:text-rose-400 transition-all p-0.5"
-                                               title="Deprecate this pattern globally"
-                                            >
-                                               <Ban size={10} />
-                                            </button>
-                                         )}
-                                      </div>
-                                      {p.text}
-                                   </div>
-                                ))}
+                                 {/* Active Patterns */}
+                                 {message.provenance.active.filter((p: any) => p.source === 'GLOBAL').map((p: any, i: number) => (
+                                    <div key={i} className={cn(
+                                       "text-[11px] text-slate-200 leading-relaxed border-l-2 border-emerald-500 pl-2 group/item relative",
+                                       deprecatedIds.has(p.id) && "opacity-40 line-through"
+                                    )}>
+                                       <div className="flex justify-between items-start gap-2">
+                                          <span className="text-emerald-400 font-black uppercase text-[11px] flex items-center gap-1">
+                                             <div className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                                             Active Pattern
+                                          </span>
+                                          {!deprecatedIds.has(p.id) && (
+                                             <button 
+                                                onClick={() => handleDeprecate(p.id, p.text)}
+                                                className="opacity-0 group-hover/item:opacity-100 text-slate-500 hover:text-rose-400 transition-all p-0.5"
+                                                title="Deprecate this pattern globally"
+                                             >
+                                                <Ban size={10} />
+                                             </button>
+                                          )}
+                                       </div>
+                                       <ScoreChip score={p.score} />
+                                       {p.text}
+                                    </div>
+                                 ))}
 
                                 {/* Suppressed Conflicts */}
                                 {message.provenance.suppressed.filter((p: any) => p.source === 'GLOBAL').map((p: any, i: number) => (
@@ -307,17 +332,81 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                     </div>
                  )}
 
-                 {/* Rules Badge */}
-                 {message.provenance.counts.rules > 0 && (
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[11px] font-bold">
-                       <Shield size={10} />
-                       <span>{message.provenance.counts.rules} RULES</span>
-                    </div>
-                 )}
-              </div>
-           )}
-        </div>
-      </div>
-    </Root>
-  );
+                  {/* Rules Badge */}
+                  {message.provenance.counts.rules > 0 && (
+                     <div className="group/hud relative">
+                        <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[11px] font-bold cursor-help">
+                           <Shield size={10} />
+                           <span>{message.provenance.counts.rules} RULES</span>
+                        </div>
+                        <div className="absolute bottom-full left-0 mb-2 w-72 hidden group-hover/hud:block z-50 animate-in fade-in slide-in-from-bottom-2">
+                           <div className="bg-black/90 border border-amber-500/30 rounded-lg p-3 backdrop-blur-xl shadow-2xl">
+                              <div className="text-[11px] font-black text-amber-400 uppercase tracking-tighter mb-2 border-b border-amber-500/20 pb-1">
+                                 Active Rules
+                              </div>
+                              <div className="space-y-2">
+                                 {message.provenance.active.filter((p: any) => p.type === 'permanent_rule').map((p: any, i: number) => (
+                                    <div key={i} className="text-[11px] text-slate-300 border-l-2 border-amber-500/50 pl-2">
+                                       {p.text}
+                                    </div>
+                                 ))}
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  )}
+
+                  {/* Timing Chip */}
+                  {message.provenance.promptTokens && (
+                     <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/10 text-slate-500 text-[11px] font-mono">
+                        <span>{message.provenance.promptTokens.total.toLocaleString()} tok</span>
+                     </div>
+                  )}
+
+                  {/* Budget Bar */}
+                  {message.provenance.promptTokens && message.provenance.promptTokens.budget > 0 && (() => {
+                     const { total, budget, memory, rules, workspace, conversationHistory, systemPrompt } = message.provenance.promptTokens!;
+                     const pct = Math.min((total / budget) * 100, 100);
+                     const barColor = pct >= 95 ? 'bg-rose-500' : pct >= 85 ? 'bg-amber-500' : 'bg-emerald-500';
+                     return (
+                        <div className="group/budget relative w-full mt-1">
+                           <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden flex">
+                              <div className="h-full bg-blue-500/50" style={{ width: `${(memory/budget)*100}%` }} title="Memory" />
+                              <div className="h-full bg-purple-500/50" style={{ width: `${(rules/budget)*100}%` }} title="Rules" />
+                              <div className="h-full bg-emerald-500/50" style={{ width: `${(workspace/budget)*100}%` }} title="Workspace" />
+                              <div className="h-full bg-amber-500/50" style={{ width: `${(conversationHistory/budget)*100}%` }} title="History" />
+                              <div className="h-full bg-slate-500/50" style={{ width: `${(systemPrompt/budget)*100}%` }} title="System" />
+                           </div>
+                           <div className="absolute bottom-full left-0 mb-1 w-56 hidden group-hover/budget:block z-50">
+                              <div className="bg-black/90 border border-white/10 rounded-lg p-2 text-[10px] space-y-1">
+                                 {[
+                                    { label: 'Memory', val: memory, color: 'bg-blue-500' },
+                                    { label: 'Rules', val: rules, color: 'bg-purple-500' },
+                                    { label: 'Workspace', val: workspace, color: 'bg-emerald-500' },
+                                    { label: 'History', val: conversationHistory, color: 'bg-amber-500' },
+                                    { label: 'System', val: systemPrompt, color: 'bg-slate-500' },
+                                 ].map(({ label, val, color }) => (
+                                    <div key={label} className="flex items-center gap-2">
+                                       <div className={cn("w-2 h-2 rounded-sm", color)} />
+                                       <span className="text-slate-400 w-20">{label}</span>
+                                       <span className="font-mono text-slate-300">{val.toLocaleString()}</span>
+                                    </div>
+                                 ))}
+                                 <div className="border-t border-white/10 pt-1 flex justify-between">
+                                    <span className="text-slate-400">Total / Budget</span>
+                                    <span className={cn("font-mono", pct >= 95 ? 'text-rose-400' : pct >= 85 ? 'text-amber-400' : 'text-slate-300')}>
+                                       {total.toLocaleString()} / {budget.toLocaleString()}
+                                    </span>
+                                 </div>
+                              </div>
+                           </div>
+                        </div>
+                     );
+                  })()}
+               </div>
+            )}
+         </div>
+       </div>
+     </Root>
+   );
 };

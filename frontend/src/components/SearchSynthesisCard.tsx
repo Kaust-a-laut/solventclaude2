@@ -37,7 +37,7 @@ export const SearchSynthesisCard: React.FC<SynthesisCardProps> = ({ synthesis, i
     try { return new URL(url).hostname.replace('www.', ''); } catch { return url; }
   };
 
-  const visibleSources = synthesis.sources.slice(0, 4);
+  const visibleSources = synthesis.sources.slice(0, 6);
   const overflowCount = synthesis.sources.length - visibleSources.length;
 
   // Render answer with backtick code spans
@@ -45,7 +45,7 @@ export const SearchSynthesisCard: React.FC<SynthesisCardProps> = ({ synthesis, i
     const parts = text.split(/(`[^`]+`)/g);
     return parts.map((part, i) =>
       part.startsWith('`') && part.endsWith('`')
-        ? <code key={i} className="px-1.5 py-0.5 bg-white/5 text-emerald-300 text-xs rounded font-mono">{part.slice(1, -1)}</code>
+        ? <code key={i} className="px-1.5 py-0.5 bg-white/5 text-emerald-300 text-[13px] rounded font-mono">{part.slice(1, -1)}</code>
         : <span key={i}>{part}</span>
     );
   };
@@ -71,7 +71,7 @@ export const SearchSynthesisCard: React.FC<SynthesisCardProps> = ({ synthesis, i
       </div>
 
       {/* Answer body */}
-      <p className="text-sm text-slate-300 leading-relaxed mb-4">
+      <p className="text-[16px] text-slate-300 leading-[1.8] mb-4">
         {renderAnswer(synthesis.answer)}
       </p>
 

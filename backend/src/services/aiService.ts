@@ -1,8 +1,9 @@
 import { AIProviderFactory } from './aiProviderFactory';
 import { WaterfallService, WaterfallStep } from './waterfallService';
-import { contextService } from './contextService';
+import { contextService, getHarnessSnapshot } from './contextService';
 import { ChatRequestData, ChatMessage, CompletionOptions } from '../types/ai';
 import { randomUUID as uuidv4 } from 'crypto';
+import { traceLogger, RetrievalTrace } from './traceLogger';
 import path from 'path';
 import fs from 'fs/promises';
 import { SolventError } from '../utils/errors';
@@ -117,8 +118,49 @@ export class AIService {
       logger.info(`Processing chat request with provider: ${provider}, model: ${model}`);
 
       // 2. Enrich Context
+      const enrichStart = Date.now();
       const { messages: enrichedMessages, provenance } = await this.enrichContext(data);
+      const pipelineMs = Date.now() - enrichStart;
       const normalizedMessages = normalizeMessages(enrichedMessages);
+
+      // 2.1 Log retrieval trace (fire-and-forget — never blocks the response)
+      const trace: RetrievalTrace = {
+        id: uuidv4(),
+        ts: new Date().toISOString(),
+        responseId: uuidv4(), // Phase B will correlate this with the actual response id
+        sessionId: data.sessionId || 'unknown',
+        mode: data.mode || 'chat',
+        provider,
+        model,
+        query: data.messages[data.messages.length - 1]?.content?.slice(0, 500) || '',
+        harnessSnapshot: getHarnessSnapshot(),
+        active: provenance.active.map((p: any) => ({
+          id: p.id,
+          text: p.text.slice(0, 200),
+          type: p.type,
+          tier: (p as any).tier || '',
+          score: p.score,
+          source: p.source || '',
+          status: 'active' as const,
+        })),
+        suppressed: provenance.suppressed.map((p: any) => ({
+          id: p.id,
+          text: p.text.slice(0, 200),
+          type: p.type,
+          tier: (p as any).tier || '',
+          score: p.score,
+          reason: p.reason || 'unknown',
+          status: 'suppressed' as const,
+        })),
+        promptTokens: provenance.promptTokens ?? {
+          memory: 0, rules: 0, workspace: 0, conversationHistory: 0,
+          systemPrompt: 0, total: 0, budget: 0,
+        },
+        counts: provenance.counts,
+        pipelineMs,
+        outcome: null,
+      };
+      traceLogger.appendTrace(trace).catch(() => {}); // fire-and-forget
 
       // 2.5. Fit conversation to token budget (sliding window with summarization)
       const contextBudget = getContextBudget(model, maxTokens || 2048);

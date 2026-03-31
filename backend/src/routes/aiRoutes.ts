@@ -352,6 +352,9 @@ router.post('/overseer/reject', async (req, res) => {
   }
 });
 
+// ── Debug Traces ─────────────────────────────────────────────────────────────
+router.get('/debug/traces', AIController.getTraces);
+
 // ── Codebase Indexing ────────────────────────────────────────────────────────
 router.post('/codebase/index', async (req, res) => {
   try {

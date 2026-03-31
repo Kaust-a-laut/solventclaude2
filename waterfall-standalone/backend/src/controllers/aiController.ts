@@ -40,7 +40,7 @@ const chatRequestSchema = z.object({
       title: z.string(),
       link: z.string(),
       snippet: z.string().optional()
-    })).optional()
+    })).nullable().optional()
   }).optional()
 });
 
