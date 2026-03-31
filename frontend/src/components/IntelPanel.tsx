@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { ChatService } from '../services/ChatService';
 import { fetchWithRetry } from '../lib/api-client';
@@ -11,6 +11,10 @@ import { cn } from '../lib/utils';
 
 const URL_PATTERN = /^https?:\/\//i;
 
+function extractHostname(url: string): string {
+  try { return new URL(url).hostname; } catch { return url; }
+}
+
 export const IntelPanel: React.FC = () => {
   const {
     intelPanelContent, setIntelPanelContent,
@@ -18,15 +22,14 @@ export const IntelPanel: React.FC = () => {
     intelQAHistory, addIntelQAEntry, clearIntelQAHistory,
     intelRecentSearches, addIntelRecentSearch,
     setBrowserInjectedContext, setCurrentMode,
+    startConversation,
+    notepadContent,
   } = useAppStore();
 
   const [inputValue, setInputValue] = useState('');
   const [qaInput, setQaInput] = useState('');
   const [qaOpen, setQaOpen] = useState(false);
   const [qaLoading, setQaLoading] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const qaInputRef = useRef<HTMLInputElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = useCallback(async () => {
     const query = inputValue.trim();
@@ -58,15 +61,16 @@ export const IntelPanel: React.FC = () => {
 
   const handleResultClick = useCallback(async (url: string) => {
     setInputValue(url);
-    setIntelPanelContent({ type: 'reader', isLoading: true, query: url });
+    const prevSearchResults = intelPanelContent.searchResults;
+    setIntelPanelContent({ type: 'reader', isLoading: true, query: url, searchResults: prevSearchResults });
     clearIntelQAHistory();
     try {
       const pageContent = await ChatService.browse(url);
-      setIntelPanelContent({ type: 'reader', pageContent, query: url });
+      setIntelPanelContent({ type: 'reader', pageContent, query: url, searchResults: prevSearchResults });
     } catch {
-      setIntelPanelContent({ type: 'reader', pageContent: null, query: url, isLoading: false });
+      setIntelPanelContent({ type: 'reader', pageContent: null, query: url, isLoading: false, searchResults: prevSearchResults });
     }
-  }, [setIntelPanelContent, clearIntelQAHistory]);
+  }, [intelPanelContent, setIntelPanelContent, clearIntelQAHistory]);
 
   const handleQASubmit = useCallback(async () => {
     const question = qaInput.trim();
@@ -118,6 +122,28 @@ export const IntelPanel: React.FC = () => {
     setCurrentMode('chat');
   }, [buildContextString, setBrowserInjectedContext, setCurrentMode]);
 
+  const sendToMission = useCallback(() => {
+    const ctx = buildContextString();
+    if (!ctx) return;
+    startConversation(ctx, 'consultation');
+  }, [buildContextString, startConversation]);
+
+  const sendToOverseer = useCallback(async () => {
+    const ctx = buildContextString();
+    if (!ctx) return;
+    try {
+      await fetchWithRetry(`${API_BASE_URL}/overseer/trigger`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          focus: `Analyze this: ${intelPanelContent.query || 'page content'}`,
+          notepadContent: notepadContent + '\n\n--- Intel Context ---\n' + ctx.slice(0, 2000),
+          recentMessages: [],
+        }),
+      });
+    } catch { /* fire-and-forget */ }
+  }, [buildContextString, intelPanelContent.query, notepadContent]);
+
   const hasContent = intelPanelContent.type !== 'idle';
   const relevanceColor = (score: number) =>
     score >= 80 ? 'text-emerald-400' : score >= 50 ? 'text-amber-400' : 'text-slate-600';
@@ -129,7 +155,6 @@ export const IntelPanel: React.FC = () => {
         <div className="flex items-center gap-2 bg-black/40 rounded-lg border border-white/5 px-3 py-1.5">
           <Globe size={12} className="text-slate-600 shrink-0" />
           <input
-            ref={inputRef}
             type="text"
             value={inputValue}
             onChange={e => setInputValue(e.target.value)}
@@ -148,7 +173,7 @@ export const IntelPanel: React.FC = () => {
       </div>
 
       {/* Content Area */}
-      <div ref={contentRef} className="flex-1 overflow-y-auto no-scrollbar px-3">
+      <div className="flex-1 overflow-y-auto no-scrollbar px-3">
         {/* Idle State */}
         {intelPanelContent.type === 'idle' && (
           <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
@@ -212,7 +237,7 @@ export const IntelPanel: React.FC = () => {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <span className="text-[9px] font-mono text-slate-700 block truncate">
-                      {(() => { try { return new URL(result.link).hostname; } catch { return result.link; } })()}
+                      {extractHostname(result.link)}
                     </span>
                     <span className="text-[11px] text-slate-300 font-bold block truncate group-hover:text-white transition-colors">
                       {result.title}
@@ -329,7 +354,7 @@ export const IntelPanel: React.FC = () => {
             className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-black uppercase text-slate-600 hover:text-white transition-colors tracking-widest"
           >
             <span>Ask</span>
-            {qaOpen ? <ChevronDown size={10} /> : <ChevronUp size={10} />}
+            {qaOpen ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
           </button>
 
           {qaOpen && (
@@ -353,7 +378,6 @@ export const IntelPanel: React.FC = () => {
               {/* Q&A Input */}
               <div className="flex items-center gap-2 bg-black/40 rounded-lg border border-white/5 px-2 py-1">
                 <input
-                  ref={qaInputRef}
                   type="text"
                   value={qaInput}
                   onChange={e => setQaInput(e.target.value)}
@@ -380,35 +404,14 @@ export const IntelPanel: React.FC = () => {
         <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-t border-white/5 bg-black/20">
           <div className="flex items-center gap-1">
             <button
-              onClick={() => {
-                const ctx = buildContextString();
-                if (!ctx) return;
-                const store = useAppStore.getState();
-                store.startConversation(ctx, 'research');
-              }}
+              onClick={sendToMission}
               title="Send to Mission"
               className="p-1.5 rounded-md text-slate-600 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all"
             >
               <Target size={12} />
             </button>
             <button
-              onClick={async () => {
-                const ctx = buildContextString();
-                if (!ctx) return;
-                const store = useAppStore.getState();
-                try {
-                  await fetchWithRetry(`${API_BASE_URL}/overseer/trigger`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      focus: `Analyze this: ${intelPanelContent.query || 'page content'}`,
-                      notepadContent: store.notepadContent + '\n\n--- Intel Context ---\n' + ctx.slice(0, 2000),
-                      recentMessages: [],
-                    }),
-                    retries: 1,
-                  });
-                } catch { /* overseer trigger is fire-and-forget */ }
-              }}
+              onClick={sendToOverseer}
               title="Send to Overseer"
               className="p-1.5 rounded-md text-slate-600 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
             >
