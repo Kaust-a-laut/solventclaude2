@@ -153,6 +153,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
     fileTreeVisible, setFileTreeVisible,
     chatPanelVisible, setChatPanelVisible,
     terminalVisible, setTerminalVisible,
+    intelAmbientContext, intelPanelContent,
   } = useAppStore();
 
   const [view, setView] = useState<'dash' | 'notes' | 'overseer' | 'missions' | 'waterfall' | 'code' | 'intel'>('dash');
@@ -230,19 +231,27 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
   const triggerOverseer = useCallback(async (focus?: string) => {
     setIsThinking(true);
     try {
+      let enrichedNotepad = notepadContent;
+      if (intelAmbientContext && intelPanelContent.type !== 'idle') {
+        if (intelPanelContent.type === 'reader' && intelPanelContent.pageContent) {
+          enrichedNotepad += `\n\n--- Intel Context ---\n${intelPanelContent.pageContent.title}: ${intelPanelContent.pageContent.content.slice(0, 1000)}`;
+        } else if (intelPanelContent.type === 'search' && intelPanelContent.searchResults?.synthesis) {
+          enrichedNotepad += `\n\n--- Intel Context ---\nSearch "${intelPanelContent.query}": ${intelPanelContent.searchResults.synthesis.answer.slice(0, 500)}`;
+        }
+      }
       await fetchWithRetry(`${API_BASE_URL}/overseer/trigger`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           focus: focus || 'manual_check',
-          notepadContent,
+          notepadContent: enrichedNotepad,
           recentMessages: messages.slice(-8),
         }),
         retries: 1,
       });
     } catch { /* non-fatal */ }
     finally { setIsThinking(false); }
-  }, [notepadContent, messages]);
+  }, [notepadContent, messages, intelAmbientContext, intelPanelContent]);
 
   const launchMission = useCallback(async () => {
     if (!missionGoal.trim()) return;

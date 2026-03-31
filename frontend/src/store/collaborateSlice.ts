@@ -68,8 +68,21 @@ export const createCollaborateSlice: StateCreator<AppState, [], [], CollaborateS
   collaborateAbortController: null,
 
   startConversation: async (goal: string, missionType: string) => {
-    const { collaborateAbortController } = get();
+    const { collaborateAbortController, intelAmbientContext, intelPanelContent } = get();
     if (collaborateAbortController) collaborateAbortController.abort();
+
+    // Append ambient intel context if enabled
+    let enrichedGoal = goal;
+    if (intelAmbientContext && intelPanelContent.type !== 'idle') {
+      let intelSummary = '';
+      if (intelPanelContent.type === 'reader' && intelPanelContent.pageContent) {
+        const p = intelPanelContent.pageContent;
+        intelSummary = `\n\n[Intel Context] ${p.title} (${p.url}): ${p.content.slice(0, 500)}`;
+      } else if (intelPanelContent.type === 'search' && intelPanelContent.searchResults?.synthesis) {
+        intelSummary = `\n\n[Intel Context] Search "${intelPanelContent.query}": ${intelPanelContent.searchResults.synthesis.answer.slice(0, 500)}`;
+      }
+      if (intelSummary) enrichedGoal += intelSummary;
+    }
 
     const controller = new AbortController();
 
@@ -91,7 +104,7 @@ export const createCollaborateSlice: StateCreator<AppState, [], [], CollaborateS
           'Content-Type': 'application/json',
           'X-Solvent-Secret': secret,
         },
-        body: JSON.stringify({ goal, missionType }),
+        body: JSON.stringify({ goal: enrichedGoal, missionType }),
         signal: controller.signal,
       });
 
