@@ -4,6 +4,7 @@ import { ChatService } from '../services/ChatService';
 import { fetchWithRetry } from '../lib/api-client';
 import { API_BASE_URL } from '../lib/config';
 import { TraceList } from './TraceList';
+import { HarnessOptimizerPanel } from './HarnessOptimizerPanel';
 import {
   Globe, Search, ArrowLeft, Send, ChevronUp, ChevronDown,
   Eye, EyeOff, Loader2, Target, Shield, MessageSquare,
@@ -32,7 +33,7 @@ export const IntelPanel: React.FC = () => {
   const [qaOpen, setQaOpen] = useState(false);
   const [qaLoading, setQaLoading] = useState(false);
   const [injectionFlash, setInjectionFlash] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'search' | 'traces'>('search');
+  const [activeTab, setActiveTab] = useState<'search' | 'traces' | 'optimize'>('search');
 
   const handleSubmit = useCallback(async () => {
     const query = inputValue.trim();
@@ -199,9 +200,22 @@ export const IntelPanel: React.FC = () => {
         >
           Traces
         </button>
+        <button
+          onClick={() => setActiveTab('optimize')}
+          className={cn(
+            "flex-1 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors",
+            activeTab === 'optimize'
+              ? "text-white border-b-2 border-white"
+              : "text-slate-500 hover:text-slate-300"
+          )}
+        >
+          Optimize
+        </button>
       </div>
 
-      {activeTab === 'traces' ? (
+      {activeTab === 'optimize' ? (
+        <HarnessOptimizerPanel />
+      ) : activeTab === 'traces' ? (
         <TraceList />
       ) : (
         <>

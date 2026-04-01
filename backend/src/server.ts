@@ -25,6 +25,7 @@ import settingsRoutes from './routes/settingsRoutes';
 import memoryRoutes from './routes/memoryRoutes';
 import agentRoutes from './routes/agentRoutes';
 import healthRoutes from './routes/healthRoutes';
+import harnessRoutes from './routes/harnessRoutes';
 
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -284,6 +285,7 @@ app.use('/api/v1', aiRoutes);
 app.use('/api/v1/agent', agentRoutes);
 app.use('/api/v1', healthRoutes);
 app.use('/api/v1', memoryRoutes);
+app.use('/api/v1', harnessRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/debug', debugRoutes);
 app.use('/api/settings', settingsRoutes);
