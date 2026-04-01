@@ -30,6 +30,7 @@ export interface ChatParams {
   thinkingModeEnabled?: boolean;
   imageProvider?: string;
   activeFile?: string | null;
+  sessionId?: string | null;
 }
 
 export class ChatService {
@@ -136,7 +137,8 @@ export class ChatService {
         apiKeys,
         thinkingModeEnabled,
         imageProvider,
-        activeFile: activeFile || undefined
+        activeFile: activeFile || undefined,
+        sessionId: params.sessionId || undefined
       }),
       retries: 3
     }) as any;
@@ -169,7 +171,8 @@ export class ChatService {
       info: data.info,
       isGeneratedImage: data.isGeneratedImage,
       imageUrl: imageUrl,
-      provenance: data.provenance // Pass through the provenance metadata
+      provenance: data.provenance,
+      traceId: data.traceId
     };
   }
 
