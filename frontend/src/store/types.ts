@@ -50,6 +50,7 @@ export interface Message {
   isGeneratedImage?: boolean;
   imageUrl?: string;
   provenance?: ContextProvenance; // Tracking where the AI drew its context from
+  traceId?: string;
 }
 
 export interface OverseerDecision {

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Bot, Download, ChevronRight, Shield, Cloud, BrainCircuit, Brain, Trash2, Ban } from 'lucide-react';
+import { User, Bot, Download, ChevronRight, Shield, Cloud, BrainCircuit, Brain, Trash2, Ban, ThumbsDown } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { CodeBlock } from './CodeBlock';
 import { cn } from '../lib/utils';
 import { ChatService } from '../services/ChatService';
+import { updateTraceOutcome } from '../lib/api-client';
 
 const ScoreChip = ({ score, signals }: { score: number; signals?: string[] }) => (
   <span className="flex items-center gap-1 flex-wrap mt-0.5">
@@ -38,6 +39,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
 }) => {
   const [showThinking, setShowThinking] = useState(false);
   const [deprecatedIds, setDeprecatedIds] = useState<Set<string>>(new Set());
+  const [correctionSent, setCorrectionSent] = useState(false);
 
   const handleDeprecate = async (id: string, text: string) => {
     if (!window.confirm(`Are you sure you want to deprecate this wisdom? It will be removed from all future sessions.\n\n"${text.substring(0, 100)}..."`)) return;
@@ -404,6 +406,28 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                      );
                   })()}
                </div>
+            )}
+
+            {/* Thumbs-down correction signal */}
+            {!isUser && message.traceId && (
+               <button
+                  onClick={async () => {
+                     if (correctionSent) return;
+                     await updateTraceOutcome(message.traceId!, 'correction');
+                     setCorrectionSent(true);
+                  }}
+                  className={cn(
+                     'mt-2 flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded transition-colors',
+                     correctionSent
+                        ? 'text-red-400 bg-red-500/10 cursor-default'
+                        : 'text-slate-500 hover:text-red-400 hover:bg-red-500/10 cursor-pointer'
+                  )}
+                  title={correctionSent ? 'Marked as correction' : 'Mark retrieval as incorrect'}
+                  disabled={correctionSent}
+               >
+                  <ThumbsDown className="w-3 h-3" />
+                  <span>{correctionSent ? 'correction flagged' : 'flag'}</span>
+               </button>
             )}
          </div>
        </div>

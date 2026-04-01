@@ -72,7 +72,8 @@ export const createActionSlice: StateCreator<AppState, [], [], ActionSlice> = (s
         apiKeys: state.apiKeys,
         thinkingModeEnabled: state.thinkingModeEnabled,
         imageProvider: state.imageProvider,
-        activeFile: state.activeFile
+        activeFile: state.activeFile,
+        sessionId: state.currentSessionId
       }, finalContent, image);
 
       if (result.updatedNotepad) {
@@ -85,7 +86,8 @@ export const createActionSlice: StateCreator<AppState, [], [], ActionSlice> = (s
         model: result.model,
         isGeneratedImage: result.isGeneratedImage,
         imageUrl: result.imageUrl,
-        provenance: result.provenance // Attach provenance to the message
+        provenance: result.provenance,
+        traceId: result.traceId
       }, state.currentMode);
 
       if (result.isGeneratedImage && result.imageUrl) {

@@ -177,6 +177,7 @@ export interface TraceFilter {
   mode?: string;
   since?: string;
   outcome?: string;
+  sessionId?: string;
 }
 
 export async function getTraces(filter: TraceFilter = {}): Promise<any[]> {
@@ -187,6 +188,7 @@ export async function getTraces(filter: TraceFilter = {}): Promise<any[]> {
   if (filter.mode) params.set('mode', filter.mode);
   if (filter.since) params.set('since', filter.since);
   if (filter.outcome) params.set('outcome', filter.outcome);
+  if (filter.sessionId) params.set('sessionId', filter.sessionId);
 
   const url = `${API_BASE_URL}/debug/traces${params.toString() ? '?' + params.toString() : ''}`;
   try {
@@ -200,4 +202,102 @@ export async function getTraces(filter: TraceFilter = {}): Promise<any[]> {
   } catch {
     return [];
   }
+}
+
+export async function updateTraceOutcome(
+  traceId: string,
+  outcome: 'correction' | 'crystallized' | 'rerequested' | 'accepted'
+): Promise<void> {
+  const { API_BASE_URL } = await import('./config');
+  try {
+    const secret = await getSecret();
+    await fetch(`${API_BASE_URL}/debug/traces/${traceId}/outcome`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'X-Solvent-Secret': secret },
+      body: JSON.stringify({ outcome }),
+    });
+  } catch {
+    // Fire-and-forget from UI — silently swallow network errors
+  }
+}
+
+export interface OptimizationConfig {
+  maxIterations?: number;
+  candidatesPerIteration?: number;
+  searchSetQuery?: string;
+  minTraceCount?: number;
+}
+
+export async function startOptimization(config: OptimizationConfig = {}): Promise<any> {
+  const { API_BASE_URL } = await import('./config');
+  try {
+    const secret = await getSecret();
+    const res = await fetch(`${API_BASE_URL}/harness/optimize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Solvent-Secret': secret },
+      body: JSON.stringify(config),
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function cancelOptimization(runId: string): Promise<boolean> {
+  const { API_BASE_URL } = await import('./config');
+  try {
+    const secret = await getSecret();
+    const res = await fetch(`${API_BASE_URL}/harness/optimize/${runId}/cancel`, {
+      method: 'POST',
+      headers: { 'X-Solvent-Secret': secret },
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function getOptimizationRun(runId: string): Promise<any | null> {
+  const { API_BASE_URL } = await import('./config');
+  try {
+    const secret = await getSecret();
+    const res = await fetch(`${API_BASE_URL}/harness/runs/${runId}`, {
+      headers: { 'X-Solvent-Secret': secret },
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function listOptimizationRuns(): Promise<any[]> {
+  const { API_BASE_URL } = await import('./config');
+  try {
+    const secret = await getSecret();
+    const res = await fetch(`${API_BASE_URL}/harness/runs`, {
+      headers: { 'X-Solvent-Secret': secret },
+    });
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
+}
+
+export function subscribeToOptimizationRun(runId: string, onUpdate: (run: any) => void): () => void {
+  const { API_BASE_URL } = require('./config');
+  const url = `${API_BASE_URL}/harness/runs/${runId}/stream`;
+  const evtSource = new EventSource(url);
+  evtSource.onmessage = (event) => {
+    if (event.data === '[DONE]') {
+      evtSource.close();
+      return;
+    }
+    try {
+      onUpdate(JSON.parse(event.data));
+    } catch { /* ignore parse errors */ }
+  };
+  return () => evtSource.close();
 }

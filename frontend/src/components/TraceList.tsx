@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getTraces, TraceFilter } from '../lib/api-client';
+import { getTraces, updateTraceOutcome, TraceFilter } from '../lib/api-client';
 import { cn } from '../lib/utils';
 import { GitCompare, ChevronDown, ChevronRight } from 'lucide-react';
 
@@ -29,6 +29,26 @@ const REASON_COLORS: Record<string, string> = {
   token_budget: 'text-purple-400 bg-purple-500/10',
   conflict: 'text-red-400 bg-red-500/10',
 };
+
+const OUTCOME_STYLES: Record<string, string> = {
+  accepted:     'bg-emerald-500/20 text-emerald-400',
+  crystallized: 'bg-blue-500/20 text-blue-400',
+  rerequested:  'bg-amber-500/20 text-amber-400',
+  correction:   'bg-red-500/20 text-red-400',
+};
+const OUTCOME_LABELS: Record<string, string> = {
+  accepted: '✓ accepted', crystallized: '✓ crystallized',
+  rerequested: '↩ rerequested', correction: '✗ correction',
+};
+
+function OutcomeBadge({ outcome }: { outcome: string | null }) {
+  if (!outcome) return <span className="text-slate-600 text-[10px] font-mono">—</span>;
+  return (
+    <span className={`text-[10px] font-mono px-1 py-0.5 rounded ${OUTCOME_STYLES[outcome] ?? 'bg-slate-500/20 text-slate-400'}`}>
+      {OUTCOME_LABELS[outcome] ?? outcome}
+    </span>
+  );
+}
 
 function BudgetBar({ pt }: { pt: TraceRow['promptTokens'] }) {
   if (!pt || pt.budget === 0) return null;
@@ -208,6 +228,7 @@ export const TraceList: React.FC = () => {
                       <span className="font-mono">{trace.promptTokens.total.toLocaleString()}/{trace.promptTokens.budget.toLocaleString()} tok</span>
                     )}
                     <span>{trace.pipelineMs}ms</span>
+                    <OutcomeBadge outcome={trace.outcome} />
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -281,14 +302,26 @@ export const TraceList: React.FC = () => {
                     </div>
                   </details>
 
-                  {/* Outcome badge */}
-                  <div className="text-[10px] text-slate-600">
-                    Outcome: <span className={cn(
-                      "ml-1 px-1 rounded",
-                      trace.outcome ? 'text-blue-400 bg-blue-500/10' : 'text-slate-600'
-                    )}>
-                      {trace.outcome ?? '—'}
-                    </span>
+                  {/* Outcome badge + manual override */}
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-[10px] text-slate-500">Outcome:</span>
+                    <OutcomeBadge outcome={trace.outcome} />
+                    <select
+                      className="text-[10px] bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-slate-300"
+                      value={trace.outcome ?? ''}
+                      onChange={async (e) => {
+                        const val = e.target.value as 'correction' | 'crystallized' | 'rerequested' | 'accepted';
+                        if (!val) return;
+                        await updateTraceOutcome(trace.id, val);
+                        setTraces(prev => prev.map(t => t.id === trace.id ? { ...t, outcome: val } : t));
+                      }}
+                    >
+                      <option value="">— set outcome —</option>
+                      <option value="accepted">accepted</option>
+                      <option value="correction">correction</option>
+                      <option value="crystallized">crystallized</option>
+                      <option value="rerequested">rerequested</option>
+                    </select>
                   </div>
                 </div>
               )}

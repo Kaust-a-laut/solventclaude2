@@ -3,6 +3,14 @@ import { aiService } from './aiService';
 import { AIProviderFactory } from './aiProviderFactory';
 
 // Mock dependencies
+vi.mock('fs/promises', () => ({
+  default: {
+    mkdir: vi.fn().mockResolvedValue(undefined),
+    writeFile: vi.fn().mockResolvedValue(undefined),
+  },
+  mkdir: vi.fn().mockResolvedValue(undefined),
+  writeFile: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock('./aiProviderFactory');
 vi.mock('./searchService');
 vi.mock('./contextService', () => ({
@@ -62,7 +70,6 @@ describe('AIService', () => {
   });
 
   it('should detect image generation intent', async () => {
-    // In processChat, it calls this.generateImage which might call pollinationsService
     const mockGemini = { 
       id: 'gemini',
       complete: vi.fn().mockRejectedValue(new Error('direct gemini image fail')),
@@ -74,7 +81,8 @@ describe('AIService', () => {
       messages: [{ role: 'user', content: 'generate an image of a cat' }],
       mode: 'vision',
       provider: 'gemini',
-      model: 'gemini-1.5-flash'
+      model: 'gemini-1.5-flash',
+      imageProvider: 'pollinations'
     };
 
     const result = await aiService.processChat(data);
