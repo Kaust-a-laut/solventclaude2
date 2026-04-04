@@ -50,6 +50,9 @@ export class VectorService {
   // LRU Cache Configuration
   private readonly MAX_CACHE_SIZE = config.MEMORY_CACHE_SIZE;
 
+  // Embedding circuit breakers
+  private geminiEmbedFailed = false;
+
   // Secondary Indices
   public typeIndex: Map<string, Set<string>> = new Map();
   public tagIndex: Map<string, Set<string>> = new Map();
@@ -460,36 +463,39 @@ export class VectorService {
       this.embeddingCache.delete(text);
     }
 
-    // Try Gemini first
-    try {
-      const genAI = this.getGenAI();
-      const model = genAI.getGenerativeModel(
-        { model: "text-embedding-004" },
-        { apiVersion: "v1" }
-      );
-      const result = await model.embedContent(text);
-      const values = result.embedding.values;
+    // Try Gemini first (fast API, <1s for chat queries; skip if circuit breaker tripped)
+    if (!this.geminiEmbedFailed) {
+      try {
+        const genAI = this.getGenAI();
+        const model = genAI.getGenerativeModel(
+          { model: "gemini-embedding-001" },
+        );
+        const result = await model.embedContent(text);
+        // gemini-embedding-001 outputs 3072 dims; truncate to 768 (Matryoshka embeddings)
+        const values = result.embedding.values.slice(0, 768);
 
-      memoryMetrics.recordCacheMiss();
-      this.cacheEmbedding(text, values);
+        memoryMetrics.recordCacheMiss();
+        this.cacheEmbedding(text, values);
 
-      return values;
-    } catch (err: unknown) {
-      logger.warn('[VectorService] Gemini embedding failed, trying Ollama fallback:', err instanceof Error ? err.message : String(err));
+        return values;
+      } catch (err: unknown) {
+        this.geminiEmbedFailed = true;
+        logger.warn('[VectorService] Gemini embedding failed (will skip future attempts), trying Ollama fallback:', err instanceof Error ? err.message : String(err));
+      }
     }
 
-    // Fallback to Ollama
+    // Fallback to Ollama (free, local, native 768 dims)
     try {
       const values = await this.ollama!.embed(text);
       memoryMetrics.recordCacheMiss();
       this.cacheEmbedding(text, values);
       return values;
     } catch (err: unknown) {
-      logger.warn('[VectorService] Ollama embedding failed, using zero vector:', err instanceof Error ? err.message : String(err));
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.warn('[VectorService] Ollama embedding also failed:', msg);
     }
 
     // Last resort: zero vector
-    logger.warn('[VectorService] All embedding sources failed, using zero vector');
     return new Array(768).fill(0);
   }
 
@@ -514,44 +520,67 @@ export class VectorService {
     });
 
     if (missingTexts.length > 0) {
-      // Try Gemini batch first
+      let ollamaBatchOk = false;
+
+      // Try Ollama batch first (free, local, native 768 dims — single API call)
       try {
-        const genAI = this.getGenAI();
-        const model = genAI.getGenerativeModel(
-          { model: "text-embedding-004" },
-          { apiVersion: "v1" }
-        );
-
-        // Google SDK batchEmbedContents
-        const batchSize = 100; // API limit usually
-        for (let i = 0; i < missingTexts.length; i += batchSize) {
-          const chunk = missingTexts.slice(i, i + batchSize);
-          const response = await model.batchEmbedContents({
-            requests: chunk.map(t => ({ content: { role: 'user', parts: [{ text: t }] } }))
-          });
-
-          response.embeddings.forEach((emb, j) => {
-            const originalIndex = missingIndices[i + j]!;
-            results[originalIndex] = emb.values;
-            this.cacheEmbedding(chunk[j]!, emb.values);
-          });
+        const batchVectors = await this.ollama!.batchEmbed(missingTexts);
+        for (let i = 0; i < missingTexts.length; i++) {
+          const originalIndex = missingIndices[i]!;
+          results[originalIndex] = batchVectors[i]!;
+          this.cacheEmbedding(missingTexts[i]!, batchVectors[i]!);
         }
+        ollamaBatchOk = true;
       } catch (err: unknown) {
-        logger.warn('[VectorService] Gemini batch embedding failed, falling back to Ollama:', err instanceof Error ? err.message : String(err));
+        const msg = err instanceof Error ? err.message : String(err);
+        logger.warn('[VectorService] Ollama batch embedding failed, trying Gemini fallback:', msg);
+      }
 
-        // Fallback: Process remaining with Ollama individually
+      // Fallback to Gemini batch (skip if previously failed)
+      if (!ollamaBatchOk && !this.geminiEmbedFailed) {
+        try {
+          const genAI = this.getGenAI();
+          const model = genAI.getGenerativeModel(
+            { model: "gemini-embedding-001" },
+          );
+
+          const batchSize = 100;
+          for (let i = 0; i < missingTexts.length; i += batchSize) {
+            // Skip items already embedded by Ollama
+            const chunk: string[] = [];
+            const chunkOriginalIndices: number[] = [];
+            for (let j = i; j < Math.min(i + batchSize, missingTexts.length); j++) {
+              const origIdx = missingIndices[j]!;
+              if (!results[origIdx]) {
+                chunk.push(missingTexts[j]!);
+                chunkOriginalIndices.push(origIdx);
+              }
+            }
+            if (chunk.length === 0) continue;
+
+            const response = await model.batchEmbedContents({
+              requests: chunk.map(t => ({ content: { role: 'user', parts: [{ text: t }] } }))
+            });
+
+            response.embeddings.forEach((emb, j) => {
+              // gemini-embedding-001 outputs 3072 dims; truncate to 768 (Matryoshka)
+              const values = emb.values.slice(0, 768);
+              results[chunkOriginalIndices[j]!] = values;
+              this.cacheEmbedding(chunk[j]!, values);
+            });
+          }
+        } catch (err: unknown) {
+          this.geminiEmbedFailed = true;
+          logger.warn('[VectorService] Gemini batch embedding also failed (will skip future attempts):', err instanceof Error ? err.message : String(err));
+        }
+      }
+
+      // Fill any remaining gaps with zero vectors
+      {
         for (let i = 0; i < missingTexts.length; i++) {
           const originalIndex = missingIndices[i]!;
           if (!results[originalIndex]) {
-            try {
-              const text = missingTexts[i]!;
-              const values = await this.ollama!.embed(text);
-              results[originalIndex] = values;
-              this.cacheEmbedding(text, values);
-            } catch (ollamaErr: unknown) {
-              logger.warn('[VectorService] Ollama embedding failed for batch item, using zero vector:', ollamaErr instanceof Error ? ollamaErr.message : String(ollamaErr));
-              results[originalIndex] = new Array(768).fill(0);
-            }
+            results[originalIndex] = new Array(768).fill(0);
           }
         }
       }
