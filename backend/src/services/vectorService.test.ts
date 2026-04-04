@@ -131,4 +131,35 @@ describe('Embedding Cache Persistence', () => {
     expect(elapsed).toBeLessThan(50); // Should be near-instant from cache
     expect(result).toHaveLength(768);
   });
+
+  it('should persist and reload embedding cache from disk', async () => {
+    // Manually inject a cached embedding
+    const testVector = new Array(768).fill(0).map((_, i) => i / 768);
+    (vectorService as any).embeddingCache.set('persist_test_text', {
+      vector: testVector,
+      lastAccess: Date.now(),
+      dirty: true
+    });
+
+    // Persist to disk
+    await vectorService.persistEmbeddingCache();
+
+    // Clear in-memory cache
+    (vectorService as any).embeddingCache.clear();
+    expect((vectorService as any).embeddingCache.size).toBe(0);
+
+    // Reload from disk
+    await (vectorService as any).loadEmbeddingCache();
+
+    // Verify round-trip
+    const reloaded = (vectorService as any).embeddingCache.get('persist_test_text');
+    expect(reloaded).toBeDefined();
+    expect(reloaded.vector).toEqual(testVector);
+    expect(reloaded.dirty).toBe(false); // Loaded entries should be clean
+
+    // Clean up the test cache file
+    const cachePath = (vectorService as any).embeddingCachePath;
+    const fsPromises = await import('fs/promises');
+    await fsPromises.unlink(cachePath).catch(() => {});
+  });
 });
