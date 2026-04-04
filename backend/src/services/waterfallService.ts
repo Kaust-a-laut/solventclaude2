@@ -199,11 +199,23 @@ ${fullPrompt}`;
     const history = [{ executor, reviewer }];
     const decisionLog: string[] = [];
 
-    while ((reviewer.score ?? 0) < 80 && attempts < maxRetries) {
+    // Hard gate: compilation failure forces retry regardless of score
+    const needsRetry = () => (reviewer.score ?? 0) < 80 || reviewer._compilationPassed === false;
+
+    while (needsRetry() && attempts < maxRetries) {
       if (signal?.aborted) throw new SolventError('Waterfall cancelled by user.', SolventErrorCode.OPERATION_CANCELLED);
       attempts++;
 
       const issues = Array.isArray(reviewer.issues) ? reviewer.issues : ['Review failed — please regenerate with higher quality'];
+
+      // Inject compilation failure as a critical issue if not already captured by the reviewer
+      if (reviewer._compilationPassed === false && reviewer.compilationStatus) {
+        const alreadyCaptured = issues.some((i: string) => /compil/i.test(i));
+        if (!alreadyCaptured) {
+          issues.unshift(`COMPILATION FAILED: ${reviewer.compilationStatus}. Code must compile cleanly before it can be accepted.`);
+        }
+      }
+
       const criticalIssues = issues.filter((i: string) => /compil|error|crash|security|inject/i.test(i));
       const majorIssues = issues.filter((i: string) => !criticalIssues.includes(i) && /missing|wrong|incorrect|broken/i.test(i));
       const minorIssues = issues.filter((i: string) => !criticalIssues.includes(i) && !majorIssues.includes(i));
@@ -229,10 +241,11 @@ ${fullPrompt}`;
 
       const feedback = feedbackParts.join('\n');
 
+      const compilNote = reviewer._compilationPassed === false ? ' (compilation failed)' : '';
       yield {
         phase: 'retrying',
-        message: `Score ${reviewer.score}/100. ${criticalIssues.length} critical, ${majorIssues.length} major issues. Attempt ${attempts}...`,
-        data: { issues: reviewer.issues, reviewer, attempt: attempts, criticalCount: criticalIssues.length, majorCount: majorIssues.length }
+        message: `Score ${reviewer.score}/100${compilNote}. ${criticalIssues.length} critical, ${majorIssues.length} major issues. Attempt ${attempts}...`,
+        data: { issues: reviewer.issues, reviewer, attempt: attempts, criticalCount: criticalIssues.length, majorCount: majorIssues.length, compilationPassed: reviewer._compilationPassed }
       };
 
       executor = await this.runExecutorWithContext(reasoner, sessionContext, reasonerHandoff, feedback, signal, modelSelection);
@@ -354,21 +367,17 @@ ${userPrompt}
 
 Output a JSON object with this exact shape:
 {
-  "logic": "NUMBERED SECTIONS, one per file/component. Each section names the file path, every class with constructor params and method signatures (name, params, return type), data flow between components, and edge case handling. This is a spec — the Executor implements it verbatim.",
-  "assumptions": ["Every assumption about the environment, existing code, or requirements — minimum 4 items"],
-  "keyDecisions": ["Each decision as 'X over Y because Z' — minimum 6 items covering algorithm, data structure, error strategy, module boundary, dependency, and API surface choices"],
+  "logic": "NUMBERED SECTIONS, one per file/component. Each section: file path, classes with constructor params and method signatures, data flow, edge case handling.",
+  "assumptions": ["Environment/dependency assumptions — minimum 4"],
+  "keyDecisions": ["'X over Y because Z' — minimum 6, covering algorithm, data structure, error strategy, module boundary, dependency, API surface"],
   "complexity": "low|medium|high",
-  "techStack": ["Technologies, frameworks, and libraries — include specific packages with versions if known, not just categories"]
+  "techStack": ["Specific packages with versions"]
 }
 
-── Example output (for a different task: "Add rate-limiting middleware") ──
-{
-  "logic": "1. FILE STRUCTURE — Create src/middleware/rateLimiter.ts containing all rate limiting logic, plus registration in src/server.ts.\\n\\n2. TYPES AND INTERFACES — Define interface RateLimitResult { allowed: boolean; remaining: number; retryAfter: number } and interface RateLimiterConfig { windowMs: number; maxRequests: number; keyPrefix?: string }. Export both for consumer use.\\n\\n3. RATELIMITER CLASS (src/middleware/rateLimiter.ts) — export class RateLimiter with constructor(private redis: Redis, private config: RateLimiterConfig). Method async check(key: string): Promise<RateLimitResult> — implements sliding window via a Lua script that atomically calls ZREMRANGEBYSCORE to prune expired entries, ZCARD to count current, conditionally ZADD if under limit, and PEXPIRE to set TTL. The Lua script returns [allowed (0|1), count, oldestTimestamp]. Method builds RateLimitResult from the Lua return values.\\n\\n4. LUA SCRIPT — Store as const SLIDING_WINDOW_LUA at module scope. Script takes KEYS[1]=rateLimit key, ARGV[1]=now, ARGV[2]=windowMs, ARGV[3]=maxRequests, ARGV[4]=memberId. Prune: ZREMRANGEBYSCORE key 0 (now-windowMs). Count: ZCARD key. If count < max: ZADD key now memberId, PEXPIRE key windowMs. Return {1, max-count-1, 0}. Else: get oldest via ZRANGE key 0 0 WITHSCORES, compute retryAfter = oldest+windowMs-now. Return {0, 0, retryAfter}.\\n\\n5. MIDDLEWARE FACTORY — export function createRateLimiter(config: Partial<RateLimiterConfig>): RequestHandler. Reads RATE_LIMIT_WINDOW_MS and RATE_LIMIT_MAX from process.env with config overrides. Creates Redis connection via new Redis(process.env.REDIS_URL). Instantiates RateLimiter. Returns async (req, res, next) that calls limiter.check(req.ip), sets X-RateLimit-Remaining header, responds 429 with Retry-After header and JSON {error, retryAfter} on denial.\\n\\n6. ERROR HANDLING — If Redis is unreachable, the middleware MUST fail open (call next()) and log the error via winston. This prevents a Redis outage from taking down the API. The RateLimiter.check() method wraps the eval call in try/catch and returns {allowed: true, remaining: -1, retryAfter: 0} on Redis errors.\\n\\n7. REGISTRATION — In src/server.ts, import createRateLimiter and add app.use('/api/', createRateLimiter()) BEFORE route mounts. This ensures all API routes are rate-limited but static assets are not.",
-  "assumptions": ["Redis 6+ already available as session store on REDIS_URL", "API gateway does not already handle rate limiting", "Express 4.x with TypeScript, strict mode enabled", "winston logger already configured in src/utils/logger.ts", "The application runs behind a reverse proxy, so req.ip is the real client IP (trust proxy is set)"],
-  "keyDecisions": ["Redis sorted sets over in-memory Map because horizontal scaling across service instances requires shared state", "Lua script over MULTI/EXEC pipeline because Lua executes atomically on the Redis thread, eliminating TOCTOU between ZCARD check and ZADD insert", "Sliding window over fixed window because fixed windows allow burst-boundary abuse (2x burst at window edges)", "Middleware factory pattern over decorator to stay consistent with existing Express middleware chain in src/server.ts", "Fail-open on Redis errors over fail-closed because a Redis outage should not make the entire API unavailable", "req.ip over custom header extraction because Express trust proxy is already configured and handles X-Forwarded-For parsing"],
-  "complexity": "medium",
-  "techStack": ["Express.js 4.x", "ioredis 5.x (already in package.json)", "TypeScript 5.x (strict mode)", "Lua scripting (Redis EVAL)", "winston (existing logger)"]
-}`
+Example keyDecision: "Redis sorted sets over in-memory Map because horizontal scaling requires shared state"
+Example assumption: "Express 4.x with TypeScript strict mode enabled"
+Example logic section: "1. FILE: src/rateLimiter.ts — class RateLimiter(redis: Redis, config: Config). Method check(key: string): Promise<Result> — sliding window via Lua ZREMRANGEBYSCORE+ZCARD+ZADD. 2. FILE: src/server.ts — register middleware before route mounts."
+`
     }];
 
     // Architect needs more tokens with enhanced prompts — detailed logic field can be 3000+ tokens
@@ -426,41 +435,26 @@ DEPTH REQUIREMENTS — The Executor implements your plan as a literal spec:
 7. If the Architect specified Lua scripts, algorithms, or non-trivial logic, reproduce the KEY PARTS in your step description (pseudocode or actual code). The Executor should not need to re-derive algorithms.
 8. You must produce at LEAST one step per file the Architect described. If the Architect described 8 files, you need at least 8 steps (plus any setup/test steps).
 
-═══ ORIGINAL REQUIREMENT ═══
-${sessionContext.originalRequirement.substring(0, 1000)}
+═══ ORIGINAL REQUIREMENT (for reference) ═══
+${sessionContext.originalRequirement.substring(0, 400)}
 
 ${handoffContext}
 
-═══ ARCHITECT'S DECISIONS (Step 1 Output) ═══
-${sessionContext.architectDecisions}
-
-═══ FULL ARCHITECT OUTPUT ═══
+═══ ARCHITECT OUTPUT ═══
 ${logicStr}
 
-Your job: Translate the Architect's blueprint into a precise, ordered execution plan. Flag any open questions the Executor needs to resolve. Carry forward every key decision — the Executor should not need to re-derive anything you already know.
+Translate the blueprint into an ordered execution plan. Carry forward every key decision verbatim. Flag open questions for the Executor.
 
 Output JSON:
 {
-  "plan": "One-paragraph summary of the full implementation — what is being built, how many files, which technologies, and the overall architecture pattern",
-  "steps": [{"title": "Short action title", "description": "SELF-CONTAINED spec: file path, every public class/function/type with signatures, algorithm details or pseudocode for non-trivial logic, expected behavior, and how it connects to other components. The Executor reads this as the sole source of truth for this file."}],
-  "carriedDecisions": ["Every key decision from the Architect, copied VERBATIM — do not paraphrase, do not drop any. Count must match the Architect's keyDecisions count."],
-  "openQuestions": ["Anything the Executor must decide locally — keep this list short, max 2-3 items"]
+  "plan": "One-paragraph summary — what is being built, how many files, technologies, architecture pattern",
+  "steps": [{"title": "Short action title", "description": "SELF-CONTAINED spec: file path, public classes/functions/types with signatures, algorithm details, expected behavior, connections to other components."}],
+  "carriedDecisions": ["Every Architect key decision, copied VERBATIM — count must match"],
+  "openQuestions": ["Max 2-3 items the Executor must decide locally"]
 }
 
-── Example output (for a different task: "Add rate-limiting middleware") ──
-{
-  "plan": "Implement Redis-backed sliding-window rate limiter as Express middleware across 2 files (src/middleware/rateLimiter.ts, src/server.ts) using ioredis and a Lua script for atomic check-and-increment, with env-var configuration, 429 response with Retry-After header, fail-open error handling, and an integration test.",
-  "steps": [
-    {"title": "Install dependencies", "description": "npm install ioredis && npm install -D @types/ioredis — do NOT use express-rate-limit (Architect chose custom Lua implementation over the library for atomic Lua-based counting)"},
-    {"title": "Create RateLimiter class and types", "description": "src/middleware/rateLimiter.ts — Define and export interface RateLimitResult { allowed: boolean; remaining: number; retryAfter: number }. Define and export interface RateLimiterConfig { windowMs: number; maxRequests: number; keyPrefix?: string }. Export class RateLimiter with constructor(private redis: Redis, private config: RateLimiterConfig). Method async check(key: string): Promise<RateLimitResult> — builds Redis key as config.keyPrefix + ':' + key, calls this.redis.eval(SLIDING_WINDOW_LUA, 1, redisKey, Date.now(), config.windowMs, config.maxRequests, uniqueMemberId). The Lua script (const at module scope): ZREMRANGEBYSCORE key 0 (now-windowMs) to prune, ZCARD key to count, if count < max then ZADD key now memberId and PEXPIRE key windowMs and return {1, max-count-1, 0}, else ZRANGE key 0 0 WITHSCORES to get oldest and return {0, 0, oldest+windowMs-now}. Wrap the eval call in try/catch — on Redis error, log via console.error and return {allowed: true, remaining: -1, retryAfter: 0} (fail-open per Architect decision)."},
-    {"title": "Create middleware factory", "description": "Same file — export function createRateLimiter(config?: Partial<RateLimiterConfig>): RequestHandler. Merge config with env-var defaults: windowMs = config?.windowMs ?? parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), maxRequests = config?.maxRequests ?? parseInt(process.env.RATE_LIMIT_MAX || '100'). Create Redis connection: new Redis(process.env.REDIS_URL). Instantiate RateLimiter(redis, mergedConfig). Return async (req, res, next) => { const result = await limiter.check(req.ip); res.set('X-RateLimit-Remaining', String(result.remaining)); if (!result.allowed) { res.set('Retry-After', String(Math.ceil(result.retryAfter / 1000))); return res.status(429).json({error: 'Too Many Requests', retryAfter: result.retryAfter}); } next(); }"},
-    {"title": "Register in server", "description": "src/server.ts — import { createRateLimiter } from './middleware/rateLimiter'. Add app.use('/api/', createRateLimiter()) BEFORE app.use('/api', routes) — this ensures all API routes are rate-limited but static asset routes are not."},
-    {"title": "Add env vars", "description": ".env.example — add RATE_LIMIT_WINDOW_MS=900000 and RATE_LIMIT_MAX=100 with inline comments explaining defaults (15-minute window, 100 requests)"},
-    {"title": "Integration test", "description": "tests/rateLimiter.test.ts — import { RateLimiter } from '../src/middleware/rateLimiter'. Test 1: send maxRequests+1 calls to limiter.check('test-ip'), assert first maxRequests return allowed=true, last returns allowed=false with retryAfter > 0. Test 2: verify Retry-After header is present on 429 response. Test 3: mock Redis.eval to throw, verify check() returns allowed=true (fail-open). Use a test Redis instance on REDIS_URL_TEST."}
-  ],
-  "carriedDecisions": ["Redis sorted sets over in-memory Map because horizontal scaling across service instances requires shared state", "Lua script over MULTI/EXEC pipeline because Lua executes atomically on the Redis thread, eliminating TOCTOU between ZCARD check and ZADD insert", "Sliding window over fixed window because fixed windows allow burst-boundary abuse (2x burst at window edges)", "Middleware factory pattern over decorator to stay consistent with existing Express middleware chain in src/server.ts", "Fail-open on Redis errors over fail-closed because a Redis outage should not make the entire API unavailable", "req.ip over custom header extraction because Express trust proxy is already configured"],
-  "openQuestions": ["Should 429 body include remaining retry time in milliseconds in addition to Retry-After header (which is in seconds)?"]
-}`;
+Example step: {"title": "Create RateLimiter class", "description": "src/middleware/rateLimiter.ts — export class RateLimiter(redis: Redis, config: Config). Method check(key: string): Promise<Result> uses Lua ZREMRANGEBYSCORE+ZCARD+ZADD. Fail-open on Redis errors per Architect decision."}
+Example carriedDecision: "Redis sorted sets over in-memory Map because horizontal scaling requires shared state"`;
 
     const messages = [{ role: 'user' as const, content: prompt }];
     const reasonerMaxTokens = 4096;
@@ -498,16 +492,13 @@ CRITICAL RULES:
 4. The "code" field is a single string containing all source code. Use file-separator comments (e.g. "// ═══ src/foo.ts ═══") to delimit multiple files within the string.
 5. Respond with ONLY the JSON object. No markdown fences, no preamble, no explanation outside the JSON.
 
-═══ ORIGINAL REQUIREMENT ═══
-${sessionContext.originalRequirement.substring(0, 800)}
-
 ${handoffContext}
 
-═══ DECISION CHAIN SUMMARY ═══
+═══ DECISION CHAIN ═══
 [Architect] ${sessionContext.architectDecisions}
 [Reasoner] ${sessionContext.reasonerDecisions}
 
-═══ FULL EXECUTION PLAN (from Reasoner) ═══
+═══ EXECUTION PLAN (from Reasoner) ═══
 ${planStr}`;
 
     if (feedback) {
@@ -518,27 +509,17 @@ ${planStr}`;
 ╚══════════════════════════════════════════╝
 ${feedback}
 
-Every issue listed above must be explicitly fixed in this revision. Do not resubmit code with unresolved reviewer findings.`;
+Every issue listed above must be explicitly fixed in this revision.`;
     }
 
     prompt += `
 
 Output JSON:
 {
-  "code": "Complete, production-ready source code — not illustrative snippets",
-  "explanation": "Brief summary of implementation approach and any non-obvious choices",
-  "files": ["List of files created or modified"],
-  "decisionsOverridden": ["If you deviated from any carried decision, document it here with justification — empty array if none"]
-}
-
-IMPORTANT: The "code" field must contain COMPLETE source code. Do NOT truncate with "// ..." or "// TODO". Every function must have a full implementation body. Use "// ═══ filename ═══" comments to separate multiple files within the single code string.
-
-── Example output (for a different task: "Add rate-limiting middleware") ──
-{
-  "code": "// ═══ src/middleware/rateLimiter.ts ═══\nimport Redis from 'ioredis';\nimport { RequestHandler } from 'express';\n\nconst LUA_SLIDING_WINDOW = [\n  'local key = KEYS[1]',\n  'local now = tonumber(ARGV[1])',\n  'local windowMs = tonumber(ARGV[2])',\n  'local max = tonumber(ARGV[3])',\n  'redis.call(\"ZREMRANGEBYSCORE\", key, 0, now - windowMs)',\n  'redis.call(\"ZADD\", key, now, now .. \"-\" .. math.random(1000000))',\n  'local count = redis.call(\"ZCARD\", key)',\n  'redis.call(\"PEXPIRE\", key, windowMs)',\n  'return count'\n].join('\\n');\n\nexport class RateLimiter {\n  constructor(private redis: Redis) {}\n  async check(key: string, windowMs: number, max: number) {\n    const now = Date.now();\n    const count = await this.redis.call('EVAL', LUA_SLIDING_WINDOW, '1', key, String(now), String(windowMs), String(max)) as number;\n    return { allowed: count <= max, remaining: Math.max(0, max - count), retryAfter: count <= max ? 0 : Math.ceil(windowMs / 1000) };\n  }\n}\n\nexport function createRateLimiter(config: {windowMs?: number; max?: number} = {}): RequestHandler {\n  const windowMs = config.windowMs ?? parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10);\n  const max = config.max ?? parseInt(process.env.RATE_LIMIT_MAX || '100', 10);\n  const redis = new Redis(process.env.REDIS_URL);\n  const limiter = new RateLimiter(redis);\n  return async (req, res, next) => {\n    const result = await limiter.check('rl:' + req.ip, windowMs, max);\n    res.set('X-RateLimit-Remaining', String(result.remaining));\n    if (!result.allowed) { res.set('Retry-After', String(result.retryAfter)); return res.status(429).json({error: 'Too Many Requests', retryAfter: result.retryAfter}); }\n    next();\n  };\n}",
-  "explanation": "Redis-backed sliding window rate limiter using Lua script for atomic ZADD+ZREMRANGEBYSCORE+ZCARD. Factory function returns Express middleware. Config from env vars with sensible defaults. Returns 429 with Retry-After header.",
-  "files": ["src/middleware/rateLimiter.ts", "src/server.ts"],
-  "decisionsOverridden": []
+  "code": "Complete, compilable source code. Use '// ═══ filename ═══' to separate files. No truncation, no '// ...' placeholders.",
+  "explanation": "Brief summary of approach and non-obvious choices",
+  "files": ["Files created or modified"],
+  "decisionsOverridden": ["Deviations from carried decisions with justification — empty array if none"]
 }`;
 
     const messages = [{ role: 'user' as const, content: prompt }];
@@ -569,6 +550,7 @@ IMPORTANT: The "code" field must contain COMPLETE source code. Do NOT truncate w
     const phase = this.resolvePhase(WATERFALL_CONFIG.PHASE_4_REVIEWER!, modelSelection.reviewer);
 
     let compilationStatus = 'Not tested';
+    let compilationPassed = true;
     if (executorData.code) {
       if (signal?.aborted) throw new SolventError('Waterfall cancelled by user.', SolventErrorCode.OPERATION_CANCELLED);
       const tempFile = path.join(os.tmpdir(), `solvent_review_${randomUUID()}.ts`);
@@ -576,76 +558,73 @@ IMPORTANT: The "code" field must contain COMPLETE source code. Do NOT truncate w
       try {
         await fs.writeFile(tempFile, executorData.code, 'utf-8');
         const check = await toolService.executeTool('run_shell', { command: `npx tsc --noEmit --allowJs --esModuleInterop --skipLibCheck ${tempFile}` });
-        compilationStatus = check.stderr ? `Type Error: ${check.stderr}` : 'Syntax Validated (tsc --noEmit)';
+        if (check.stderr) {
+          compilationStatus = `Type Error: ${check.stderr}`;
+          compilationPassed = false;
+        } else {
+          compilationStatus = 'Syntax Validated (tsc --noEmit)';
+        }
       } catch (e: any) {
         compilationStatus = `Check Failed: ${e.message}`;
+        compilationPassed = false;
       } finally {
         await fs.unlink(tempFile).catch(() => {});
       }
     }
 
+    // Extract only the code and files list from executor — skip redundant explanation/decisions
+    const executorCode = executorData.code || '';
+    const executorFiles = Array.isArray(executorData.files) ? executorData.files.join(', ') : '';
+
+    // Extract carried decisions from reasoner for compliance checking
+    const carriedDecisions = Array.isArray(plan.carriedDecisions)
+      ? plan.carriedDecisions.map((d: string, i: number) => `  ${i + 1}. ${d}`).join('\n')
+      : sessionContext.reasonerDecisions;
+
     const prompt = [{
       role: 'user' as const,
-      content: `You are the Principal Engineer on a senior engineering team. You are Step 4 of a 4-step pipeline: Architect → Reasoner → Executor → [YOU: Reviewer].
+      content: `You are the Principal Engineer reviewing Step 3 (Executor) output in a 4-step pipeline: Architect → Reasoner → Executor → [YOU].
 
-You have visibility into the full decision chain. Your job is to audit whether the Executor faithfully implemented what the Architect and Reasoner designed, AND whether the code itself is correct, secure, and efficient.
+Audit whether the code faithfully implements the decision chain AND is correct, secure, and efficient.
 
-CRITICAL RULES:
-1. Be HONEST and SPECIFIC. A score of 95+ means near-perfect code with at most cosmetic issues. Most real implementations score 70-90.
-2. Every issue MUST be actionable: name the exact function, line, or pattern that is wrong and what the fix should be.
-3. Check every carriedDecision from the Reasoner — if the Executor dropped one, that is a compliance deduction.
-4. If the code is truncated or contains "// ..." placeholders, the syntax score is 0 and compliance is halved.
-5. Respond with ONLY the JSON object. No markdown fences, no preamble, no explanation outside the JSON.
+RULES:
+1. Be HONEST. Score 95+ = near-perfect (rare). Most real code scores 70-90.
+2. Every issue MUST be actionable: name the exact function/pattern and the fix.
+3. Check every carried decision — missed decision = compliance deduction.
+4. Truncated code or "// ..." placeholders = syntax score 0, compliance halved.
+5. Respond with ONLY the JSON object. No markdown fences, no preamble.
 
-SCORING CALIBRATION:
-- 90-100: Production-ready. All requirements met, all decisions honored, no bugs. Rare.
-- 75-89: Good implementation with minor issues (missing edge cases, non-critical bugs).
-- 50-74: Incomplete or has significant bugs. Missing major requirements.
-- 25-49: Fundamentally broken. Most requirements unmet, compilation fails.
-- 0-24: No usable code produced.
+SCORING: 90-100 production-ready | 75-89 good with minor issues | 50-74 significant bugs | 25-49 fundamentally broken | 0-24 no usable code
 
 ═══ ORIGINAL REQUIREMENT ═══
-${sessionContext.originalRequirement.substring(0, 600)}
+${sessionContext.originalRequirement.substring(0, 400)}
 
-═══ FULL DECISION CHAIN ═══
-[Step 1 — Architect] ${sessionContext.architectDecisions}
-[Step 2 — Reasoner] ${sessionContext.reasonerDecisions}
+═══ DECISION CHAIN ═══
+[Architect] ${sessionContext.architectDecisions}
+[Reasoner] ${sessionContext.reasonerDecisions}
 
-═══ EXECUTION PLAN (Step 2 Full Output) ═══
-${JSON.stringify(plan)}
+═══ CARRIED DECISIONS (check each one) ═══
+${carriedDecisions}
 
-═══ IMPLEMENTED CODE (Step 3 Output) ═══
-${JSON.stringify(executorData)}
+═══ IMPLEMENTED CODE ═══
+Files: ${executorFiles}
+
+${executorCode}
 
 ═══ COMPILATION CHECK ═══
 ${compilationStatus}
 
-RUBRIC (100 pts total):
-1. Decision Chain Compliance (40 pts): Does the code implement EVERY Architect key decision AND EVERY Reasoner carried decision? Check them one by one. Each missed decision = -5 pts. Each missing Reasoner step = -10 pts.
-2. Security (20 pts): Hardcoded secrets, injection risks, unsafe imports, exposed internals, or missing input validation on external boundaries?
-3. Efficiency (20 pts): Is the code performant and idiomatic? Are there unnecessary allocations, missing caching, or O(n²) where O(n) is possible?
-4. Syntax/Compilation (20 pts): Does it pass the syntax check? Are all imports present? Any undefined references?
+RUBRIC (100 pts): Compliance (40) — each missed decision -5, each missing step -10. Security (20) — secrets, injection, unsafe imports. Efficiency (20) — performance, idiom. Syntax (20) — compilation, imports, references.
 
 Output JSON:
 {
-  "score": <total 0-100 — be honest, most code scores 70-90>,
+  "score": <0-100>,
   "breakdown": { "compliance": <0-40>, "security": <0-20>, "efficiency": <0-20>, "syntax": <0-20> },
-  "issues": ["Specific, actionable: 'Function X in file Y has bug Z — should be fixed by doing W'"],
-  "decisionsHonored": ["List each carried decision and confirm it was implemented correctly"],
-  "summary": "One-paragraph verdict — lead with the most critical finding",
+  "issues": ["Actionable: 'Function X has bug Y — fix by doing Z'"],
+  "decisionsHonored": ["Each carried decision and whether it was implemented"],
+  "summary": "One-paragraph verdict — lead with most critical finding",
   "compilationStatus": "${compilationStatus}",
-  "crystallizable_insight": "If score > 90: a concise reusable architectural pattern from this success. Otherwise null."
-}
-
-── Example output (for a different task: "Add rate-limiting middleware") ──
-{
-  "score": 82,
-  "breakdown": {"compliance": 32, "security": 18, "efficiency": 17, "syntax": 15},
-  "issues": ["RateLimiter.check() uses Date.now() instead of Redis TIME — violates Architect's decision to use server time for clock skew mitigation", "Missing input validation on RATE_LIMIT_MAX — non-numeric env var produces NaN, bypassing limiter entirely", "No test file generated despite Reasoner plan step 6 requiring integration test", "createRateLimiter() creates a new Redis connection per call — should accept injected client or use singleton"],
-  "decisionsHonored": ["Redis sorted sets for sliding window — correctly implemented via Lua script", "Middleware factory pattern — consistent with Express chain", "Sliding window over fixed window — correctly uses ZREMRANGEBYSCORE for time-based expiry"],
-  "summary": "Solid middleware with correct Lua-based sliding window, but uses client-side timestamps instead of Redis TIME (clock skew vulnerability), missing the integration test specified in the plan, and has an env var parsing bug that could disable the limiter. Fix the timestamp source and add input validation for a production-ready implementation.",
-  "compilationStatus": "Syntax Validated (node --check)",
-  "crystallizable_insight": null
+  "crystallizable_insight": "If score > 90: reusable pattern from this success. Otherwise null."
 }`
     }];
 
@@ -655,6 +634,7 @@ Output JSON:
       const primaryProvider = await AIProviderFactory.getProvider(phase.primary.provider);
       const response = await primaryProvider.complete(prompt, { model: phase.primary.model, jsonMode: true, maxTokens: reviewerMaxTokens, signal });
       const parsed = this.parseJSONResponse(response);
+      parsed._compilationPassed = compilationPassed;
 
       if (parsed.score > 90 && parsed.crystallizable_insight) {
         try {
@@ -676,13 +656,17 @@ Output JSON:
       const fbProvider = await AIProviderFactory.getProvider(phase.fallback.provider);
       try {
         const res = await fbProvider.complete(prompt, { model: phase.fallback.model, jsonMode: true, maxTokens: reviewerMaxTokens, signal });
-        return this.parseJSONResponse(res);
+        const parsed = this.parseJSONResponse(res);
+        parsed._compilationPassed = compilationPassed;
+        return parsed;
       } catch (e: any) {
         console.error(`[Waterfall:Reviewer] Fallback (${phase.fallback.provider}/${phase.fallback.model}) failed:`, e.message);
         if (signal?.aborted) throw e;
         const localProvider = await AIProviderFactory.getProvider('ollama');
         const res = await localProvider.complete(prompt, { model: phase.local, jsonMode: true, maxTokens: reviewerMaxTokens, signal });
-        return this.parseJSONResponse(res);
+        const parsed = this.parseJSONResponse(res);
+        parsed._compilationPassed = compilationPassed;
+        return parsed;
       }
     }
   }
