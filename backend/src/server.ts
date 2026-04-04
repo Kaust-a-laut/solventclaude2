@@ -275,7 +275,11 @@ app.use((req, res, next) => {
 
   const clientSecret = req.headers['x-solvent-secret'];
   if (!clientSecret || typeof clientSecret !== 'string' || !safeCompare(clientSecret, API_SECRET)) {
-    console.warn(`[SECURITY] Unauthorized request to ${req.path} from ${req.ip}`);
+    // Don't log browser noise (direct visits to backend URL)
+    const browserNoise = ['/', '/favicon.ico', '/robots.txt'];
+    if (!browserNoise.includes(req.path)) {
+      console.warn(`[SECURITY] Unauthorized request to ${req.path} from ${req.ip}`);
+    }
     return res.status(401).json({ error: 'Unauthorized: Invalid session secret' });
   }
   next();
