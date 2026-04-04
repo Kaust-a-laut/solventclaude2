@@ -199,27 +199,27 @@ export class VectorService {
 
   async persistEmbeddingCache() {
     try {
-      // Dirty-flag approach: Only persist entries that have been modified since last persist
-      const dirtyEntries = Array.from(this.embeddingCache.entries())
-        .filter(([_, data]) => data.dirty)
+      // Check if any dirty entries exist before writing; skip if nothing changed
+      const hasDirty = Array.from(this.embeddingCache.values()).some(v => v.dirty);
+      if (!hasDirty) {
+        logger.debug('[VectorService] No dirty entries to persist.');
+        return;
+      }
+
+      // Write ALL entries so a reload doesn't lose clean entries from a prior persist
+      const allEntries = Array.from(this.embeddingCache.entries())
         .map(([text, { vector, lastAccess }]) => ({
           text,
           vector,
           lastAccess
         }));
-      
-      if (dirtyEntries.length === 0) {
-        logger.debug('[VectorService] No dirty entries to persist.');
-        return;
-      }
-      
-      await AtomicFileSystem.writeJson(this.embeddingCachePath, dirtyEntries);
-      logger.info(`[VectorService] Persisted ${dirtyEntries.length} dirty embeddings to cache file.`);
-      
+
+      await AtomicFileSystem.writeJson(this.embeddingCachePath, allEntries);
+      logger.info(`[VectorService] Persisted ${allEntries.length} embeddings to cache file.`);
+
       // Mark all entries as clean after successful persist
-      for (const [text] of this.embeddingCache.entries()) {
-        const entry = this.embeddingCache.get(text);
-        if (entry) entry.dirty = false;
+      for (const entry of this.embeddingCache.values()) {
+        entry.dirty = false;
       }
     } catch (error) {
       logger.error('[VectorService] Failed to persist embedding cache', error);
@@ -609,11 +609,14 @@ export class VectorService {
     this.embeddingCache.set(text, { vector, lastAccess: Date.now(), dirty: true });
     memoryMetrics.updateCacheSize(this.embeddingCache.size);
 
-    // Periodic persistence using dirty-flag approach
+    // Periodic persistence: only trigger if the counter threshold is reached AND there are dirty entries
     this.cacheWriteCounter++;
     if (this.cacheWriteCounter >= this.CACHE_PERSIST_THRESHOLD) {
       this.cacheWriteCounter = 0;
-      this.persistEmbeddingCache().catch(e => logger.error('[VectorService] Cache persist failed', e));
+      const hasDirty = Array.from(this.embeddingCache.values()).some(v => v.dirty);
+      if (hasDirty) {
+        this.persistEmbeddingCache().catch(e => logger.error('[VectorService] Cache persist failed', e));
+      }
     }
   }
 
