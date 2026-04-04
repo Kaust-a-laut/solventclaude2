@@ -36,6 +36,7 @@ import { taskService, TaskQueue } from './services/taskService';
 import { SocketBatcher } from './lib/socketBatcher';
 import { SocketRateLimiter } from './utils/socketRateLimiter';
 import { codebaseIndexer } from './services/codebaseIndexer';
+import { vectorService } from './services/vectorService';
 
 // Timing-safe secret comparison to prevent timing attacks
 function safeCompare(a: string, b: string): boolean {
@@ -192,7 +193,7 @@ try {
 
   console.log('[Server] Mission progress bridge initialized');
 } catch (err) {
-  console.warn('[Server] Mission progress bridge unavailable (Redis may not be running):', err);
+  console.warn('[Server] Mission progress bridge unavailable (Redis not running — missions/task queue disabled)');
 }
 
 // --- Global Middleware ---
@@ -364,10 +365,8 @@ async function startServer(): Promise<void> {
     }
   });
 
-  // Start codebase indexing in background (non-blocking)
-  startCodebaseIndexing().catch(error => {
-    console.error('[Server] Background codebase indexing failed to start:', error);
-  });
+  // Codebase indexing disabled — Solvent should not index its own source code.
+  // Indexing will be triggered on-demand when a user uploads/opens a project.
 }
 
 startServer().catch(error => {
@@ -389,6 +388,13 @@ async function gracefulShutdown(signal: string): Promise<void> {
     logger.info('[Server] Codebase indexer stopped');
   } catch (error) {
     logger.warn('[Server] Error stopping codebase indexer', error);
+  }
+
+  try {
+    await vectorService.persistEmbeddingCache();
+    logger.info('[Server] Embedding cache flushed');
+  } catch (error) {
+    logger.warn('[Server] Error flushing embedding cache', error);
   }
 
   setTimeout(() => {
