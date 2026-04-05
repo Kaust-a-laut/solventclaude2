@@ -194,7 +194,7 @@ class ModelAvailabilityService {
 
     // Fetch model lists from all providers in parallel
     const providers = [...new Set([...presetModels.values()].map(m => m.provider))];
-    const results = await Promise.all(
+    await Promise.all(
       providers.map(async (provider) => {
         const models = await this.fetchProviderModels(provider);
         if (models === null) {
