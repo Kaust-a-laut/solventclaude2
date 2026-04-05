@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { API_BASE_URL } from '../lib/config';
+import { toast } from 'sonner';
 import { Sparkles, X, RotateCcw, FlaskConical, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
@@ -121,6 +122,31 @@ export const WaterfallArea = () => {
   const handleSwapModel = (stage: StageKey, model: string, provider: string) => {
     setWaterfallCustomStage(stage, { model, provider });
   };
+
+  // ── Toast notifications for model upgrades ────────────────────────────────
+  useEffect(() => {
+    if (upgradeSuggestions.length === 0) return;
+    const dismissed = getDismissedUpgrades();
+    const toShow = upgradeSuggestions
+      .filter(u => !dismissed.has(upgradeKey(u)))
+      .slice(0, 3);
+
+    const timer = setTimeout(() => {
+      for (const u of toShow) {
+        const k = upgradeKey(u);
+        toast.info(u.note, {
+          description: `Used by: ${u.usedInPresets.join(', ')}`,
+          duration: 8000,
+          action: {
+            label: 'Dismiss',
+            onClick: () => handleDismissUpgrade(k),
+          },
+        });
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [upgradeSuggestions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Stage timing tracking ──────────────────────────────────────────────────
   const stageStartTimes = useRef<Record<StageKey, number | null>>({

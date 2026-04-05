@@ -323,8 +323,8 @@ export const WaterfallPresetPicker = ({
   unavailableModels,
   upgradeSuggestions,
   dismissedKeys,
-  onDismissUpgrade,
-  onSwapModel,
+  onDismissUpgrade: _onDismissUpgrade,
+  onSwapModel: _onSwapModel,
 }: {
   unavailableModels: UnavailableModel[];
   upgradeSuggestions: UpgradeSuggestion[];
