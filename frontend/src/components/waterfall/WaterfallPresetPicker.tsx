@@ -224,13 +224,13 @@ const PresetCard = ({
           <div>
             <button
               onClick={(e) => { e.stopPropagation(); setShowSwapMenu(!showSwapMenu); }}
-              className="w-full flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-colors"
+              className="w-full flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/15 transition-colors"
             >
               <ArrowUpCircle size={11} className="text-blue-400 shrink-0" />
-              <span className="text-[11px] text-blue-400 font-semibold leading-tight flex-1 text-left">
+              <span className="text-[11px] text-slate-300 font-semibold leading-tight flex-1 text-left">
                 {upgrades.length === 1 ? `${upgrades[0]!.successorModel} available` : `${upgrades.length} upgrades available`}
               </span>
-              <ChevronDown size={10} className={cn('text-blue-400 transition-transform', showSwapMenu && 'rotate-180')} />
+              <ChevronDown size={10} className={cn('text-slate-500 transition-transform', showSwapMenu && 'rotate-180')} />
             </button>
             <AnimatePresence>
               {showSwapMenu && (
@@ -241,27 +241,45 @@ const PresetCard = ({
                   transition={{ duration: 0.15 }}
                   className="overflow-hidden"
                 >
-                  <div className="pt-2 space-y-1.5">
-                    {upgrades.map(u => (
-                      <div key={u.key} className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-white/[0.02] border border-white/[0.04]">
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[11px] text-slate-500 font-medium truncate">{u.stageLabel}: {u.currentModel}</div>
-                          <div className="text-[11px] text-blue-400 font-semibold truncate">→ {u.successorModel}</div>
+                  <div className="pt-2 space-y-2.5">
+                    {/* Group upgrades by stage */}
+                    {STAGE_ORDER.filter(stage => upgrades.some(u => u.stage === stage)).map(stage => {
+                      const cfg = STAGE_CONFIGS[stage];
+                      const Icon = cfg.icon;
+                      const stageUpgrades = upgrades.filter(u => u.stage === stage);
+                      return (
+                        <div key={stage}>
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <div className={cn('w-4 h-4 rounded flex items-center justify-center', cfg.bgColor)}>
+                              <Icon size={8} className={cfg.textColor} />
+                            </div>
+                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-wider">
+                              {cfg.displayName}
+                            </span>
+                          </div>
+                          {stageUpgrades.map(u => (
+                            <div key={u.key} className="flex items-center gap-2 px-2 py-1.5 ml-5 rounded-md bg-white/[0.02] border border-white/[0.04]">
+                              <div className="flex-1 min-w-0">
+                                <div className="text-[10px] text-slate-600 font-medium truncate">{u.currentModel}</div>
+                                <div className="text-[11px] text-slate-300 font-medium truncate">→ {u.successorModel}</div>
+                              </div>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); onSwapModel(u.stage, u.successorModel, u.successorProvider); onDismissUpgrade(u.key); }}
+                                className={cn('shrink-0 px-2 py-0.5 rounded-md border text-[10px] font-bold uppercase tracking-wider transition-colors', cfg.bgColor, cfg.textColor, 'border-white/10 hover:border-white/20')}
+                              >
+                                Use
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); onDismissUpgrade(u.key); }}
+                                className="shrink-0 px-1.5 py-0.5 rounded-md text-[10px] text-slate-700 font-medium hover:text-slate-400 transition-colors"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
                         </div>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onSwapModel(u.stage, u.successorModel, u.successorProvider); onDismissUpgrade(u.key); }}
-                          className="shrink-0 px-2 py-0.5 rounded-md bg-blue-500/15 border border-blue-500/25 text-[10px] text-blue-400 font-bold uppercase tracking-wider hover:bg-blue-500/25 transition-colors"
-                        >
-                          Use
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onDismissUpgrade(u.key); }}
-                          className="shrink-0 px-1.5 py-0.5 rounded-md text-[10px] text-slate-600 font-medium hover:text-slate-400 transition-colors"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </motion.div>
               )}
