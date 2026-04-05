@@ -1,12 +1,120 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { useAppStore } from '../../store/useAppStore';
 import { WATERFALL_PRESET_LIST, type WaterfallPresetMeta } from '../../lib/waterfallPresets';
 import { STAGE_CONFIGS, type StageKey } from './WaterfallStageCard';
-import { Layers, ChevronDown, Zap, Clock, Trophy, SlidersHorizontal } from 'lucide-react';
+import { Layers, ChevronDown, Zap, Clock, Trophy, SlidersHorizontal, AlertTriangle, ArrowUpCircle } from 'lucide-react';
+import { API_BASE_URL } from '../../lib/config';
 
 const STAGE_ORDER: StageKey[] = ['architect', 'reasoner', 'executor', 'reviewer'];
+
+// ─── Model availability types ──────────────────────────────────────────────
+
+interface UnavailableModel {
+  model: string;
+  provider: string;
+  available: boolean;
+  usedInPresets: string[];
+}
+
+interface UpgradeSuggestion {
+  current: { model: string; provider: string };
+  successor: { model: string; provider: string };
+  note: string;
+  usedInPresets: string[];
+}
+
+interface ModelScanResult {
+  scannedAt: string;
+  unavailable: UnavailableModel[];
+  upgrades: UpgradeSuggestion[];
+  scanErrors: string[];
+}
+
+function useModelAvailability() {
+  const [unavailableModels, setUnavailableModels] = useState<UnavailableModel[]>([]);
+  const [upgradeSuggestions, setUpgradeSuggestions] = useState<UpgradeSuggestion[]>([]);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/health/models`)
+      .then(res => res.ok ? res.json() : null)
+      .then((data: ModelScanResult | null) => {
+        if (data?.unavailable) setUnavailableModels(data.unavailable);
+        if (data?.upgrades) setUpgradeSuggestions(data.upgrades);
+      })
+      .catch(() => {});
+  }, []);
+
+  return { unavailableModels, upgradeSuggestions };
+}
+
+/** Check if a preset has any unavailable models, return list of affected stage labels */
+function getPresetWarnings(
+  preset: WaterfallPresetMeta,
+  unavailable: UnavailableModel[],
+): string[] {
+  if (unavailable.length === 0) return [];
+  const warnings: string[] = [];
+  for (const stage of STAGE_ORDER) {
+    const sel = preset.selection[stage];
+    if (typeof sel === 'object') {
+      const isDown = unavailable.some(u => u.provider === sel.provider && u.model === sel.model);
+      if (isDown) warnings.push(preset.stageLabels[stage]);
+    }
+  }
+  return warnings;
+}
+
+const DISMISS_KEY = 'solvent:dismissed-upgrades';
+
+function getDismissedUpgrades(): Set<string> {
+  try {
+    const raw = localStorage.getItem(DISMISS_KEY);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function dismissUpgrade(key: string) {
+  const dismissed = getDismissedUpgrades();
+  dismissed.add(key);
+  localStorage.setItem(DISMISS_KEY, JSON.stringify([...dismissed]));
+}
+
+function upgradeKey(u: UpgradeSuggestion): string {
+  return `${u.current.provider}:${u.current.model}→${u.successor.model}`;
+}
+
+/** Get non-dismissed upgrade suggestions for a preset, return list of { stageLabel, successorModel, note, key } */
+function getPresetUpgrades(
+  preset: WaterfallPresetMeta,
+  upgrades: UpgradeSuggestion[],
+  dismissed: Set<string>,
+): { stageLabel: string; successorModel: string; note: string; key: string }[] {
+  if (upgrades.length === 0) return [];
+  const results: { stageLabel: string; successorModel: string; note: string; key: string }[] = [];
+  for (const stage of STAGE_ORDER) {
+    const sel = preset.selection[stage];
+    if (typeof sel === 'object') {
+      for (const u of upgrades) {
+        if (u.current.provider === sel.provider && u.current.model === sel.model) {
+          const k = upgradeKey(u);
+          if (!dismissed.has(k)) {
+            results.push({
+              stageLabel: preset.stageLabels[stage],
+              successorModel: u.successor.model,
+              note: u.note,
+              key: k,
+            });
+          }
+        }
+      }
+    }
+  }
+  return results;
+}
 
 // ─── Score badge color ──────────────────────────────────────────────────────
 
@@ -32,12 +140,18 @@ const PresetCard = ({
   isExpanded,
   onSelect,
   onToggleExpand,
+  warnings,
+  upgrades,
+  onDismissUpgrade,
 }: {
   preset: WaterfallPresetMeta;
   isSelected: boolean;
   isExpanded: boolean;
   onSelect: () => void;
   onToggleExpand: () => void;
+  warnings: string[];
+  upgrades: { stageLabel: string; successorModel: string; note: string; key: string }[];
+  onDismissUpgrade: (key: string) => void;
 }) => {
   const badge = scoreBadge(preset.score, preset.tier);
   const spd = speedIcon(preset.speed);
@@ -78,6 +192,26 @@ const PresetCard = ({
           </div>
         </div>
 
+        {/* Unavailability warning */}
+        {warnings.length > 0 && (
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <AlertTriangle size={11} className="text-amber-400 shrink-0" />
+            <span className="text-[11px] text-amber-400 font-medium leading-tight">
+              {warnings.length === 1 ? `${warnings[0]} offline` : `${warnings.length} models offline`}
+            </span>
+          </div>
+        )}
+
+        {/* Upgrade suggestions */}
+        {upgrades.length > 0 && (
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-sky-500/10 border border-sky-500/20">
+            <ArrowUpCircle size={11} className="text-sky-400 shrink-0" />
+            <span className="text-[11px] text-sky-400 font-medium leading-tight flex-1">
+              {upgrades.length === 1 ? `${upgrades[0]!.successorModel} available` : `${upgrades.length} upgrades available`}
+            </span>
+          </div>
+        )}
+
         {/* Expand toggle */}
         {isSelected && (
           <button
@@ -105,6 +239,7 @@ const PresetCard = ({
                 const cfg = STAGE_CONFIGS[stage];
                 const Icon = cfg.icon;
                 const label = preset.stageLabels[stage];
+                const isOffline = warnings.includes(label);
                 return (
                   <div key={stage} className="flex items-center gap-2.5">
                     <div className={cn('w-5 h-5 rounded flex items-center justify-center', cfg.bgColor)}>
@@ -113,7 +248,15 @@ const PresetCard = ({
                     <span className="text-[12px] font-black text-slate-600 uppercase tracking-wider w-20">
                       {cfg.displayName}
                     </span>
-                    <span className="text-[12px] text-slate-400 font-medium">{label}</span>
+                    <span className={cn('text-[12px] font-medium', isOffline ? 'text-amber-400 line-through decoration-amber-500/40' : 'text-slate-400')}>
+                      {label}
+                    </span>
+                    {isOffline && <AlertTriangle size={10} className="text-amber-400" />}
+                    {upgrades.filter(u => u.stageLabel === label).map(u => (
+                      <span key={u.key} className="flex items-center gap-1 text-[11px] text-sky-400 font-medium">
+                        <ArrowUpCircle size={9} /> {u.successorModel}
+                      </span>
+                    ))}
                   </div>
                 );
               })}
@@ -222,6 +365,13 @@ export const WaterfallPresetPicker = () => {
 
   const [expandedPreset, setExpandedPreset] = useState<string | null>(null);
   const [showCustom, setShowCustom] = useState(waterfallPresetKey === 'custom');
+  const { unavailableModels, upgradeSuggestions } = useModelAvailability();
+  const [dismissedKeys, setDismissedKeys] = useState<Set<string>>(() => getDismissedUpgrades());
+
+  const handleDismissUpgrade = (key: string) => {
+    dismissUpgrade(key);
+    setDismissedKeys(prev => new Set([...prev, key]));
+  };
 
   const topPresets = WATERFALL_PRESET_LIST.filter(p => p.tier === 'top');
   const otherPresets = WATERFALL_PRESET_LIST.filter(p => p.tier !== 'top');
@@ -273,6 +423,9 @@ export const WaterfallPresetPicker = () => {
               isExpanded={expandedPreset === preset.key}
               onSelect={() => handleSelect(preset.key)}
               onToggleExpand={() => setExpandedPreset(expandedPreset === preset.key ? null : preset.key)}
+              warnings={getPresetWarnings(preset, unavailableModels)}
+              upgrades={getPresetUpgrades(preset, upgradeSuggestions, dismissedKeys)}
+              onDismissUpgrade={handleDismissUpgrade}
             />
           ))}
         </div>
@@ -283,6 +436,8 @@ export const WaterfallPresetPicker = () => {
             {otherPresets.map((preset) => {
               const badge = scoreBadge(preset.score, preset.tier);
               const isSelected = waterfallPresetKey === preset.key;
+              const otherWarnings = getPresetWarnings(preset, unavailableModels);
+              const otherUpgrades = getPresetUpgrades(preset, upgradeSuggestions, dismissedKeys);
               return (
                 <button
                   key={preset.key}
@@ -294,6 +449,8 @@ export const WaterfallPresetPicker = () => {
                       : 'bg-white/[0.02] border-white/[0.06] text-slate-500 hover:text-slate-300 hover:border-white/15',
                   )}
                 >
+                  {otherWarnings.length > 0 && <AlertTriangle size={11} className="text-amber-400" />}
+                  {otherUpgrades.length > 0 && <ArrowUpCircle size={11} className="text-sky-400" />}
                   {preset.name}
                   <span className={cn('text-[12px] font-mono', badge.text)}>{badge.label}</span>
                 </button>
