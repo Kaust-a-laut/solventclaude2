@@ -553,22 +553,43 @@ Output JSON:
     let compilationPassed = true;
     if (executorData.code) {
       if (signal?.aborted) throw new SolventError('Waterfall cancelled by user.', SolventErrorCode.OPERATION_CANCELLED);
-      const tempFile = path.join(os.tmpdir(), `solvent_review_${randomUUID()}.ts`);
+
+      // Split multi-file code blocks into separate temp files so cross-file
+      // imports resolve correctly. Falls back to single-file for non-split code.
+      const tempDir = path.join(os.tmpdir(), `solvent_review_${randomUUID()}`);
 
       try {
-        await fs.writeFile(tempFile, executorData.code, 'utf-8');
-        const check = await toolService.executeTool('run_shell', { command: `npx tsc --noEmit --allowJs --esModuleInterop --skipLibCheck ${tempFile}` });
+        await fs.mkdir(tempDir, { recursive: true });
+        const fileBlocks = this.splitCodeBlocks(executorData.code);
+
+        for (const block of fileBlocks) {
+          const filePath = path.join(tempDir, block.filename);
+          await fs.mkdir(path.dirname(filePath), { recursive: true });
+          await fs.writeFile(filePath, block.code, 'utf-8');
+        }
+
+        // Minimal tsconfig for the temp directory
+        await fs.writeFile(path.join(tempDir, 'tsconfig.json'), JSON.stringify({
+          compilerOptions: {
+            noEmit: true, strict: true, esModuleInterop: true, skipLibCheck: true,
+            module: 'commonjs', target: 'ES2020', moduleResolution: 'node',
+            resolveJsonModule: true, allowJs: true
+          },
+          include: ['**/*.ts']
+        }), 'utf-8');
+
+        const check = await toolService.executeTool('run_shell', { command: `cd ${tempDir} && npx tsc --noEmit` });
         if (check.stderr) {
           compilationStatus = `Type Error: ${check.stderr}`;
           compilationPassed = false;
         } else {
-          compilationStatus = 'Syntax Validated (tsc --noEmit)';
+          compilationStatus = `Syntax Validated (tsc --noEmit, ${fileBlocks.length} files)`;
         }
       } catch (e: any) {
         compilationStatus = `Check Failed: ${e.message}`;
         compilationPassed = false;
       } finally {
-        await fs.unlink(tempFile).catch(() => {});
+        await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
       }
     }
 
@@ -589,10 +610,11 @@ Audit whether the code faithfully implements the decision chain AND is correct, 
 
 RULES:
 1. Be HONEST. Score 95+ = near-perfect (rare). Most real code scores 70-90.
-2. Every issue MUST be actionable: name the exact function/pattern and the fix.
-3. Check every carried decision — missed decision = compliance deduction.
-4. Truncated code or "// ..." placeholders = syntax score 0, compliance halved.
-5. Respond with ONLY the JSON object. No markdown fences, no preamble.
+2. Every issue MUST cite the exact code. Quote the function name or line that is wrong and explain the fix. If you cannot point to specific code, the issue is not real — do NOT include it.
+3. Before claiming something is MISSING, search the code for it. If the code contains try/catch, do not claim "no error handling." If it has a validation function, do not claim "no validation." False claims invalidate your review.
+4. Check every carried decision — missed decision = compliance deduction.
+5. Truncated code or "// ..." placeholders = syntax score 0, compliance halved.
+6. Respond with ONLY the JSON object. No markdown fences, no preamble.
 
 SCORING: 90-100 production-ready | 75-89 good with minor issues | 50-74 significant bugs | 25-49 fundamentally broken | 0-24 no usable code
 
@@ -695,6 +717,35 @@ Output JSON:
   private async runReview(plan: any, executorData: any, signal?: AbortSignal) {
     const sessionContext: WaterfallSessionContext = { originalRequirement: '', architectDecisions: '', reasonerDecisions: '' };
     return this.runReviewWithContext(plan, executorData, sessionContext, signal);
+  }
+
+  /**
+   * Split executor code output into individual file blocks.
+   * Handles "// ═══ path/to/file.ts ═══" separator comments.
+   * Falls back to a single file if no separators are found.
+   */
+  private splitCodeBlocks(code: string): { filename: string; code: string }[] {
+    const lines = code.split('\n');
+    const blocks: { filename: string; lines: string[] }[] = [];
+    let current: { filename: string; lines: string[] } | null = null;
+    const sepPattern = /^\/\/\s*═+\s*(.+?)\s*═+\s*$/;
+
+    for (const line of lines) {
+      const match = line.match(sepPattern);
+      if (match) {
+        if (current) blocks.push(current);
+        current = { filename: match[1]!.trim(), lines: [] };
+      } else if (current) {
+        current.lines.push(line);
+      }
+    }
+    if (current) blocks.push(current);
+
+    if (blocks.length === 0) {
+      return [{ filename: 'index.ts', code }];
+    }
+
+    return blocks.map(b => ({ filename: b.filename, code: b.lines.join('\n').trim() }));
   }
 
   private parseJSONResponse(response: string): any {

@@ -36,9 +36,9 @@ export const WATERFALL_PRESET_LIST: WaterfallPresetMeta[] = [
       architect: { model: 'glm-4.7:cloud', provider: 'ollama' },
       reasoner:  { model: 'qwen/qwen3-32b', provider: 'groq' },
       executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reviewer:  { model: 'xiaomi/mimo-v2-omni', provider: 'openrouter' },
+      reviewer:  { model: 'deepseek/deepseek-r1:free', provider: 'openrouter' },
     },
-    stageLabels: { architect: 'GLM-4.7', reasoner: 'Qwen3 32B', executor: 'Kimi K2', reviewer: 'MiMo V2' },
+    stageLabels: { architect: 'GLM-4.7', reasoner: 'Qwen3 32B', executor: 'Kimi K2', reviewer: 'DeepSeek R1' },
   },
   {
     key: 'glm-kimi',
@@ -51,9 +51,9 @@ export const WATERFALL_PRESET_LIST: WaterfallPresetMeta[] = [
       architect: { model: 'glm-4.7:cloud', provider: 'ollama' },
       reasoner:  { model: 'kimi-k2.5:cloud', provider: 'ollama' },
       executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reviewer:  { model: 'xiaomi/mimo-v2-omni', provider: 'openrouter' },
+      reviewer:  { model: 'deepseek/deepseek-r1:free', provider: 'openrouter' },
     },
-    stageLabels: { architect: 'GLM-4.7', reasoner: 'Kimi K2.5', executor: 'Kimi K2', reviewer: 'MiMo V2' },
+    stageLabels: { architect: 'GLM-4.7', reasoner: 'Kimi K2.5', executor: 'Kimi K2', reviewer: 'DeepSeek R1' },
   },
   {
     key: 'groq-speed',
@@ -66,9 +66,9 @@ export const WATERFALL_PRESET_LIST: WaterfallPresetMeta[] = [
       architect: { model: 'openai/gpt-oss-120b', provider: 'groq' },
       reasoner:  { model: 'qwen/qwen3-32b', provider: 'groq' },
       executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reviewer:  { model: 'xiaomi/mimo-v2-omni', provider: 'openrouter' },
+      reviewer:  { model: 'deepseek/deepseek-r1:free', provider: 'openrouter' },
     },
-    stageLabels: { architect: 'GPT-OSS 120B', reasoner: 'Qwen3 32B', executor: 'Kimi K2', reviewer: 'MiMo V2' },
+    stageLabels: { architect: 'GPT-OSS 120B', reasoner: 'Qwen3 32B', executor: 'Kimi K2', reviewer: 'DeepSeek R1' },
   },
   {
     key: 'kimi-duo',
@@ -81,9 +81,9 @@ export const WATERFALL_PRESET_LIST: WaterfallPresetMeta[] = [
       architect: { model: 'openai/gpt-oss-120b', provider: 'groq' },
       reasoner:  { model: 'kimi-k2.5:cloud', provider: 'ollama' },
       executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reviewer:  { model: 'xiaomi/mimo-v2-omni', provider: 'openrouter' },
+      reviewer:  { model: 'deepseek/deepseek-r1:free', provider: 'openrouter' },
     },
-    stageLabels: { architect: 'GPT-OSS 120B', reasoner: 'Kimi K2.5', executor: 'Kimi K2', reviewer: 'MiMo V2' },
+    stageLabels: { architect: 'GPT-OSS 120B', reasoner: 'Kimi K2.5', executor: 'Kimi K2', reviewer: 'DeepSeek R1' },
   },
 
   // ── Standard tier — tested, honest reviewer, viable ──────────────────────
@@ -98,9 +98,9 @@ export const WATERFALL_PRESET_LIST: WaterfallPresetMeta[] = [
       architect: { model: 'openai/gpt-oss-120b', provider: 'groq' },
       reasoner:  { model: 'deepseek-v3.2:cloud', provider: 'ollama' },
       executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reviewer:  { model: 'xiaomi/mimo-v2-omni', provider: 'openrouter' },
+      reviewer:  { model: 'deepseek/deepseek-r1:free', provider: 'openrouter' },
     },
-    stageLabels: { architect: 'GPT-OSS 120B', reasoner: 'DeepSeek V3.2', executor: 'Kimi K2', reviewer: 'MiMo V2' },
+    stageLabels: { architect: 'GPT-OSS 120B', reasoner: 'DeepSeek V3.2', executor: 'Kimi K2', reviewer: 'DeepSeek R1' },
   },
   {
     key: 'glm-nemotron',
@@ -113,9 +113,9 @@ export const WATERFALL_PRESET_LIST: WaterfallPresetMeta[] = [
       architect: { model: 'glm-4.7:cloud', provider: 'ollama' },
       reasoner:  { model: 'nemotron-3-super:cloud', provider: 'ollama' },
       executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reviewer:  { model: 'xiaomi/mimo-v2-omni', provider: 'openrouter' },
+      reviewer:  { model: 'deepseek/deepseek-r1:free', provider: 'openrouter' },
     },
-    stageLabels: { architect: 'GLM-4.7', reasoner: 'Nemotron 3S', executor: 'Kimi K2', reviewer: 'MiMo V2' },
+    stageLabels: { architect: 'GLM-4.7', reasoner: 'Nemotron 3S', executor: 'Kimi K2', reviewer: 'DeepSeek R1' },
   },
   {
     key: 'ollama-ultima',
@@ -128,9 +128,9 @@ export const WATERFALL_PRESET_LIST: WaterfallPresetMeta[] = [
       architect: { model: 'qwen3.5:cloud', provider: 'ollama' },
       reasoner:  { model: 'kimi-k2-thinking:cloud', provider: 'ollama' },
       executor:  { model: 'qwen3-coder:480b-cloud', provider: 'ollama' },
-      reviewer:  { model: 'xiaomi/mimo-v2-omni', provider: 'openrouter' },
+      reviewer:  { model: 'deepseek/deepseek-r1:free', provider: 'openrouter' },
     },
-    stageLabels: { architect: 'Qwen 3.5', reasoner: 'Kimi Thinking', executor: 'Qwen3 Coder 480B', reviewer: 'MiMo V2' },
+    stageLabels: { architect: 'Qwen 3.5', reasoner: 'Kimi Thinking', executor: 'Qwen3 Coder 480B', reviewer: 'DeepSeek R1' },
   },
 
   // ── Demo tier — generous reviewers, useful for demos ─────────────────────
