@@ -352,3 +352,30 @@ export const getModelContextLimit = (modelName: string): number => {
   
   return CONTEXT_LIMITS['default'] ?? 8192;
 };
+
+/**
+ * Per-request total token limits (input + output) for models with tight quotas.
+ * Groq free tier enforces these as "TPM" but they apply per-request.
+ * Only models with known tight limits are listed — unlisted models have no cap.
+ */
+export const REQUEST_TOKEN_LIMITS: Record<string, number> = {
+  'qwen/qwen3-32b':                        6000,
+  'deepseek-r1-distill-qwen-32b':          6000,
+  'qwen-qwq-32b':                          6000,
+  'meta-llama/llama-4-scout-17b-16e-instruct': 8000,
+  'meta-llama/llama-4-maverick-17b-128e-instruct': 8000,
+};
+
+/**
+ * Cap maxTokens to stay within a model's per-request total token limit.
+ * Returns the original maxTokens if the model has no known limit.
+ */
+export function capMaxTokens(model: string, inputTokenEstimate: number, requestedMaxTokens: number): number {
+  const limit = REQUEST_TOKEN_LIMITS[model];
+  if (!limit) return requestedMaxTokens;
+  const available = Math.max(256, limit - inputTokenEstimate - 50); // 50-token safety margin
+  if (available < requestedMaxTokens) {
+    console.log(`[TokenCap] ${model}: capping maxTokens from ${requestedMaxTokens} to ${available} (limit=${limit}, input~${inputTokenEstimate})`);
+  }
+  return Math.min(requestedMaxTokens, available);
+};

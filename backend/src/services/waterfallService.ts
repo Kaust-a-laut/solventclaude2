@@ -3,7 +3,7 @@ import os from 'os';
 import path from 'path';
 import { randomUUID } from 'node:crypto';
 import { AIProviderFactory } from './aiProviderFactory';
-import { WATERFALL_CONFIG, WATERFALL_DEFAULT_SELECTION } from '../constants/models';
+import { WATERFALL_CONFIG, WATERFALL_DEFAULT_SELECTION, capMaxTokens } from '../constants/models';
 import type { WaterfallModelSelection, WaterfallPhaseConfig, WaterfallPhaseSelection } from '../constants/models';
 import { AppError } from '../utils/AppError';
 import { ResourceEstimator, ResourceEstimate } from '../utils/resourceEstimator';
@@ -51,6 +51,11 @@ export interface WaterfallResult {
 }
 
 export class WaterfallService {
+
+  /** Rough token estimate for messages (1 token ≈ 4 chars). */
+  private estimateTokens(messages: { role: string; content: string }[]): number {
+    return Math.ceil(messages.reduce((sum, m) => sum + m.content.length, 0) / 4);
+  }
 
   /** Resolve primary + fallback model/provider from the user's A/B selection or custom override for a phase. */
   private resolvePhase(phaseCfg: WaterfallPhaseConfig, choice: WaterfallPhaseSelection) {
@@ -380,7 +385,7 @@ Example logic section: "1. FILE: src/rateLimiter.ts — class RateLimiter(redis:
 `
     }];
 
-    // Architect needs more tokens with enhanced prompts — detailed logic field can be 3000+ tokens
+    const inputTokens = this.estimateTokens(prompt);
     const architectMaxTokens = 4096;
 
     try {
@@ -388,7 +393,7 @@ Example logic section: "1. FILE: src/rateLimiter.ts — class RateLimiter(redis:
         model: phase.primary.model,
         shouldSearch: false,
         jsonMode: true,
-        maxTokens: architectMaxTokens,
+        maxTokens: capMaxTokens(phase.primary.model, inputTokens, architectMaxTokens),
         signal
       });
       return this.parseJSONResponse(response);
@@ -396,12 +401,12 @@ Example logic section: "1. FILE: src/rateLimiter.ts — class RateLimiter(redis:
       if (signal?.aborted) throw error;
       const fbProvider = await AIProviderFactory.getProvider(phase.fallback.provider);
       try {
-        const res = await fbProvider.complete(prompt, { model: phase.fallback.model, jsonMode: true, maxTokens: architectMaxTokens, signal });
+        const res = await fbProvider.complete(prompt, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, architectMaxTokens), signal });
         return this.parseJSONResponse(res);
       } catch (e) {
         if (signal?.aborted) throw e;
         const localProvider = await AIProviderFactory.getProvider('ollama');
-        const res = await localProvider.complete(prompt, { model: phase.local, jsonMode: true, maxTokens: architectMaxTokens, signal });
+        const res = await localProvider.complete(prompt, { model: phase.local, jsonMode: true, maxTokens: capMaxTokens(phase.local, inputTokens, architectMaxTokens), signal });
         return this.parseJSONResponse(res);
       }
     }
@@ -457,15 +462,16 @@ Example step: {"title": "Create RateLimiter class", "description": "src/middlewa
 Example carriedDecision: "Redis sorted sets over in-memory Map because horizontal scaling requires shared state"`;
 
     const messages = [{ role: 'user' as const, content: prompt }];
+    const inputTokens = this.estimateTokens(messages);
     const reasonerMaxTokens = 4096;
 
     try {
-      const response = await primaryProvider.complete(messages, { model: phase.primary.model, jsonMode: true, maxTokens: reasonerMaxTokens, signal });
+      const response = await primaryProvider.complete(messages, { model: phase.primary.model, jsonMode: true, maxTokens: capMaxTokens(phase.primary.model, inputTokens, reasonerMaxTokens), signal });
       return this.parseJSONResponse(response);
     } catch (error: any) {
       if (signal?.aborted) throw error;
       const fbProvider = await AIProviderFactory.getProvider(phase.fallback.provider);
-      const fallback = await fbProvider.complete(messages, { model: phase.fallback.model, jsonMode: true, maxTokens: reasonerMaxTokens, signal });
+      const fallback = await fbProvider.complete(messages, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, reasonerMaxTokens), signal });
       return this.parseJSONResponse(fallback);
     }
   }
@@ -523,24 +529,23 @@ Output JSON:
 }`;
 
     const messages = [{ role: 'user' as const, content: prompt }];
-
-    // Executor needs a much higher token limit to produce complete code for complex tasks
+    const inputTokens = this.estimateTokens(messages);
     const executorMaxTokens = 16384;
 
     try {
       const primaryProvider = await AIProviderFactory.getProvider(phase.primary.provider);
-      const response = await primaryProvider.complete(messages, { model: phase.primary.model, jsonMode: true, maxTokens: executorMaxTokens, signal });
+      const response = await primaryProvider.complete(messages, { model: phase.primary.model, jsonMode: true, maxTokens: capMaxTokens(phase.primary.model, inputTokens, executorMaxTokens), signal });
       return this.parseJSONResponse(response);
     } catch (error: any) {
       if (signal?.aborted) throw error;
       const fbProvider = await AIProviderFactory.getProvider(phase.fallback.provider);
       try {
-        const res = await fbProvider.complete(messages, { model: phase.fallback.model, jsonMode: true, maxTokens: executorMaxTokens, signal });
+        const res = await fbProvider.complete(messages, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, executorMaxTokens), signal });
         return this.parseJSONResponse(res);
       } catch (err) {
         if (signal?.aborted) throw err;
         const localProvider = await AIProviderFactory.getProvider('ollama');
-        const res = await localProvider.complete(messages, { model: phase.local, jsonMode: true, maxTokens: executorMaxTokens, signal });
+        const res = await localProvider.complete(messages, { model: phase.local, jsonMode: true, maxTokens: capMaxTokens(phase.local, inputTokens, executorMaxTokens), signal });
         return this.parseJSONResponse(res);
       }
     }
@@ -650,11 +655,12 @@ Output JSON:
 }`
     }];
 
+    const inputTokens = this.estimateTokens(prompt);
     const reviewerMaxTokens = 4096;
 
     try {
       const primaryProvider = await AIProviderFactory.getProvider(phase.primary.provider);
-      const response = await primaryProvider.complete(prompt, { model: phase.primary.model, jsonMode: true, maxTokens: reviewerMaxTokens, signal });
+      const response = await primaryProvider.complete(prompt, { model: phase.primary.model, jsonMode: true, maxTokens: capMaxTokens(phase.primary.model, inputTokens, reviewerMaxTokens), signal });
       const parsed = this.parseJSONResponse(response);
       parsed._compilationPassed = compilationPassed;
 
@@ -677,7 +683,7 @@ Output JSON:
       if (signal?.aborted) throw error;
       const fbProvider = await AIProviderFactory.getProvider(phase.fallback.provider);
       try {
-        const res = await fbProvider.complete(prompt, { model: phase.fallback.model, jsonMode: true, maxTokens: reviewerMaxTokens, signal });
+        const res = await fbProvider.complete(prompt, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, reviewerMaxTokens), signal });
         const parsed = this.parseJSONResponse(res);
         parsed._compilationPassed = compilationPassed;
         return parsed;
@@ -685,7 +691,7 @@ Output JSON:
         console.error(`[Waterfall:Reviewer] Fallback (${phase.fallback.provider}/${phase.fallback.model}) failed:`, e.message);
         if (signal?.aborted) throw e;
         const localProvider = await AIProviderFactory.getProvider('ollama');
-        const res = await localProvider.complete(prompt, { model: phase.local, jsonMode: true, maxTokens: reviewerMaxTokens, signal });
+        const res = await localProvider.complete(prompt, { model: phase.local, jsonMode: true, maxTokens: capMaxTokens(phase.local, inputTokens, reviewerMaxTokens), signal });
         const parsed = this.parseJSONResponse(res);
         parsed._compilationPassed = compilationPassed;
         return parsed;
