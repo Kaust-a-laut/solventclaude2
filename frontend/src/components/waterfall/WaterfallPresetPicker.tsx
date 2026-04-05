@@ -88,14 +88,24 @@ function upgradeKey(u: UpgradeSuggestion): string {
   return `${u.current.provider}:${u.current.model}→${u.successor.model}`;
 }
 
-/** Get non-dismissed upgrade suggestions for a preset, return list of { stageLabel, successorModel, note, key } */
+interface PresetUpgrade {
+  stage: StageKey;
+  stageLabel: string;
+  currentModel: string;
+  successorModel: string;
+  successorProvider: string;
+  note: string;
+  key: string;
+}
+
+/** Get non-dismissed upgrade suggestions for a preset */
 function getPresetUpgrades(
   preset: WaterfallPresetMeta,
   upgrades: UpgradeSuggestion[],
   dismissed: Set<string>,
-): { stageLabel: string; successorModel: string; note: string; key: string }[] {
+): PresetUpgrade[] {
   if (upgrades.length === 0) return [];
-  const results: { stageLabel: string; successorModel: string; note: string; key: string }[] = [];
+  const results: PresetUpgrade[] = [];
   for (const stage of STAGE_ORDER) {
     const sel = preset.selection[stage];
     if (typeof sel === 'object') {
@@ -104,8 +114,11 @@ function getPresetUpgrades(
           const k = upgradeKey(u);
           if (!dismissed.has(k)) {
             results.push({
+              stage,
               stageLabel: preset.stageLabels[stage],
+              currentModel: u.current.model,
               successorModel: u.successor.model,
+              successorProvider: u.successor.provider,
               note: u.note,
               key: k,
             });
@@ -144,6 +157,7 @@ const PresetCard = ({
   warnings,
   upgrades,
   onDismissUpgrade,
+  onSwapModel,
 }: {
   preset: WaterfallPresetMeta;
   isSelected: boolean;
@@ -151,9 +165,11 @@ const PresetCard = ({
   onSelect: () => void;
   onToggleExpand: () => void;
   warnings: string[];
-  upgrades: { stageLabel: string; successorModel: string; note: string; key: string }[];
+  upgrades: PresetUpgrade[];
   onDismissUpgrade: (key: string) => void;
+  onSwapModel: (stage: StageKey, model: string, provider: string) => void;
 }) => {
+  const [showSwapMenu, setShowSwapMenu] = useState(false);
   const badge = scoreBadge(preset.score, preset.tier);
   const spd = speedIcon(preset.speed);
   const SpdIcon = spd.icon;
@@ -203,13 +219,53 @@ const PresetCard = ({
           </div>
         )}
 
-        {/* Upgrade suggestions */}
+        {/* Upgrade suggestions — clickable to expand swap menu */}
         {upgrades.length > 0 && (
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-sky-500/10 border border-sky-500/20">
-            <ArrowUpCircle size={11} className="text-sky-400 shrink-0" />
-            <span className="text-[11px] text-sky-400 font-medium leading-tight flex-1">
-              {upgrades.length === 1 ? `${upgrades[0]!.successorModel} available` : `${upgrades.length} upgrades available`}
-            </span>
+          <div>
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowSwapMenu(!showSwapMenu); }}
+              className="w-full flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-colors"
+            >
+              <ArrowUpCircle size={11} className="text-blue-400 shrink-0" />
+              <span className="text-[11px] text-blue-400 font-semibold leading-tight flex-1 text-left">
+                {upgrades.length === 1 ? `${upgrades[0]!.successorModel} available` : `${upgrades.length} upgrades available`}
+              </span>
+              <ChevronDown size={10} className={cn('text-blue-400 transition-transform', showSwapMenu && 'rotate-180')} />
+            </button>
+            <AnimatePresence>
+              {showSwapMenu && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="overflow-hidden"
+                >
+                  <div className="pt-2 space-y-1.5">
+                    {upgrades.map(u => (
+                      <div key={u.key} className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-white/[0.02] border border-white/[0.04]">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[11px] text-slate-500 font-medium truncate">{u.stageLabel}: {u.currentModel}</div>
+                          <div className="text-[11px] text-blue-400 font-semibold truncate">→ {u.successorModel}</div>
+                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onSwapModel(u.stage, u.successorModel, u.successorProvider); onDismissUpgrade(u.key); }}
+                          className="shrink-0 px-2 py-0.5 rounded-md bg-blue-500/15 border border-blue-500/25 text-[10px] text-blue-400 font-bold uppercase tracking-wider hover:bg-blue-500/25 transition-colors"
+                        >
+                          Use
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onDismissUpgrade(u.key); }}
+                          className="shrink-0 px-1.5 py-0.5 rounded-md text-[10px] text-slate-600 font-medium hover:text-slate-400 transition-colors"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
 
@@ -254,7 +310,7 @@ const PresetCard = ({
                     </span>
                     {isOffline && <AlertTriangle size={10} className="text-amber-400" />}
                     {upgrades.filter(u => u.stageLabel === label).map(u => (
-                      <span key={u.key} className="flex items-center gap-1 text-[11px] text-sky-400 font-medium">
+                      <span key={u.key} className="flex items-center gap-1 text-[11px] text-blue-400 font-medium">
                         <ArrowUpCircle size={9} /> {u.successorModel}
                       </span>
                     ))}
@@ -374,6 +430,11 @@ export const WaterfallPresetPicker = () => {
     setDismissedKeys(prev => new Set([...prev, key]));
   };
 
+  const handleSwapModel = (stage: StageKey, model: string, provider: string) => {
+    setWaterfallCustomStage(stage, { model, provider });
+    setShowCustom(true);
+  };
+
   // Fire toasts for non-dismissed upgrade suggestions (max 3)
   useEffect(() => {
     if (upgradeSuggestions.length === 0) return;
@@ -452,6 +513,7 @@ export const WaterfallPresetPicker = () => {
               warnings={getPresetWarnings(preset, unavailableModels)}
               upgrades={getPresetUpgrades(preset, upgradeSuggestions, dismissedKeys)}
               onDismissUpgrade={handleDismissUpgrade}
+              onSwapModel={handleSwapModel}
             />
           ))}
         </div>
@@ -476,7 +538,7 @@ export const WaterfallPresetPicker = () => {
                   )}
                 >
                   {otherWarnings.length > 0 && <AlertTriangle size={11} className="text-amber-400" />}
-                  {otherUpgrades.length > 0 && <ArrowUpCircle size={11} className="text-sky-400" />}
+                  {otherUpgrades.length > 0 && <ArrowUpCircle size={11} className="text-blue-400" />}
                   {preset.name}
                   <span className={cn('text-[12px] font-mono', badge.text)}>{badge.label}</span>
                 </button>
