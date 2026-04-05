@@ -6,6 +6,7 @@ import { WATERFALL_PRESET_LIST, type WaterfallPresetMeta } from '../../lib/water
 import { STAGE_CONFIGS, type StageKey } from './WaterfallStageCard';
 import { Layers, ChevronDown, Zap, Clock, Trophy, SlidersHorizontal, AlertTriangle, ArrowUpCircle } from 'lucide-react';
 import { API_BASE_URL } from '../../lib/config';
+import { toast } from 'sonner';
 
 const STAGE_ORDER: StageKey[] = ['architect', 'reasoner', 'executor', 'reviewer'];
 
@@ -372,6 +373,31 @@ export const WaterfallPresetPicker = () => {
     dismissUpgrade(key);
     setDismissedKeys(prev => new Set([...prev, key]));
   };
+
+  // Fire toasts for non-dismissed upgrade suggestions (max 3)
+  useEffect(() => {
+    if (upgradeSuggestions.length === 0) return;
+    const dismissed = getDismissedUpgrades();
+    const toShow = upgradeSuggestions
+      .filter(u => !dismissed.has(upgradeKey(u)))
+      .slice(0, 3);
+
+    const timer = setTimeout(() => {
+      for (const u of toShow) {
+        const k = upgradeKey(u);
+        toast.info(u.note, {
+          description: `Used by: ${u.usedInPresets.join(', ')}`,
+          duration: 8000,
+          action: {
+            label: 'Dismiss',
+            onClick: () => handleDismissUpgrade(k),
+          },
+        });
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [upgradeSuggestions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const topPresets = WATERFALL_PRESET_LIST.filter(p => p.tier === 'top');
   const otherPresets = WATERFALL_PRESET_LIST.filter(p => p.tier !== 'top');
