@@ -256,6 +256,77 @@ export const WATERFALL_PRESETS: Record<string, WaterfallPreset> = {
       reviewer:  { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
     },
   },
+  // --- Solo presets — single model all stages, avoids cross-provider rate limits ---
+  'solo-gemini-pro': {
+    name: 'Solo: Gemini 3 Pro',
+    description: 'All stages on Gemini 3 Pro.',
+    selection: {
+      architect: { model: 'gemini-3-pro-preview', provider: 'gemini' },
+      reasoner:  { model: 'gemini-3-pro-preview', provider: 'gemini' },
+      executor:  { model: 'gemini-3-pro-preview', provider: 'gemini' },
+      reviewer:  { model: 'gemini-3-pro-preview', provider: 'gemini' },
+    },
+  },
+  'solo-gemini-flash': {
+    name: 'Solo: Gemini 3 Flash',
+    description: 'All stages on Gemini 3 Flash.',
+    selection: {
+      architect: { model: 'gemini-3-flash-preview', provider: 'gemini' },
+      reasoner:  { model: 'gemini-3-flash-preview', provider: 'gemini' },
+      executor:  { model: 'gemini-3-flash-preview', provider: 'gemini' },
+      reviewer:  { model: 'gemini-3-flash-preview', provider: 'gemini' },
+    },
+  },
+  'solo-gpt-oss': {
+    name: 'Solo: GPT-OSS 120B',
+    description: 'All stages on GPT-OSS 120B via Groq.',
+    selection: {
+      architect: { model: 'openai/gpt-oss-120b', provider: 'groq' },
+      reasoner:  { model: 'openai/gpt-oss-120b', provider: 'groq' },
+      executor:  { model: 'openai/gpt-oss-120b', provider: 'groq' },
+      reviewer:  { model: 'openai/gpt-oss-120b', provider: 'groq' },
+    },
+  },
+  'solo-qwen36': {
+    name: 'Solo: Qwen 3.6 Plus',
+    description: 'All stages on Qwen 3.6 Plus via OpenRouter free tier.',
+    selection: {
+      architect: { model: 'qwen/qwen3.6-plus:free', provider: 'openrouter' },
+      reasoner:  { model: 'qwen/qwen3.6-plus:free', provider: 'openrouter' },
+      executor:  { model: 'qwen/qwen3.6-plus:free', provider: 'openrouter' },
+      reviewer:  { model: 'qwen/qwen3.6-plus:free', provider: 'openrouter' },
+    },
+  },
+  'solo-glm': {
+    name: 'Solo: GLM-4.7',
+    description: 'All stages on GLM-4.7 via Ollama Cloud.',
+    selection: {
+      architect: { model: 'glm-4.7:cloud', provider: 'ollama' },
+      reasoner:  { model: 'glm-4.7:cloud', provider: 'ollama' },
+      executor:  { model: 'glm-4.7:cloud', provider: 'ollama' },
+      reviewer:  { model: 'glm-4.7:cloud', provider: 'ollama' },
+    },
+  },
+  'solo-kimi-k2.5': {
+    name: 'Solo: Kimi K2.5',
+    description: 'All stages on Kimi K2.5 via Ollama Cloud.',
+    selection: {
+      architect: { model: 'kimi-k2.5:cloud', provider: 'ollama' },
+      reasoner:  { model: 'kimi-k2.5:cloud', provider: 'ollama' },
+      executor:  { model: 'kimi-k2.5:cloud', provider: 'ollama' },
+      reviewer:  { model: 'kimi-k2.5:cloud', provider: 'ollama' },
+    },
+  },
+  'solo-kimi-k2': {
+    name: 'Solo: Kimi K2',
+    description: 'All stages on Kimi K2 via Groq.',
+    selection: {
+      architect: { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
+      reasoner:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
+      executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
+      reviewer:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
+    },
+  },
 };
 
 export const WATERFALL_DEFAULT_SELECTION: WaterfallModelSelection = {

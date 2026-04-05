@@ -633,20 +633,22 @@ export const WaterfallDetailPanel = ({ selectedStage, steps }: WaterfallDetailPa
                       <p className="text-[13px] text-slate-700 font-mono">Waiting for pipeline to reach this stage...</p>
                     )}
                     {step.status === 'processing' && (
-                      <div className="flex items-center gap-2">
-                        <div className="flex gap-1">
-                          {[0, 1, 2].map((i) => (
-                            <motion.div
-                              key={i}
-                              animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }}
-                              transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.25 }}
-                              className={cn('w-1.5 h-1.5 rounded-full', `bg-${cfg.color}`)}
-                            />
-                          ))}
+                      <div className="flex flex-col items-center justify-center py-32 gap-6">
+                        <motion.div
+                          animate={{ borderColor: [`${cfg.borderRgba}0.15)`, `${cfg.borderRgba}0.6)`, `${cfg.borderRgba}0.15)`] }}
+                          transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}
+                          className={cn('w-36 h-36 rounded-3xl flex items-center justify-center border-2', cfg.bgColor)}
+                        >
+                          <Icon size={90} strokeWidth={1.2} className={cfg.textColor} />
+                        </motion.div>
+                        <div className="flex flex-col items-center gap-3">
+                          <span className={cn('text-[14px] font-black uppercase tracking-[0.5em]', cfg.textColor)}>
+                            {cfg.displayName}
+                          </span>
+                          <span className="text-[15px] text-slate-500 font-medium animate-pulse text-center max-w-sm">
+                            {step.data?.message || cfg.description}
+                          </span>
                         </div>
-                        <span className="text-[13px] text-slate-600 font-mono animate-pulse">
-                          {step.data?.message || 'Processing...'}
-                        </span>
                       </div>
                     )}
                     {step.status === 'error' && step.error && (
@@ -669,20 +671,22 @@ export const WaterfallDetailPanel = ({ selectedStage, steps }: WaterfallDetailPa
                     )}
                     {/* Auto-completed by state machine but real data hasn't arrived yet */}
                     {step.status === 'completed' && step.data && isProcessingMarker(step.data) && (
-                      <div className="flex items-center gap-2">
-                        <div className="flex gap-1">
-                          {[0, 1, 2].map((i) => (
-                            <motion.div
-                              key={i}
-                              animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }}
-                              transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.25 }}
-                              className={cn('w-1.5 h-1.5 rounded-full', `bg-${cfg.color}`)}
-                            />
-                          ))}
+                      <div className="flex flex-col items-center justify-center py-32 gap-6">
+                        <motion.div
+                          animate={{ borderColor: [`${cfg.borderRgba}0.15)`, `${cfg.borderRgba}0.6)`, `${cfg.borderRgba}0.15)`] }}
+                          transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}
+                          className={cn('w-36 h-36 rounded-3xl flex items-center justify-center border-2', cfg.bgColor)}
+                        >
+                          <Icon size={90} strokeWidth={1.2} className={cfg.textColor} />
+                        </motion.div>
+                        <div className="flex flex-col items-center gap-3">
+                          <span className={cn('text-[14px] font-black uppercase tracking-[0.5em]', cfg.textColor)}>
+                            {cfg.displayName}
+                          </span>
+                          <span className="text-[15px] text-slate-500 font-medium animate-pulse text-center max-w-sm">
+                            Compiling results...
+                          </span>
                         </div>
-                        <span className="text-[13px] text-slate-600 font-mono animate-pulse">
-                          Compiling results...
-                        </span>
                       </div>
                     )}
                     {/* Fallback: completed but no data at all */}
