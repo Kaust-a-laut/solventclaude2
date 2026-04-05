@@ -135,8 +135,9 @@ const CUSTOM_MODELS: { label: string; value: string; provider: string; group: st
   { label: 'Llama 3.3 70B',  value: 'llama-3.3-70b-versatile',           provider: 'groq',       group: 'Groq' },
   { label: 'Llama 4 Maverick', value: 'meta-llama/llama-4-maverick-17b-128e-instruct', provider: 'groq', group: 'Groq' },
   // OpenRouter
-  { label: 'DeepSeek R1',    value: 'deepseek/deepseek-r1:free',          provider: 'openrouter', group: 'OpenRouter' },
-  { label: 'Qwen3 235B',     value: 'qwen/qwen3-235b-a22b:free',         provider: 'openrouter', group: 'OpenRouter' },
+  { label: 'Llama 3.3 70B',   value: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter', group: 'OpenRouter' },
+  { label: 'Hermes 3 405B',  value: 'nousresearch/hermes-3-llama-3.1-405b:free', provider: 'openrouter', group: 'OpenRouter' },
+  { label: 'Qwen3.6 Plus',   value: 'qwen/qwen3.6-plus:free',            provider: 'openrouter', group: 'OpenRouter' },
   { label: 'MiMo V2 Omni',   value: 'xiaomi/mimo-v2-omni',               provider: 'openrouter', group: 'OpenRouter' },
   { label: 'Healer Alpha',   value: 'deepinfra/healerdoctor-healer-alpha', provider: 'openrouter', group: 'OpenRouter' },
   { label: 'Hunter Alpha',   value: 'openrouter/hunter-alpha',            provider: 'openrouter', group: 'OpenRouter' },

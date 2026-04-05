@@ -90,9 +90,10 @@ export const MODELS = {
     'meta-llama/llama-4-scout:free',
     'meta-llama/llama-3.3-70b-instruct:free',
     'meta-llama/llama-3.1-8b-instruct:free',
-    // DeepSeek
-    'deepseek/deepseek-r1:free',
-    'deepseek/deepseek-chat-v3-0324:free',
+    // Nvidia
+    'nvidia/nemotron-3-super-120b-a12b:free',
+    // Qwen
+    'qwen/qwen3.6-plus:free',
     // Google
     'google/gemini-2.0-flash-exp:free',
     'google/gemma-3-27b-it:free',
@@ -146,7 +147,7 @@ export const WATERFALL_PRESETS: Record<string, WaterfallPreset> = {
       architect: { model: 'openai/gpt-oss-120b', provider: 'groq' },
       reasoner:  { model: 'microsoft/phi-4-reasoning-plus:free', provider: 'openrouter' },
       executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reviewer:  { model: 'deepseek/deepseek-r1:free', provider: 'openrouter' },
+      reviewer:  { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
     },
   },
   'kimi-duo': {
@@ -156,7 +157,7 @@ export const WATERFALL_PRESETS: Record<string, WaterfallPreset> = {
       architect: { model: 'openai/gpt-oss-120b', provider: 'groq' },
       reasoner:  { model: 'kimi-k2.5:cloud', provider: 'ollama' },
       executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reviewer:  { model: 'deepseek/deepseek-r1:free', provider: 'openrouter' },
+      reviewer:  { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
     },
   },
   'groq-speed': {
@@ -166,7 +167,7 @@ export const WATERFALL_PRESETS: Record<string, WaterfallPreset> = {
       architect: { model: 'openai/gpt-oss-120b', provider: 'groq' },
       reasoner:  { model: 'qwen/qwen3-32b', provider: 'groq' },
       executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reviewer:  { model: 'deepseek/deepseek-r1:free', provider: 'openrouter' },
+      reviewer:  { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
     },
   },
   'deepseek-kimi': {
@@ -176,7 +177,7 @@ export const WATERFALL_PRESETS: Record<string, WaterfallPreset> = {
       architect: { model: 'openai/gpt-oss-120b', provider: 'groq' },
       reasoner:  { model: 'deepseek-v3.2:cloud', provider: 'ollama' },
       executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reviewer:  { model: 'deepseek/deepseek-r1:free', provider: 'openrouter' },
+      reviewer:  { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
     },
   },
   'reliable': {
@@ -212,7 +213,7 @@ export const WATERFALL_PRESETS: Record<string, WaterfallPreset> = {
       architect: { model: 'glm-4.7:cloud', provider: 'ollama' },
       reasoner:  { model: 'qwen/qwen3-32b', provider: 'groq' },
       executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reviewer:  { model: 'deepseek/deepseek-r1:free', provider: 'openrouter' },
+      reviewer:  { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
     },
   },
   'glm-kimi': {
@@ -222,7 +223,7 @@ export const WATERFALL_PRESETS: Record<string, WaterfallPreset> = {
       architect: { model: 'glm-4.7:cloud', provider: 'ollama' },
       reasoner:  { model: 'kimi-k2.5:cloud', provider: 'ollama' },
       executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reviewer:  { model: 'deepseek/deepseek-r1:free', provider: 'openrouter' },
+      reviewer:  { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
     },
   },
   'glm-nemotron': {
@@ -232,7 +233,7 @@ export const WATERFALL_PRESETS: Record<string, WaterfallPreset> = {
       architect: { model: 'glm-4.7:cloud', provider: 'ollama' },
       reasoner:  { model: 'nemotron-3-super:cloud', provider: 'ollama' },
       executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reviewer:  { model: 'deepseek/deepseek-r1:free', provider: 'openrouter' },
+      reviewer:  { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
     },
   },
   'ollama-ultima': {
@@ -242,7 +243,7 @@ export const WATERFALL_PRESETS: Record<string, WaterfallPreset> = {
       architect: { model: 'qwen3.5:cloud', provider: 'ollama' },
       reasoner:  { model: 'kimi-k2-thinking:cloud', provider: 'ollama' },
       executor:  { model: 'qwen3-coder:480b-cloud', provider: 'ollama' },
-      reviewer:  { model: 'deepseek/deepseek-r1:free', provider: 'openrouter' },
+      reviewer:  { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
     },
   },
   'deepseek-ultra': {
@@ -252,7 +253,7 @@ export const WATERFALL_PRESETS: Record<string, WaterfallPreset> = {
       architect: { model: 'deepseek-v3.1:671b-cloud', provider: 'ollama' },
       reasoner:  { model: 'deepseek-v3.1:671b-cloud', provider: 'ollama' },
       executor:  { model: 'qwen3-coder:480b-cloud', provider: 'ollama' },
-      reviewer:  { model: 'deepseek/deepseek-r1:free', provider: 'openrouter' },
+      reviewer:  { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
     },
   },
 };
@@ -281,10 +282,10 @@ export const WATERFALL_CONFIG: Record<string, WaterfallPhaseConfig> = {
     LOCAL: 'deepseek-r1:latest'
   },
   // Reviewer: code audit + quality scoring (needs deep analysis + structured output)
-  // DeepSeek R1 is a strong reasoning model less prone to hallucination than MiMo.
+  // Free-tier models rotate on OpenRouter — keep these updated when models go offline.
   PHASE_4_REVIEWER: {
-    OPTION_A: { model: 'deepseek/deepseek-r1:free',  provider: 'openrouter', label: 'DeepSeek R1',     score: 'AIME 79%'      },
-    OPTION_B: { model: 'qwen/qwen3-235b-a22b:free',  provider: 'openrouter', label: 'Qwen3 235B',     score: 'MMLU 88%'      },
+    OPTION_A: { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter', label: 'Llama 3.3 70B', score: 'MMLU 86%' },
+    OPTION_B: { model: 'nousresearch/hermes-3-llama-3.1-405b:free', provider: 'openrouter', label: 'Hermes 405B', score: '405B' },
     LOCAL: 'deepseek-r1:latest'
   }
 };
