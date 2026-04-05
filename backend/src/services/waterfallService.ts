@@ -57,6 +57,41 @@ export class WaterfallService {
     return Math.ceil(messages.reduce((sum, m) => sum + m.content.length, 0) / 4);
   }
 
+  /** Check if an error is a 429 rate-limit response. */
+  private is429(error: any): boolean {
+    return error?.response?.status === 429
+      || error?.status === 429
+      || /status code 429|rate.?limit/i.test(error?.message ?? '');
+  }
+
+  /** Call provider.complete with retry-on-429. Parses Retry-After / "try again in Xs" from error. */
+  private async completeWithRetry(
+    provider: any,
+    prompt: any,
+    options: any,
+    { maxRetries = 3, baseDelay = 15_000, label = 'unknown', signal }: { maxRetries?: number; baseDelay?: number; label?: string; signal?: AbortSignal } = {},
+  ): Promise<string> {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await provider.complete(prompt, { ...options, signal });
+      } catch (error: any) {
+        if (signal?.aborted) throw error;
+        if (!this.is429(error) || attempt === maxRetries) throw error;
+
+        // Try to extract wait time from error message (e.g. "try again in 29.8575s")
+        const retryMatch = (error?.response?.data?.error?.message ?? error?.message ?? '')
+          .match(/try again in ([\d.]+)s/i);
+        const delay = retryMatch
+          ? Math.ceil(parseFloat(retryMatch[1]) * 1000) + 2000  // parsed + 2s buffer
+          : baseDelay * (attempt + 1);
+
+        console.log(`[Waterfall:${label}] 429 rate-limited, retrying in ${(delay / 1000).toFixed(1)}s (attempt ${attempt + 1}/${maxRetries})...`);
+        await new Promise(r => setTimeout(r, delay));
+      }
+    }
+    throw new Error('Unreachable');
+  }
+
   /** Resolve primary + fallback model/provider from the user's A/B selection or custom override for a phase. */
   private resolvePhase(phaseCfg: WaterfallPhaseConfig, choice: WaterfallPhaseSelection) {
     // Custom model override — use it as primary, fall back to OPTION_B
@@ -389,21 +424,20 @@ Example logic section: "1. FILE: src/rateLimiter.ts — class RateLimiter(redis:
     const architectMaxTokens = 4096;
 
     try {
-      const response = await provider.complete(prompt, {
+      const response = await this.completeWithRetry(provider, prompt, {
         model: phase.primary.model,
         shouldSearch: false,
         jsonMode: true,
         maxTokens: capMaxTokens(phase.primary.model, inputTokens, architectMaxTokens),
-        signal
-      });
+      }, { label: 'Architect', signal });
       return this.parseJSONResponse(response);
     } catch (error: any) {
       if (signal?.aborted) throw error;
       const fbProvider = await AIProviderFactory.getProvider(phase.fallback.provider);
       try {
-        const res = await fbProvider.complete(prompt, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, architectMaxTokens), signal });
+        const res = await this.completeWithRetry(fbProvider, prompt, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, architectMaxTokens) }, { label: 'Architect-FB', signal });
         return this.parseJSONResponse(res);
-      } catch (e) {
+      } catch (e: any) {
         if (signal?.aborted) throw e;
         const localProvider = await AIProviderFactory.getProvider('ollama');
         const res = await localProvider.complete(prompt, { model: phase.local, jsonMode: true, maxTokens: capMaxTokens(phase.local, inputTokens, architectMaxTokens), signal });
@@ -424,54 +458,44 @@ UPSTREAM HANDOFF (from Architect):
 - Key Decisions (MUST carry forward): ${architectHandoff.keyDecisions.map((d, i) => `\n  ${i + 1}. ${d}`).join('')}
 - Constraints: ${architectHandoff.constraints.join(', ')}`;
 
-    const prompt = `You are the Technical Architect on a senior engineering team. You are Step 2 of a 4-step pipeline: Architect → [YOU: Reasoner] → Executor → Reviewer.
+    const prompt = `You are Step 2 (Reasoner) in a 4-step pipeline: Architect → [YOU] → Executor → Reviewer.
 
-The Architect (Step 1) has completed their analysis. You must read their decisions carefully and produce a detailed execution plan that the Senior Developer (Step 3) will implement directly.
+The Architect has completed their analysis below. Produce a detailed execution plan the Executor will implement directly.
 
-CRITICAL RULES:
-1. Every step MUST include specific file paths, class names, method signatures, or shell commands. Vague steps like "implement the logic" are useless to the Executor.
-2. Copy forward ALL key decisions from the Architect into carriedDecisions — verbatim, word for word. The Executor relies on this list — if you drop a decision, it gets lost. Count the Architect's keyDecisions and verify your carriedDecisions has the SAME count.
-3. Order steps by dependency — the Executor will implement them top-to-bottom in sequence.
-4. Respond with ONLY the JSON object. No markdown fences, no preamble, no explanation outside the JSON.
-
-DEPTH REQUIREMENTS — The Executor implements your plan as a literal spec:
-5. Each step description must be SELF-CONTAINED — it should contain enough detail that the Executor can implement it without referring back to the Architect output. Include constructor parameters, method signatures with types, key algorithm details, and expected behavior.
-6. For any step that creates a file, describe EVERY public export from that file: classes with constructor params, functions with signatures, types/interfaces with their fields. The Executor should not need to invent any API surface you didn't specify.
-7. If the Architect specified Lua scripts, algorithms, or non-trivial logic, reproduce the KEY PARTS in your step description (pseudocode or actual code). The Executor should not need to re-derive algorithms.
-8. You must produce at LEAST one step per file the Architect described. If the Architect described 8 files, you need at least 8 steps (plus any setup/test steps).
-
-═══ ORIGINAL REQUIREMENT (for reference) ═══
-${sessionContext.originalRequirement.substring(0, 400)}
+RULES:
+1. Every step MUST include specific file paths, class names, method signatures, or shell commands. Vague steps are useless to the Executor.
+2. Copy ALL Architect keyDecisions into carriedDecisions verbatim. Count must match.
+3. Order steps by dependency — Executor implements top-to-bottom.
+4. Respond with ONLY the JSON object. No markdown fences, no preamble.
+5. Each step must be SELF-CONTAINED with constructor params, method signatures, algorithm details. The Executor should not need to refer back to the Architect output.
+6. For each file, describe EVERY public export: classes, functions, types with full signatures.
+7. Reproduce key algorithms/logic in step descriptions (pseudocode or code). Executor should not re-derive.
+8. At LEAST one step per file the Architect described.
 
 ${handoffContext}
 
 ═══ ARCHITECT OUTPUT ═══
 ${logicStr}
 
-Translate the blueprint into an ordered execution plan. Carry forward every key decision verbatim. Flag open questions for the Executor.
-
 Output JSON:
 {
-  "plan": "One-paragraph summary — what is being built, how many files, technologies, architecture pattern",
-  "steps": [{"title": "Short action title", "description": "SELF-CONTAINED spec: file path, public classes/functions/types with signatures, algorithm details, expected behavior, connections to other components."}],
-  "carriedDecisions": ["Every Architect key decision, copied VERBATIM — count must match"],
+  "plan": "One-paragraph summary — what is being built, files, technologies, pattern",
+  "steps": [{"title": "Action title", "description": "SELF-CONTAINED spec: file path, classes/functions/types with signatures, algorithm details, behavior, connections."}],
+  "carriedDecisions": ["Every Architect keyDecision, VERBATIM — count must match"],
   "openQuestions": ["Max 2-3 items the Executor must decide locally"]
-}
-
-Example step: {"title": "Create RateLimiter class", "description": "src/middleware/rateLimiter.ts — export class RateLimiter(redis: Redis, config: Config). Method check(key: string): Promise<Result> uses Lua ZREMRANGEBYSCORE+ZCARD+ZADD. Fail-open on Redis errors per Architect decision."}
-Example carriedDecision: "Redis sorted sets over in-memory Map because horizontal scaling requires shared state"`;
+}`;
 
     const messages = [{ role: 'user' as const, content: prompt }];
     const inputTokens = this.estimateTokens(messages);
     const reasonerMaxTokens = 4096;
 
     try {
-      const response = await primaryProvider.complete(messages, { model: phase.primary.model, jsonMode: true, maxTokens: capMaxTokens(phase.primary.model, inputTokens, reasonerMaxTokens), signal });
+      const response = await this.completeWithRetry(primaryProvider, messages, { model: phase.primary.model, jsonMode: true, maxTokens: capMaxTokens(phase.primary.model, inputTokens, reasonerMaxTokens) }, { label: 'Reasoner', signal });
       return this.parseJSONResponse(response);
     } catch (error: any) {
       if (signal?.aborted) throw error;
       const fbProvider = await AIProviderFactory.getProvider(phase.fallback.provider);
-      const fallback = await fbProvider.complete(messages, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, reasonerMaxTokens), signal });
+      const fallback = await this.completeWithRetry(fbProvider, messages, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, reasonerMaxTokens) }, { label: 'Reasoner-FB', signal });
       return this.parseJSONResponse(fallback);
     }
   }
@@ -487,22 +511,18 @@ UPSTREAM HANDOFF:
 - Constraints: ${reasonerHandoff.constraints.join(', ')}
 - Open Questions: ${reasonerHandoff.openQuestions.join(', ')}`;
 
-    let prompt = `You are the Senior Developer on a senior engineering team. You are Step 3 of a 4-step pipeline: Architect → Reasoner → [YOU: Executor] → Reviewer.
+    let prompt = `You are Step 3 (Executor) in a 4-step pipeline: Architect → Reasoner → [YOU] → Reviewer.
 
-Two senior engineers have already made explicit decisions about this task. You must implement their plan faithfully.
+Implement the Reasoner's plan faithfully. The carried decisions below were made deliberately by upstream engineers.
 
-CRITICAL RULES:
-1. Your code field MUST contain COMPLETE, COMPILABLE source code — every function body fully implemented, every import present. The Reviewer will check compilation. Truncated or placeholder code (e.g. "// ... implementation" or "// TODO") will score 0 on syntax.
-2. Do NOT second-guess architectural choices — they were deliberate. If you must deviate, document it in decisionsOverridden with your justification.
-3. Implement EVERY step from the Reasoner's plan. The Reviewer audits step-by-step compliance. Missing steps lose 10 points each from the compliance score.
-4. The "code" field is a single string containing all source code. Use file-separator comments (e.g. "// ═══ src/foo.ts ═══") to delimit multiple files within the string.
-5. Respond with ONLY the JSON object. No markdown fences, no preamble, no explanation outside the JSON.
+RULES:
+1. Code MUST be COMPLETE and COMPILABLE — every function body implemented, every import present. Truncated or placeholder code scores 0.
+2. Do NOT second-guess architectural choices. If you must deviate, document it in decisionsOverridden.
+3. Implement EVERY step from the plan. Missing steps lose 10 points each.
+4. Use file-separator comments (e.g. "// ═══ src/foo.ts ═══") to delimit files in the code string.
+5. Respond with ONLY the JSON object. No markdown fences, no preamble.
 
 ${handoffContext}
-
-═══ DECISION CHAIN ═══
-[Architect] ${sessionContext.architectDecisions}
-[Reasoner] ${sessionContext.reasonerDecisions}
 
 ═══ EXECUTION PLAN (from Reasoner) ═══
 ${planStr}`;
@@ -534,15 +554,15 @@ Output JSON:
 
     try {
       const primaryProvider = await AIProviderFactory.getProvider(phase.primary.provider);
-      const response = await primaryProvider.complete(messages, { model: phase.primary.model, jsonMode: true, maxTokens: capMaxTokens(phase.primary.model, inputTokens, executorMaxTokens), signal });
+      const response = await this.completeWithRetry(primaryProvider, messages, { model: phase.primary.model, jsonMode: true, maxTokens: capMaxTokens(phase.primary.model, inputTokens, executorMaxTokens) }, { label: 'Executor', signal });
       return this.parseJSONResponse(response);
     } catch (error: any) {
       if (signal?.aborted) throw error;
       const fbProvider = await AIProviderFactory.getProvider(phase.fallback.provider);
       try {
-        const res = await fbProvider.complete(messages, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, executorMaxTokens), signal });
+        const res = await this.completeWithRetry(fbProvider, messages, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, executorMaxTokens) }, { label: 'Executor-FB', signal });
         return this.parseJSONResponse(res);
-      } catch (err) {
+      } catch (err: any) {
         if (signal?.aborted) throw err;
         const localProvider = await AIProviderFactory.getProvider('ollama');
         const res = await localProvider.complete(messages, { model: phase.local, jsonMode: true, maxTokens: capMaxTokens(phase.local, inputTokens, executorMaxTokens), signal });
@@ -583,7 +603,7 @@ Output JSON:
           include: ['**/*.ts']
         }), 'utf-8');
 
-        const check = await toolService.executeTool('run_shell', { command: `cd ${tempDir} && npx tsc --noEmit` });
+        const check = await toolService.executeTool('run_shell', { command: `npx tsc --noEmit --project ${tempDir}/tsconfig.json` });
         if (check.stderr) {
           compilationStatus = `Type Error: ${check.stderr}`;
           compilationPassed = false;
@@ -609,39 +629,35 @@ Output JSON:
 
     const prompt = [{
       role: 'user' as const,
-      content: `You are the Principal Engineer reviewing Step 3 (Executor) output in a 4-step pipeline: Architect → Reasoner → Executor → [YOU].
+      content: `You are Step 4 (Reviewer) in a 4-step pipeline: Architect → Reasoner → Executor → [YOU].
 
-Audit whether the code faithfully implements the decision chain AND is correct, secure, and efficient.
+Audit whether the code implements the carried decisions and is correct, secure, and efficient.
 
 RULES:
 1. Be HONEST. Score 95+ = near-perfect (rare). Most real code scores 70-90.
-2. Every issue MUST cite the exact code. Quote the function name or line that is wrong and explain the fix. If you cannot point to specific code, the issue is not real — do NOT include it.
-3. Before claiming something is MISSING, search the code for it. If the code contains try/catch, do not claim "no error handling." If it has a validation function, do not claim "no validation." False claims invalidate your review.
+2. Every issue MUST cite exact code — quote the function/line and explain the fix. No vague claims.
+3. Before claiming something is MISSING, search the code for it. False claims invalidate your review.
 4. Check every carried decision — missed decision = compliance deduction.
-5. Truncated code or "// ..." placeholders = syntax score 0, compliance halved.
+5. Truncated code or placeholders = syntax score 0, compliance halved.
 6. Respond with ONLY the JSON object. No markdown fences, no preamble.
 
-SCORING: 90-100 production-ready | 75-89 good with minor issues | 50-74 significant bugs | 25-49 fundamentally broken | 0-24 no usable code
+SCORING: 90-100 production-ready | 75-89 minor issues | 50-74 significant bugs | 25-49 broken | 0-24 no usable code
 
-═══ ORIGINAL REQUIREMENT ═══
+═══ REQUIREMENT ═══
 ${sessionContext.originalRequirement.substring(0, 400)}
-
-═══ DECISION CHAIN ═══
-[Architect] ${sessionContext.architectDecisions}
-[Reasoner] ${sessionContext.reasonerDecisions}
 
 ═══ CARRIED DECISIONS (check each one) ═══
 ${carriedDecisions}
 
-═══ IMPLEMENTED CODE ═══
+═══ CODE ═══
 Files: ${executorFiles}
 
 ${executorCode}
 
-═══ COMPILATION CHECK ═══
+═══ COMPILATION ═══
 ${compilationStatus}
 
-RUBRIC (100 pts): Compliance (40) — each missed decision -5, each missing step -10. Security (20) — secrets, injection, unsafe imports. Efficiency (20) — performance, idiom. Syntax (20) — compilation, imports, references.
+RUBRIC (100 pts): Compliance (40) — missed decision -5, missing step -10. Security (20). Efficiency (20). Syntax (20).
 
 Output JSON:
 {
@@ -651,7 +667,7 @@ Output JSON:
   "decisionsHonored": ["Each carried decision and whether it was implemented"],
   "summary": "One-paragraph verdict — lead with most critical finding",
   "compilationStatus": "${compilationStatus}",
-  "crystallizable_insight": "If score > 90: reusable pattern from this success. Otherwise null."
+  "crystallizable_insight": "If score > 90: reusable pattern. Otherwise null."
 }`
     }];
 
@@ -660,7 +676,7 @@ Output JSON:
 
     try {
       const primaryProvider = await AIProviderFactory.getProvider(phase.primary.provider);
-      const response = await primaryProvider.complete(prompt, { model: phase.primary.model, jsonMode: true, maxTokens: capMaxTokens(phase.primary.model, inputTokens, reviewerMaxTokens), signal });
+      const response = await this.completeWithRetry(primaryProvider, prompt, { model: phase.primary.model, jsonMode: true, maxTokens: capMaxTokens(phase.primary.model, inputTokens, reviewerMaxTokens) }, { label: 'Reviewer', signal });
       const parsed = this.parseJSONResponse(response);
       parsed._compilationPassed = compilationPassed;
 
@@ -683,7 +699,7 @@ Output JSON:
       if (signal?.aborted) throw error;
       const fbProvider = await AIProviderFactory.getProvider(phase.fallback.provider);
       try {
-        const res = await fbProvider.complete(prompt, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, reviewerMaxTokens), signal });
+        const res = await this.completeWithRetry(fbProvider, prompt, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, reviewerMaxTokens) }, { label: 'Reviewer-FB', signal });
         const parsed = this.parseJSONResponse(res);
         parsed._compilationPassed = compilationPassed;
         return parsed;
@@ -760,15 +776,35 @@ Output JSON:
       return { raw: null, _parseError: 'Provider returned empty or non-string response' };
     }
 
+    let cleaned = response.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    cleaned = cleaned.replace(/```json/g, '').replace(/```/g, '').trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    const jsonToParse = jsonMatch ? jsonMatch[0] : cleaned;
+
+    // Attempt 1: direct parse
     try {
-      let cleaned = response.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-      cleaned = cleaned.replace(/```json/g, '').replace(/```/g, '').trim();
-      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-      const jsonToParse = jsonMatch ? jsonMatch[0] : cleaned;
       return JSON.parse(jsonToParse);
-    } catch (e) {
-      console.warn('[WaterfallService] Failed to parse JSON response (length=%d):', response.length, response.substring(0, 200));
-      return { raw: response };
+    } catch (e1: any) {
+      const pos = typeof e1.message === 'string' && e1.message.match(/position (\d+)/)?.[1];
+      console.warn(`[WaterfallService] JSON parse failed at pos ${pos ?? '?'} (length=${jsonToParse.length}): ${e1.message}`);
+
+      // Attempt 2: repair common LLM JSON issues
+      try {
+        let repaired = jsonToParse
+          // Fix unescaped control characters inside string values
+          .replace(/[\x00-\x1f]/g, (ch: string) => {
+            if (ch === '\n') return '\\n';
+            if (ch === '\r') return '\\r';
+            if (ch === '\t') return '\\t';
+            return '';
+          })
+          // Remove trailing commas before } or ]
+          .replace(/,\s*([}\]])/g, '$1');
+        return JSON.parse(repaired);
+      } catch (e2) {
+        console.warn('[WaterfallService] JSON repair also failed, returning raw (first 300 chars):', jsonToParse.substring(0, 300));
+        return { raw: response };
+      }
     }
   }
 }

@@ -25,15 +25,12 @@ export class DashScopeProviderPlugin implements IProviderPlugin {
   private apiKey: string | null = null;
 
   async initialize(options: Record<string, any>): Promise<void> {
-    this.apiKey = options.apiKey || config.DASHSCOPE_API_KEY;
-    if (!this.apiKey) {
-      throw new Error('DashScope API key missing. Set DASHSCOPE_API_KEY in your .env file.');
-    }
+    this.apiKey = options.apiKey || config.DASHSCOPE_API_KEY || null;
     this.isInitialized = true;
   }
 
   isReady(): boolean {
-    return this.isInitialized && !!this.apiKey;
+    return this.isInitialized;
   }
 
   async healthCheck(): Promise<boolean> {
@@ -60,25 +57,34 @@ export class DashScopeProviderPlugin implements IProviderPlugin {
   }
 
   async complete(messages: ChatMessage[], options: CompletionOptions): Promise<string> {
-    if (!this.apiKey) throw new Error('DashScope provider not initialized');
-
     const { model, temperature = 0.7, maxTokens = 2048, apiKey, jsonMode } = options;
     const effectiveApiKey = apiKey || this.apiKey;
+    if (!effectiveApiKey) throw new Error('DashScope API key missing. Provide it in settings or set DASHSCOPE_API_KEY in .env.');
 
-    const response = await axios.post(`${DASHSCOPE_BASE_URL}/chat/completions`, {
-      model: model || this.defaultModel,
-      messages: messages.map(msg => ({ role: msg.role, content: msg.content })),
-      temperature,
-      max_tokens: maxTokens,
-      ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
-    }, {
-      headers: {
-        'Authorization': `Bearer ${effectiveApiKey}`,
-        'Content-Type': 'application/json',
-      }
-    });
+    const effectiveModel = model || this.defaultModel;
+    try {
+      const response = await axios.post(`${DASHSCOPE_BASE_URL}/chat/completions`, {
+        model: effectiveModel,
+        messages: messages.map(msg => ({ role: msg.role, content: msg.content })),
+        temperature,
+        max_tokens: maxTokens,
+        ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
+      }, {
+        headers: {
+          'Authorization': `Bearer ${effectiveApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 180_000,
+      });
 
-    return response.data.choices[0].message.content;
+      console.log(`[DashScope] Response OK: model=${effectiveModel}`);
+      return response.data.choices[0].message.content;
+    } catch (error: any) {
+      const status = error?.response?.status;
+      const errData = error?.response?.data;
+      console.error(`[DashScope] Request error (${status}): model=${effectiveModel}`, JSON.stringify(errData || error.message));
+      throw error;
+    }
   }
 
 }

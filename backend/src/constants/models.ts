@@ -289,12 +289,12 @@ export const WATERFALL_PRESETS: Record<string, WaterfallPreset> = {
   },
   'solo-qwen36': {
     name: 'Solo: Qwen 3.6 Plus',
-    description: 'All stages on Qwen 3.6 Plus via OpenRouter free tier.',
+    description: 'All stages on Qwen 3.6 Plus via DashScope.',
     selection: {
-      architect: { model: 'qwen/qwen3.6-plus:free', provider: 'openrouter' },
-      reasoner:  { model: 'qwen/qwen3.6-plus:free', provider: 'openrouter' },
-      executor:  { model: 'qwen/qwen3.6-plus:free', provider: 'openrouter' },
-      reviewer:  { model: 'qwen/qwen3.6-plus:free', provider: 'openrouter' },
+      architect: { model: 'qwen3.6-plus', provider: 'dashscope' },
+      reasoner:  { model: 'qwen3.6-plus', provider: 'dashscope' },
+      executor:  { model: 'qwen3.6-plus', provider: 'dashscope' },
+      reviewer:  { model: 'qwen3.6-plus', provider: 'dashscope' },
     },
   },
   'solo-glm': {
