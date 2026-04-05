@@ -23,7 +23,24 @@ function resolveModelLabel(
   };
 }
 
-export const WaterfallFlowPreview = () => {
+interface UpgradeSuggestion {
+  current: { model: string; provider: string };
+  successor: { model: string; provider: string };
+  note: string;
+  usedInPresets: string[];
+}
+
+export const WaterfallFlowPreview = ({
+  upgradeSuggestions: _upgradeSuggestions,
+  dismissedKeys: _dismissedKeys,
+  onDismissUpgrade: _onDismissUpgrade,
+  onSwapModel: _onSwapModel,
+}: {
+  upgradeSuggestions: UpgradeSuggestion[];
+  dismissedKeys: Set<string>;
+  onDismissUpgrade: (key: string) => void;
+  onSwapModel: (stage: StageKey, model: string, provider: string) => void;
+}) => {
   const { waterfallPresetKey } = useAppStore();
 
   return (

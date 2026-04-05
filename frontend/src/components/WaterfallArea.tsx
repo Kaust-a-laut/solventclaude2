@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
+import { API_BASE_URL } from '../lib/config';
 import { Sparkles, X, RotateCcw, FlaskConical, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
@@ -28,6 +29,65 @@ const INIT_DOTS = [
   { color: 'bg-jb-orange', glow: 'rgba(251,146,60,0.6)', delay: 0.5  },
 ] as const;
 
+// ─── Model upgrade types & helpers ────────────────────────────────────────────
+
+interface UpgradeSuggestion {
+  current: { model: string; provider: string };
+  successor: { model: string; provider: string };
+  note: string;
+  usedInPresets: string[];
+}
+
+interface UnavailableModel {
+  model: string;
+  provider: string;
+  available: boolean;
+  usedInPresets: string[];
+}
+
+interface ModelScanResult {
+  scannedAt: string;
+  unavailable: UnavailableModel[];
+  upgrades: UpgradeSuggestion[];
+  scanErrors: string[];
+}
+
+const DISMISS_KEY = 'solvent:dismissed-upgrades';
+
+function getDismissedUpgrades(): Set<string> {
+  try {
+    const raw = localStorage.getItem(DISMISS_KEY);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch { return new Set(); }
+}
+
+function dismissUpgrade(key: string) {
+  const dismissed = getDismissedUpgrades();
+  dismissed.add(key);
+  localStorage.setItem(DISMISS_KEY, JSON.stringify([...dismissed]));
+}
+
+function upgradeKey(u: UpgradeSuggestion): string {
+  return `${u.current.provider}:${u.current.model}→${u.successor.model}`;
+}
+
+function useModelAvailability() {
+  const [unavailableModels, setUnavailableModels] = useState<UnavailableModel[]>([]);
+  const [upgradeSuggestions, setUpgradeSuggestions] = useState<UpgradeSuggestion[]>([]);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/health/models`)
+      .then(res => res.ok ? res.json() : null)
+      .then((data: ModelScanResult | null) => {
+        if (data?.unavailable) setUnavailableModels(data.unavailable);
+        if (data?.upgrades) setUpgradeSuggestions(data.upgrades);
+      })
+      .catch(() => {});
+  }, []);
+
+  return { unavailableModels, upgradeSuggestions };
+}
+
 // ─── Component ─────────────────────────────────────────────────────────────────
 
 export const WaterfallArea = () => {
@@ -43,10 +103,24 @@ export const WaterfallArea = () => {
     setEditPlanDraft,
     applyEditedPlan,
     retryCount,
+    setWaterfallCustomStage,
   } = useAppStore();
 
   const [input, setInput] = useState('');
   const [selectedStage, setSelectedStage] = useState<StageKey | null>(null);
+
+  // ── Model upgrade state (shared between PresetPicker and FlowPreview) ───
+  const { unavailableModels, upgradeSuggestions } = useModelAvailability();
+  const [dismissedKeys, setDismissedKeys] = useState<Set<string>>(() => getDismissedUpgrades());
+
+  const handleDismissUpgrade = (key: string) => {
+    dismissUpgrade(key);
+    setDismissedKeys(prev => new Set([...prev, key]));
+  };
+
+  const handleSwapModel = (stage: StageKey, model: string, provider: string) => {
+    setWaterfallCustomStage(stage, { model, provider });
+  };
 
   // ── Stage timing tracking ──────────────────────────────────────────────────
   const stageStartTimes = useRef<Record<StageKey, number | null>>({
@@ -280,7 +354,13 @@ export const WaterfallArea = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <WaterfallPresetPicker />
+                    <WaterfallPresetPicker
+                      unavailableModels={unavailableModels}
+                      upgradeSuggestions={upgradeSuggestions}
+                      dismissedKeys={dismissedKeys}
+                      onDismissUpgrade={handleDismissUpgrade}
+                      onSwapModel={handleSwapModel}
+                    />
                   </motion.div>
 
                   {/* Idle dots */}
@@ -313,7 +393,12 @@ export const WaterfallArea = () => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.4, delay: 0.1 }}
                 >
-                  <WaterfallFlowPreview />
+                  <WaterfallFlowPreview
+                    upgradeSuggestions={upgradeSuggestions}
+                    dismissedKeys={dismissedKeys}
+                    onDismissUpgrade={handleDismissUpgrade}
+                    onSwapModel={handleSwapModel}
+                  />
                 </motion.div>
               </div>
             )}

@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { useAppStore } from '../../store/useAppStore';
 import { WATERFALL_PRESET_LIST, type WaterfallPresetMeta } from '../../lib/waterfallPresets';
 import { STAGE_CONFIGS, type StageKey } from './WaterfallStageCard';
 import { Layers, ChevronDown, Zap, Clock, Trophy, SlidersHorizontal, AlertTriangle, ArrowUpCircle } from 'lucide-react';
-import { API_BASE_URL } from '../../lib/config';
-import { toast } from 'sonner';
 
 const STAGE_ORDER: StageKey[] = ['architect', 'reasoner', 'executor', 'reviewer'];
 
@@ -26,30 +24,6 @@ interface UpgradeSuggestion {
   usedInPresets: string[];
 }
 
-interface ModelScanResult {
-  scannedAt: string;
-  unavailable: UnavailableModel[];
-  upgrades: UpgradeSuggestion[];
-  scanErrors: string[];
-}
-
-function useModelAvailability() {
-  const [unavailableModels, setUnavailableModels] = useState<UnavailableModel[]>([]);
-  const [upgradeSuggestions, setUpgradeSuggestions] = useState<UpgradeSuggestion[]>([]);
-
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/health/models`)
-      .then(res => res.ok ? res.json() : null)
-      .then((data: ModelScanResult | null) => {
-        if (data?.unavailable) setUnavailableModels(data.unavailable);
-        if (data?.upgrades) setUpgradeSuggestions(data.upgrades);
-      })
-      .catch(() => {});
-  }, []);
-
-  return { unavailableModels, upgradeSuggestions };
-}
-
 /** Check if a preset has any unavailable models, return list of affected stage labels */
 function getPresetWarnings(
   preset: WaterfallPresetMeta,
@@ -65,23 +39,6 @@ function getPresetWarnings(
     }
   }
   return warnings;
-}
-
-const DISMISS_KEY = 'solvent:dismissed-upgrades';
-
-function getDismissedUpgrades(): Set<string> {
-  try {
-    const raw = localStorage.getItem(DISMISS_KEY);
-    return new Set(raw ? JSON.parse(raw) : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function dismissUpgrade(key: string) {
-  const dismissed = getDismissedUpgrades();
-  dismissed.add(key);
-  localStorage.setItem(DISMISS_KEY, JSON.stringify([...dismissed]));
 }
 
 function upgradeKey(u: UpgradeSuggestion): string {
@@ -430,7 +387,19 @@ const CustomStageRow = ({
 
 // ─── Main Component ─────────────────────────────────────────────────────────
 
-export const WaterfallPresetPicker = () => {
+export const WaterfallPresetPicker = ({
+  unavailableModels,
+  upgradeSuggestions,
+  dismissedKeys,
+  onDismissUpgrade,
+  onSwapModel,
+}: {
+  unavailableModels: UnavailableModel[];
+  upgradeSuggestions: UpgradeSuggestion[];
+  dismissedKeys: Set<string>;
+  onDismissUpgrade: (key: string) => void;
+  onSwapModel: (stage: StageKey, model: string, provider: string) => void;
+}) => {
   const {
     waterfallPresetKey,
     waterfallModelSelection,
@@ -440,43 +409,6 @@ export const WaterfallPresetPicker = () => {
 
   const [expandedPreset, setExpandedPreset] = useState<string | null>(null);
   const [showCustom, setShowCustom] = useState(waterfallPresetKey === 'custom');
-  const { unavailableModels, upgradeSuggestions } = useModelAvailability();
-  const [dismissedKeys, setDismissedKeys] = useState<Set<string>>(() => getDismissedUpgrades());
-
-  const handleDismissUpgrade = (key: string) => {
-    dismissUpgrade(key);
-    setDismissedKeys(prev => new Set([...prev, key]));
-  };
-
-  const handleSwapModel = (stage: StageKey, model: string, provider: string) => {
-    setWaterfallCustomStage(stage, { model, provider });
-    setShowCustom(true);
-  };
-
-  // Fire toasts for non-dismissed upgrade suggestions (max 3)
-  useEffect(() => {
-    if (upgradeSuggestions.length === 0) return;
-    const dismissed = getDismissedUpgrades();
-    const toShow = upgradeSuggestions
-      .filter(u => !dismissed.has(upgradeKey(u)))
-      .slice(0, 3);
-
-    const timer = setTimeout(() => {
-      for (const u of toShow) {
-        const k = upgradeKey(u);
-        toast.info(u.note, {
-          description: `Used by: ${u.usedInPresets.join(', ')}`,
-          duration: 8000,
-          action: {
-            label: 'Dismiss',
-            onClick: () => handleDismissUpgrade(k),
-          },
-        });
-      }
-    }, 1500);
-
-    return () => clearTimeout(timer);
-  }, [upgradeSuggestions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const topPresets = WATERFALL_PRESET_LIST.filter(p => p.tier === 'top');
   const otherPresets = WATERFALL_PRESET_LIST.filter(p => p.tier !== 'top');
@@ -530,8 +462,8 @@ export const WaterfallPresetPicker = () => {
               onToggleExpand={() => setExpandedPreset(expandedPreset === preset.key ? null : preset.key)}
               warnings={getPresetWarnings(preset, unavailableModels)}
               upgrades={getPresetUpgrades(preset, upgradeSuggestions, dismissedKeys)}
-              onDismissUpgrade={handleDismissUpgrade}
-              onSwapModel={handleSwapModel}
+              onDismissUpgrade={onDismissUpgrade}
+              onSwapModel={onSwapModel}
             />
           ))}
         </div>
