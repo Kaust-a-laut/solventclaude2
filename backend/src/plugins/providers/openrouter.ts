@@ -25,15 +25,12 @@ export class OpenRouterProviderPlugin implements IProviderPlugin {
   private apiKey: string | null = null;
 
   async initialize(options: Record<string, any>): Promise<void> {
-    this.apiKey = options.apiKey || config.OPENROUTER_API_KEY;
-    if (!this.apiKey) {
-      throw new Error('OpenRouter API key missing. Set OPENROUTER_API_KEY in your .env file.');
-    }
+    this.apiKey = options.apiKey || config.OPENROUTER_API_KEY || null;
     this.isInitialized = true;
   }
 
   isReady(): boolean {
-    return this.isInitialized && !!this.apiKey;
+    return this.isInitialized;
   }
 
   async healthCheck(): Promise<boolean> {
@@ -60,12 +57,16 @@ export class OpenRouterProviderPlugin implements IProviderPlugin {
   }
 
   async complete(messages: ChatMessage[], options: CompletionOptions): Promise<string> {
-    if (!this.apiKey) throw new Error('OpenRouter provider not initialized');
-
     const { model, temperature = 0.7, maxTokens = 2048, apiKey, jsonMode } = options;
     const effectiveApiKey = apiKey || this.apiKey;
+    if (!effectiveApiKey) throw new Error('OpenRouter API key missing. Provide it in settings or set OPENROUTER_API_KEY in .env.');
     const effectiveModel = model || this.defaultModel;
-    console.log(`[OpenRouter] Sending request: model=${effectiveModel}, messages=${messages.length}`);
+    console.log(`[OpenRouter] Sending request: model=${effectiveModel}, messages=${messages.length}, maxTokens=${maxTokens}`);
+
+    // Reasoning models (R1, thinking models) use <think> blocks before JSON,
+    // so response_format: json_object can break them. Skip jsonMode for these.
+    const isReasoningModel = /deepseek.*r1|thinking|reasoner/i.test(effectiveModel);
+    const useJsonMode = jsonMode && !isReasoningModel;
 
     try {
       const response = await axios.post(`${OPENROUTER_BASE_URL}/chat/completions`, {
@@ -73,14 +74,15 @@ export class OpenRouterProviderPlugin implements IProviderPlugin {
         messages: messages.map(msg => ({ role: msg.role, content: msg.content })),
         temperature,
         max_tokens: maxTokens,
-        ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
+        ...(useJsonMode ? { response_format: { type: 'json_object' } } : {}),
       }, {
         headers: {
           'Authorization': `Bearer ${effectiveApiKey}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': 'https://solvent.ai',
           'X-Title': 'Solvent AI'
-        }
+        },
+        timeout: 180_000, // 3 minutes — reasoning models can be slow
       });
 
       console.log(`[OpenRouter] Response OK: model=${effectiveModel}`);
