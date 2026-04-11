@@ -13,24 +13,14 @@ import { WATERFALL_PRESET_LIST, type WaterfallPresetMeta } from '../lib/waterfal
 
 const STAGES = [
   {
-    id: 'architect' as const,
-    label: 'Architect',
-    icon: Compass,
+    id: 'planner' as const,
+    label: 'Planner',
+    icon: Brain,
     textColor: 'text-jb-purple',
     bgColor: 'bg-jb-purple/10',
     borderColor: 'border-jb-purple/20',
     dotColor: 'bg-jb-purple',
     glowColor: 'rgba(157,91,210,0.5)',
-  },
-  {
-    id: 'reasoner' as const,
-    label: 'Reasoner',
-    icon: Brain,
-    textColor: 'text-jb-accent',
-    bgColor: 'bg-jb-accent/10',
-    borderColor: 'border-jb-accent/20',
-    dotColor: 'bg-jb-accent',
-    glowColor: 'rgba(60,113,247,0.5)',
   },
   {
     id: 'executor' as const,
@@ -80,10 +70,10 @@ const scoreColor = (score: number) => {
 const StagePreview = ({ id, data }: { id: StageId; data: any }) => {
   if (!data || data.phase) return null; // skip processing markers
 
-  if (id === 'architect') {
+  if (id === 'planner') {
     return (
       <div className="space-y-1.5">
-        {data.logic && <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-3">{data.logic}</p>}
+        {data.plan && <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-3">{data.plan}</p>}
         {data.complexity && (
           <span className={cn(
             'inline-block px-1.5 py-0.5 rounded text-[11px] font-black uppercase border',
@@ -94,23 +84,15 @@ const StagePreview = ({ id, data }: { id: StageId; data: any }) => {
             {data.complexity}
           </span>
         )}
+        {data.steps?.length > 0 && (
+          <span className="text-[11px] text-slate-600 font-mono">{data.steps.length} steps planned</span>
+        )}
         {data.techStack?.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {data.techStack.slice(0, 5).map((t: string, i: number) => (
               <span key={i} className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[11px] font-mono text-slate-500">{t}</span>
             ))}
           </div>
-        )}
-      </div>
-    );
-  }
-
-  if (id === 'reasoner') {
-    return (
-      <div className="space-y-1.5">
-        {data.plan && <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-3">{data.plan}</p>}
-        {data.steps?.length > 0 && (
-          <span className="text-[11px] text-slate-600 font-mono">{data.steps.length} steps planned</span>
         )}
       </div>
     );
@@ -160,8 +142,8 @@ const CompactPresetPicker = () => {
   const [expanded, setExpanded] = useState(false);
 
   const selected = WATERFALL_PRESET_LIST.find((p) => p.key === waterfallPresetKey);
-  const topPresets = WATERFALL_PRESET_LIST.filter((p) => p.tier === 'top');
-  const otherPresets = WATERFALL_PRESET_LIST.filter((p) => p.tier !== 'top');
+  const mainPresets = WATERFALL_PRESET_LIST.filter((p) => p.category === 'recommended' || p.category === 'top');
+  const otherPresets = WATERFALL_PRESET_LIST.filter((p) => p.category === 'solo' || p.category === 'demo');
 
   return (
     <div className="space-y-1.5">
@@ -185,7 +167,7 @@ const CompactPresetPicker = () => {
             className="overflow-hidden"
           >
             <div className="space-y-1 pt-1">
-              {topPresets.map((p) => {
+              {mainPresets.map((p) => {
                 const isActive = waterfallPresetKey === p.key;
                 return (
                   <button
@@ -206,9 +188,9 @@ const CompactPresetPicker = () => {
                       {p.speed === '~30s' ? <Zap size={8} className="text-emerald-400" /> : <Clock size={8} className="text-slate-600" />}
                       <span className={cn(
                         'text-[11px] font-black tabular-nums',
-                        p.score && p.score >= 90 ? 'text-emerald-400' : p.score && p.score >= 85 ? 'text-sky-400' : 'text-slate-500',
+                        p.grade?.startsWith('A') ? 'text-emerald-400' : p.grade?.startsWith('B') ? 'text-sky-400' : 'text-slate-500',
                       )}>
-                        {p.score ?? '—'}
+                        {p.grade ?? '—'}
                       </span>
                     </div>
                   </button>
@@ -247,7 +229,7 @@ export const WaterfallVisualizer = () => {
   const [expandedStage, setExpandedStage] = useState<StageId | null>(null);
   const [prompt, setPrompt] = useState('');
 
-  const isIdle = !waterfall.currentStep && waterfall.steps.architect.status === 'idle';
+  const isIdle = !waterfall.currentStep && waterfall.steps.planner.status === 'idle';
   const isStreaming = waterfallAbortController !== null;
   const allCompleted = STAGES.every((s) => waterfall.steps[s.id].status === 'completed');
 
