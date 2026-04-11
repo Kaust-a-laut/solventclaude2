@@ -4,7 +4,7 @@ import { logger } from '../utils/logger';
 interface RerankCandidate {
   id: string;
   score: number;
-  metadata: { text: string; [key: string]: any };
+  metadata: { text?: string; [key: string]: unknown };
 }
 
 interface RerankedResult extends RerankCandidate {

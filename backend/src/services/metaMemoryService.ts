@@ -21,7 +21,7 @@ export class MetaMemoryService {
 
     const memoryDump = recent
         .filter(m => m.metadata.text && m.metadata.text.length > 20)
-        .map(m => `[${m.metadata.type?.toUpperCase() || 'INFO'} | ${m.metadata.timestamp || 'N/A'}] ${m.metadata.text.substring(0, 300)}...`)
+        .map(m => `[${m.metadata.type?.toUpperCase() || 'INFO'} | ${m.metadata.timestamp || 'N/A'}] ${(m.metadata.text || '').substring(0, 300)}...`)
         .join('\n');
 
     // 2. Perform Cognitive Analysis
@@ -65,8 +65,9 @@ export class MetaMemoryService {
         logger.info('[MetaMemory] Synthesis complete. New meta-summary stored.');
         return summary;
 
-    } catch (error: any) {
-        logger.error(`[MetaMemory] Synthesis failed: ${error.message}`);
+    } catch (error: unknown) {
+        const err = error as Error;
+        logger.error(`[MetaMemory] Synthesis failed: ${err.message}`);
         throw error;
     }
   }

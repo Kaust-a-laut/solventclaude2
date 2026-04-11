@@ -185,7 +185,7 @@ export class MemoryConsolidationService {
     const allRecent = vectorService.getRecentEntries(500);
     const olderEpisodic = allRecent.filter(m => 
       m.metadata.tier === 'episodic' && 
-      (Date.now() - new Date(m.metadata.createdAt).getTime()) > 1000 * 60 * 60 * 24 * 3 // Older than 3 days
+      (Date.now() - new Date(m.metadata.createdAt || 0).getTime()) > 1000 * 60 * 60 * 24 * 3 // Older than 3 days
     );
 
     if (olderEpisodic.length < 20) return;

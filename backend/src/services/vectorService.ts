@@ -11,10 +11,34 @@ import { HNSWIndex } from '../utils/hnswIndex';
 import { memoryMetrics } from '../utils/memoryMetrics';
 import { OllamaService } from './ollamaService';
 
+interface VectorLink {
+  targetId: string;
+  type: string;
+}
+
+export interface VectorMetadata {
+  id?: string;
+  text?: string;
+  type?: string;
+  tier?: MemoryTier;
+  importance?: number;
+  createdAt?: string;
+  status?: string;
+  links?: Array<string | VectorLink>;
+  isAnchor?: boolean;
+  isUniversal?: boolean;
+  timestamp?: string;
+  tags?: string[];
+  filePath?: string;
+  symbols?: string[];
+  fileModifiedAt?: number;
+  [key: string]: unknown;
+}
+
 interface VectorEntry {
   id: string;
   vector: number[];
-  metadata: any; 
+  metadata: VectorMetadata;
 }
 
 export type MemoryTier = 'episodic' | 'crystallized' | 'meta-summary' | 'archived';
@@ -408,7 +432,7 @@ export class VectorService {
 
   // --- TYPED STORAGE METHODS ---
 
-  async saveRule(rule: any) {
+  async saveRule(rule: CrystallizedRule) {
     const entry = {
       ...rule,
       tier: 'crystallized' as MemoryTier,
@@ -421,7 +445,7 @@ export class VectorService {
     return this.addEntry(rule.ruleText, entry);
   }
 
-  async savePattern(pattern: any) {
+  async savePattern(pattern: SuccessPattern) {
     const entry = {
       ...pattern,
       tier: 'crystallized' as MemoryTier,
@@ -432,7 +456,7 @@ export class VectorService {
     return this.addEntry(`${pattern.problemDomain}\n${pattern.solutionCode}`, entry);
   }
 
-  async saveInsight(insight: any) {
+  async saveInsight(insight: SupervisoryInsight) {
     const entry = {
       ...insight,
       tier: 'crystallized' as MemoryTier,
@@ -622,14 +646,14 @@ export class VectorService {
     }
   }
 
-  async addEntry(text: string, metadata: any) {
+  async addEntry(text: string, metadata: VectorMetadata) {
     if (!text) return;
     const vector = await this.getEmbedding(text);
     
     // Normalize links if present
     let normalizedLinks = metadata.links;
     if (Array.isArray(metadata.links)) {
-      normalizedLinks = metadata.links.map((link: any) => 
+      normalizedLinks = metadata.links.map((link: string | VectorLink) =>
         typeof link === 'string' ? { targetId: link, type: 'references' } : link
       );
     }
@@ -663,7 +687,7 @@ export class VectorService {
     return entry.id;
   }
 
-  async addEntriesBatch(entries: { text: string, metadata: any }[]) {
+  async addEntriesBatch(entries: { text: string, metadata: VectorMetadata }[]) {
     if (entries.length === 0) return [];
 
     const embeddings = await this.batchGetEmbeddings(entries.map(e => e.text));
@@ -673,7 +697,7 @@ export class VectorService {
       // Normalize links if present
       let normalizedLinks = e.metadata.links;
       if (Array.isArray(e.metadata.links)) {
-        normalizedLinks = e.metadata.links.map((link: any) => 
+        normalizedLinks = e.metadata.links.map((link: string | VectorLink) =>
           typeof link === 'string' ? { targetId: link, type: 'references' } : link
         );
       }
@@ -734,7 +758,7 @@ export class VectorService {
 
           const extensions = ['.ts', '.tsx', '.js', '.jsx', '.md', '.txt', '.py', '.json'];
 
-          const pendingEntries: { text: string, metadata: any }[] = [];
+          const pendingEntries: { text: string, metadata: VectorMetadata }[] = [];
 
     
 
@@ -836,7 +860,7 @@ export class VectorService {
 
     
 
-                          const links = this.findReferenceTargets(entry.metadata.text, id);
+                          const links = this.findReferenceTargets(entry.metadata.text || '', id);
 
     
 
@@ -992,7 +1016,7 @@ export class VectorService {
 
     
 
-      private chunkFile(content: string, filePath: string): { text: string, metadata: any }[] {
+      private chunkFile(content: string, filePath: string): { text: string, metadata: VectorMetadata }[] {
         const maxChunkSize = 1200;
         const overlapSize = 200;
         const relativePath = path.relative(process.cwd(), filePath);
@@ -1017,7 +1041,7 @@ export class VectorService {
           blocks = content.split(/\n\n+/);
         }
 
-        const chunks: { text: string, metadata: any }[] = [];
+        const chunks: { text: string, metadata: VectorMetadata }[] = [];
         let currentChunk = "";
 
         for (const block of blocks) {
@@ -1060,15 +1084,15 @@ export class VectorService {
         this.newEntriesSinceLastDream = 0;
         // Use task service to schedule maintenance instead of running inline
         import('./taskService').then(({ taskService }) => {
-          taskService.scheduleMaintenance().catch((e: any) =>
+          taskService.scheduleMaintenance().catch((e: unknown) =>
             logger.error('[VectorService] Maintenance scheduling failed', e)
           );
-        }).catch((e: any) =>
+        }).catch((e: unknown) =>
           logger.error('[VectorService] Failed to import taskService', e)
         );
       }
 
-    async updateEntry(id: string, updates: any) {
+    async updateEntry(id: string, updates: Partial<VectorMetadata>) {
       const index = this.memory.findIndex(m => m.id === id);
       if (index === -1) return false;
 
@@ -1162,7 +1186,7 @@ export class VectorService {
         if (filter.tier) candidates = candidates.filter(m => m.metadata.tier === filter.tier);
         if (filter.tags && filter.tags.length > 0 && candidates.length === this.memory.length) {
           candidates = candidates.filter(m => 
-            m.metadata.tags && filter.tags!.some(t => m.metadata.tags.includes(t))
+            m.metadata.tags && filter.tags!.some(t => m.metadata.tags!.includes(t))
           );
         }
       }
@@ -1219,9 +1243,10 @@ export class VectorService {
 
                         // Only add if not already in results
 
-                        if (!expandedResults.find(r => r.id === link.targetId)) {
+                        const linkId = typeof link === 'string' ? link : link.targetId;
+                        if (!expandedResults.find(r => r.id === linkId)) {
 
-                          const targetEntry = this.memory.find(m => m.id === link.targetId);
+                          const targetEntry = this.memory.find(m => m.id === linkId);
 
                           if (targetEntry) {
 
@@ -1328,7 +1353,7 @@ export class VectorService {
   getAllTexts(): Array<{ id: string; text: string }> {
     return this.memory
       .filter(e => e.metadata.status !== 'deprecated' && e.metadata.text)
-      .map(e => ({ id: e.id, text: e.metadata.text }));
+      .map(e => ({ id: e.id, text: e.metadata.text! }));
   }
 
   /**
@@ -1348,7 +1373,7 @@ export class VectorService {
     for (const id of ids) {
       const entry = this.memory.find(e => e.id === id);
       if (entry) {
-        entry.metadata.retrievalCount = (entry.metadata.retrievalCount || 0) + 1;
+        entry.metadata.retrievalCount = Number(entry.metadata.retrievalCount || 0) + 1;
         changed = true;
       }
     }

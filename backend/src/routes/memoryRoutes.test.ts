@@ -86,7 +86,7 @@ describe('POST /api/v1/memory/search', () => {
         vector: [],
         metadata: {
           type: 'decision',
-          tier: 'high',
+          tier: 'crystallized',
           importance: 0.8,
           confidence: 0.9,
           timestamp: '2024-01-01T00:00:00Z',

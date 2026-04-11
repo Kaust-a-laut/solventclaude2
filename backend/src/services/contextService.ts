@@ -586,10 +586,11 @@ export class ContextService {
 
     // 2c. Traversal of Links for top candidates
     const topCandidates = relevantEntries.slice(0, 5);
-    const linkedMemories: any[] = [];
+    const linkedMemories: Array<{ id: string; score: number; vector: number[]; metadata: import('./vectorService').VectorMetadata }> = [];
     for (const cand of topCandidates) {
       if (cand.metadata.links && Array.isArray(cand.metadata.links)) {
-        const linked = vectorService.getEntriesByIds(cand.metadata.links);
+        const linkIds = cand.metadata.links.map((l: string | { targetId: string }) => typeof l === 'string' ? l : l.targetId);
+        const linked = vectorService.getEntriesByIds(linkIds);
         linked.forEach(m => {
           if (m?.id && !relevantEntries.find(re => re.id === m.id)) {
             linkedMemories.push({ ...m, score: cand.score * LINKED_MEMORY_SCORE_MULTIPLIER });
@@ -658,7 +659,7 @@ export class ContextService {
       if (tagCandidatesIds.has(e.id)) finalScore += SCORE_BOOST_TAG_MATCH;
 
       // Retrieval reinforcement: boost entries that have been retrieved frequently
-      const entryRetrievalCount = e.metadata.retrievalCount || 0;
+      const entryRetrievalCount = Number(e.metadata.retrievalCount) || 0;
       if (entryRetrievalCount > 0) {
         finalScore += SCORE_BOOST_PER_RETRIEVAL * Math.min(entryRetrievalCount, MAX_RETRIEVAL_BOOST_COUNT);
       }
@@ -700,7 +701,7 @@ export class ContextService {
       const tokenize = (text: string) =>
         text.toLowerCase().split(/\W+/).filter(w => w.length >= 4 && !STOP_WORDS.has(w));
       const hasConflict = globalRules.some(r => {
-        const ruleText = r.metadata.text.toLowerCase();
+        const ruleText = (r.metadata.text || '').toLowerCase();
         const isNegationRule = NEGATION_WORDS.some(w => ruleText.includes(w));
         if (!isNegationRule) return false;
         const ruleTokens = new Set(tokenize(ruleText));

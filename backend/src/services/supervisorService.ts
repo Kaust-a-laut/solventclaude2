@@ -633,7 +633,7 @@ RESPONSE FORMAT (strict JSON):
 
       const memoryContext = memories
         .filter(m => m.score > 0.75) // Only high relevance
-        .map(m => `[${m.metadata.type.toUpperCase()}]: ${m.metadata.text}`)
+        .map(m => `[${(m.metadata.type || 'INFO').toUpperCase()}]: ${m.metadata.text || ''}`)
         .join('\n');
 
       if (!memoryContext) return;

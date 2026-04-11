@@ -273,16 +273,17 @@ describe('VectorService', () => {
       const codeInterface = 'export interface ILogger { log(msg: string): void; }';
       const codeImpl = 'export class ConsoleLogger implements ILogger { log(msg: string) { console.log(msg); } }';
       
-      const idInterface = await vectorService.addEntry(codeInterface, { 
-        type: 'code_block', 
+      const idInterface = await vectorService.addEntry(codeInterface, {
+        type: 'code_block',
         symbols: ['ILogger'],
-        tier: 'episodic' 
+        tier: 'episodic'
       });
-      
-      const idImpl = await vectorService.addEntry(codeImpl, { 
-        type: 'code_block', 
+      expect(idInterface).toBeDefined();
+
+      const idImpl = await vectorService.addEntry(codeImpl, {
+        type: 'code_block',
         symbols: ['ConsoleLogger'],
-        links: [{ targetId: idInterface, type: 'depends_on' }],
+        links: [{ targetId: idInterface!, type: 'depends_on' }],
         tier: 'episodic'
       });
 

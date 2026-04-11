@@ -57,7 +57,7 @@ router.get('/memory/entries', (req: Request, res: Response) => {
   if (type) entries = entries.filter(e => e.metadata?.type === type);
   if (search) {
     entries = entries.filter(e => {
-      const content = (e.metadata?.content || e.metadata?.summary || '').toLowerCase();
+      const content = String(e.metadata?.content || e.metadata?.summary || '').toLowerCase();
       return content.includes(search);
     });
   }
