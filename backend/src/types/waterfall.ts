@@ -22,11 +22,12 @@ export interface PlannedTask {
 }
 
 export interface PlannerOutput extends Record<string, unknown> {
-  decisions: string[];
-  tasks: PlannedTask[];
-  estimatedRisk: 'low' | 'medium' | 'high';
-  reasoning: string;
-  // LLM planner also returns these fields:
+  /** Normalized fields (reserved for future structured planners) */
+  decisions?: string[];
+  tasks?: PlannedTask[];
+  estimatedRisk?: 'low' | 'medium' | 'high';
+  reasoning?: string;
+  // LLM planner returns these fields:
   keyDecisions?: string[];
   assumptions?: string[];
   complexity?: 'low' | 'medium' | 'high';
@@ -34,6 +35,8 @@ export interface PlannerOutput extends Record<string, unknown> {
   openQuestions?: string[];
   plan?: string;
   steps?: Array<{ title: string; description: string }>;
+  /** Set when JSON parse fails in parseJSONResponse */
+  raw?: string | null;
 }
 
 // ============================================================================
@@ -53,16 +56,18 @@ export interface ExecutionError {
 }
 
 export interface ExecutorOutput extends Record<string, unknown> {
-  filesCreated: FileChange[];
-  filesModified: FileChange[];
-  filesDeleted: string[];
-  decisions: string[];
-  errors: ExecutionError[];
-  // LLM executor also returns these fields:
+  /** Normalized fields (reserved for future structured executors) */
+  filesCreated?: FileChange[];
+  filesModified?: FileChange[];
+  filesDeleted?: string[];
+  decisions?: string[];
+  errors?: ExecutionError[];
+  // LLM executor returns these fields:
   code?: string;
   explanation?: string;
   files?: string[];
   decisionsOverridden?: string[];
+  raw?: string | null;
 }
 
 // ============================================================================
@@ -145,9 +150,9 @@ export interface WaterfallPausedResult {
   status: 'paused';
   estimate?: import('../utils/resourceEstimator').ResourceEstimate;
   planner: PlannerOutput | null;
-  executor?: null;
-  reviewer?: null;
-  attempts?: number;
+  executor: null;
+  reviewer: null;
+  attempts: number;
 }
 
 // ============================================================================
