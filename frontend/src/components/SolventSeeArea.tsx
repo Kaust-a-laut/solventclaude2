@@ -233,7 +233,7 @@ export const SolventSeeArea = () => {
         break;
       case 'Gen-Fill':
         setImageLoading(true);
-        await generateImageAction(data);
+        await generateImageAction(data as string);
         return;
       case 'Agentic Edit':
         prompt = `I want to make this change to the image: "${data}". Explain how this could be achieved and what the result would look like.`;

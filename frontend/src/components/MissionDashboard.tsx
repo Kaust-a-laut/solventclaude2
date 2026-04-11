@@ -58,21 +58,23 @@ export const MissionDashboard: React.FC = () => {
 
   // Listen for MISSION_PROGRESS socket events
   useEffect(() => {
-    const socket = (window as unknown as { socket?: unknown }).socket;
+    type SocketLike = { on(e: string, fn: (d: unknown) => void): void; off(e: string, fn: (d: unknown) => void): void };
+    const socket = (window as unknown as { socket?: SocketLike }).socket;
     if (!socket) return;
 
-    const handleMissionProgress = (data: MissionProgress) => {
+    const handleMissionProgress = (data: unknown) => {
+      const d = data as MissionProgress;
       setActiveMission(prev => ({
         ...prev,
-        ...data,
-        agentContributions: data.agentContributions || prev?.agentContributions || []
+        ...d,
+        agentContributions: d.agentContributions || prev?.agentContributions || []
       }));
 
       // Update consensus score if available
-      if (data.progress !== undefined) {
+      if (d.progress !== undefined) {
         setConsensusHistory(prev => [
           ...prev.slice(-19), // Keep last 20
-          { score: data.progress, timestamp: Date.now() }
+          { score: d.progress, timestamp: Date.now() }
         ]);
       }
     };

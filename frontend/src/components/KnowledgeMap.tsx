@@ -64,7 +64,7 @@ export const KnowledgeMap = () => {
     const g = svg.append("g");
 
     // Zoom behavior
-    const zoom = d3Zoom()
+    const zoom = d3Zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 8])
       .on("zoom", (event) => {
         g.attr("transform", event.transform);
@@ -73,7 +73,7 @@ export const KnowledgeMap = () => {
     svg.call(zoom);
 
     const nodes = displayNodes.map(n => ({ ...n, x: width / 2, y: height / 2 })) as SimNode[];
-    const links = displayEdges as SimulationLinkDatum<SimNode>[];
+    const links = displayEdges as unknown as SimulationLinkDatum<SimNode>[];
 
     const simulation = forceSimulation<SimNode>(nodes)
       .force("link", forceLink<SimNode, SimulationLinkDatum<SimNode>>(links).id((d) => d.id).distance(100))
@@ -135,32 +135,36 @@ export const KnowledgeMap = () => {
       .on("click", (event, d) => {
         event.stopPropagation();
         setSelectedEdge(d);
-        setEdgeData(d.data || JSON.stringify({ source: (d.source as SimulationLinkDatum<SimNode>).source?.id ?? d.source, target: (d.target as SimulationLinkDatum<SimNode>).target?.id ?? d.target, status: "pending" }, null, 2));
+        const resolvedSrc = d.source as unknown as SimNode | string;
+        const resolvedTgt = d.target as unknown as SimNode | string;
+        setEdgeData(d.data || JSON.stringify({ source: typeof resolvedSrc === 'object' ? resolvedSrc.id : resolvedSrc, target: typeof resolvedTgt === 'object' ? resolvedTgt.id : resolvedTgt, status: "pending" }, null, 2));
+      });
+
+    const dragBehavior = d3Drag<SVGGElement, SimNode>()
+      .on("start", function(event) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        event.subject.fx = event.subject.x;
+        event.subject.fy = event.subject.y;
+        select(event.sourceEvent.currentTarget).attr("cursor", "grabbing");
+      })
+      .on("drag", function(event) {
+        event.subject.fx = event.x;
+        event.subject.fy = event.y;
+      })
+      .on("end", function(event) {
+        if (!event.active) simulation.alphaTarget(0);
+        event.subject.fx = null;
+        event.subject.fy = null;
+        select(event.sourceEvent.currentTarget).attr("cursor", "grab");
       });
 
     const node = g.append("g")
       .selectAll("g")
-      .data(displayNodes)
+      .data(nodes)
       .join("g")
       .attr("cursor", "grab")
-      .call(d3Drag()
-        .on("start", function(event) {
-          if (!event.active) simulation.alphaTarget(0.3).restart();
-          event.subject.fx = event.subject.x;
-          event.subject.fy = event.subject.y;
-          select(event.sourceEvent.currentTarget).attr("cursor", "grabbing");
-        })
-        .on("drag", function(event) {
-          event.subject.fx = event.x;
-          event.subject.fy = event.y;
-        })
-        .on("end", function(event) {
-          if (!event.active) simulation.alphaTarget(0);
-          event.subject.fx = null;
-          event.subject.fy = null;
-          select(event.sourceEvent.currentTarget).attr("cursor", "grab");
-        })
-      )
+      // d3 DragBehavior generics don't align with .join() BaseType union; bypass with opaque cast
+      .call(dragBehavior as unknown as (sel: unknown) => void)
       .on("mouseover", (event, d: SimNode) => {
          select(event.currentTarget).select("circle.outer-glow").attr("r", 14).attr("opacity", 0.4);
          setHoveredNode(d);

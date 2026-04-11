@@ -112,7 +112,7 @@ export const createChatSlice: StateCreator<AppState, [], [], ChatSlice> = (set, 
 
   loadSession: async (sessionId: string) => {
     try {
-      const response = await api.get(`/sessions/${sessionId}`);
+      const response = await api.get<{ id: string; title: string; mode: string; messages: Message[] }>(`/sessions/${sessionId}`);
       const session = response.data;
       
       const messages = session.messages.map((m: Message) => ({
@@ -140,7 +140,7 @@ export const createChatSlice: StateCreator<AppState, [], [], ChatSlice> = (set, 
   listSessions: async (mode?: string) => {
     try {
       const url = mode ? `/sessions?mode=${encodeURIComponent(mode)}` : '/sessions';
-      const response = await api.get(url);
+      const response = await api.get<{ sessions: unknown[] }>(url);
       return response.data.sessions;
     } catch (error) {
       console.error('[chatSlice] Failed to list sessions:', error);

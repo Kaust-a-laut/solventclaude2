@@ -63,13 +63,15 @@ export const SupervisorHistory = () => {
 
   // Listen for DECISION_PENDING socket events
   useEffect(() => {
-    const socket = (window as unknown as { socket?: unknown }).socket;
+    type SocketLike = { on(e: string, fn: (d: unknown) => void): void; off(e: string, fn: (d: unknown) => void): void };
+    const socket = (window as unknown as { socket?: SocketLike }).socket;
     if (!socket) return;
 
-    const handleDecisionPending = (decision: PendingDecision) => {
-      setPendingDecisions(prev => [...prev, decision]);
-      if (decision.timeRemaining) {
-        setTimeRemaining(prev => ({ ...prev, [decision.id]: decision.expiresAt }));
+    const handleDecisionPending = (decision: unknown) => {
+      setPendingDecisions(prev => [...prev, decision as PendingDecision]);
+      const d = decision as PendingDecision;
+      if (d.timeRemaining) {
+        setTimeRemaining(prev => ({ ...prev, [d.id]: d.expiresAt }));
       }
     };
 
@@ -79,7 +81,7 @@ export const SupervisorHistory = () => {
 
   const loadPendingDecisions = async () => {
     try {
-      const response = await api.get('/overseer/pending', { retries: 0 } as unknown as RequestInit);
+      const response = await api.get<{ decisions: PendingDecision[] }>('/overseer/pending', { retries: 0 } as unknown as RequestInit);
       setPendingDecisions(response.data.decisions);
       response.data.decisions.forEach((d: PendingDecision) => {
         setTimeRemaining(prev => ({ ...prev, [d.id]: d.expiresAt }));

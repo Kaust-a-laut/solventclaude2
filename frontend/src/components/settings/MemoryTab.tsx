@@ -68,7 +68,7 @@ export const MemoryTab = () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query: memorySearch, limit: 20 }),
-        }) as Promise<{ entries: MemoryEntry[] }>;
+        }) as { entries: MemoryEntry[] };
         setMemoryEntries(result.entries || []);
       } catch {
         // silently fail
@@ -202,7 +202,7 @@ export const MemoryTab = () => {
               'meta-summary': 'bg-white/10 text-slate-400 border-white/20',
               archived: 'bg-white/5 text-slate-400 border-white/10',
             };
-            const tierClass = tierColors[entry.tier] || 'bg-white/5 text-slate-300 border-white/10';
+            const tierClass = tierColors[entry.tier ?? ''] || 'bg-white/5 text-slate-300 border-white/10';
             const confidence = typeof entry.confidence === 'string'
               ? entry.confidence
               : entry.confidence != null

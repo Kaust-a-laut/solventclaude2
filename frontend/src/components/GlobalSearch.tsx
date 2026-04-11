@@ -75,12 +75,14 @@ export const GlobalSearch: React.FC = () => {
   const performSearch = async (searchQuery: string) => {
     setIsLoading(true);
     try {
+      type SessionItem = { id: string; title: string; mode?: string; updatedAt: string; messages?: Array<{ role?: string; content?: string }>; metadata?: { messageCount?: number } };
+      type MemoryItem = { id: string; metadata?: { type?: string }; text?: string; score?: number };
       const [sessionsRes, memoriesRes] = await Promise.all([
-        api.get(`/sessions?search=${encodeURIComponent(searchQuery)}&limit=10`),
-        api.post('/memory/search', {
+        api.get<{ sessions: SessionItem[] }>(`/sessions?search=${encodeURIComponent(searchQuery)}&limit=10`),
+        api.post<{ results: MemoryItem[] }>('/memory/search', {
           query: searchQuery,
           limit: 10
-        }).catch(() => ({ data: { results: [] } }))
+        }).catch(() => ({ data: { results: [] as MemoryItem[] } }))
       ]);
 
       const formattedResults: SearchResult[] = [];
@@ -89,17 +91,17 @@ export const GlobalSearch: React.FC = () => {
       if (sessionsRes.data.sessions) {
         for (const session of sessionsRes.data.sessions) {
           // Find matching message if search matched within messages
-          const matchingMessage = session.messages?.find((m: { role?: string; content?: string }) => 
-            m.content.toLowerCase().includes(searchQuery.toLowerCase())
+          const matchingMessage = session.messages?.find((m: { role?: string; content?: string }) =>
+            m.content?.toLowerCase().includes(searchQuery.toLowerCase())
           );
 
           formattedResults.push({
             type: 'session',
             id: session.id,
             title: session.title,
-            excerpt: matchingMessage 
-              ? matchingMessage.content.slice(0, 150) + '...'
-              : session.messages?.[0]?.content.slice(0, 150) + '...',
+            excerpt: matchingMessage
+              ? (matchingMessage.content ?? '').slice(0, 150) + '...'
+              : (session.messages?.[0]?.content ?? '').slice(0, 150) + '...',
             metadata: {
               mode: session.mode,
               date: new Date(session.updatedAt).toLocaleDateString(),

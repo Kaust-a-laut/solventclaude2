@@ -48,7 +48,7 @@ export const CompareArea = () => {
       setResults(data);
     } catch (e: unknown) {
       console.error(e);
-      setError(e.message);
+      setError(e instanceof Error ? e.message : 'Comparison failed');
     } finally {
       setIsComparing(false);
     }

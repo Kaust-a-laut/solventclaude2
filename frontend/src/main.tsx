@@ -61,7 +61,7 @@ interface ElectronAPI {
 
 // Detect performance tier on startup (Electron only)
 if ((window as unknown as { electron?: ElectronAPI }).electron?.getDeviceCapability) {
-  (window as unknown as { electron?: ElectronAPI }).electron!.getDeviceCapability().then((cap: DeviceCapability) => {
+  (window as unknown as { electron?: ElectronAPI }).electron?.getDeviceCapability?.().then((cap: DeviceCapability) => {
     const tier = detectTier(cap);
     useAppStore.getState().setDetectedTier(tier);
     console.log(`[Performance] Detected tier: ${tier}`, cap);

@@ -107,8 +107,8 @@ export const IntelPanel: React.FC = () => {
     if (intelPanelContent.type === 'reader' && intelPanelContent.pageContent) {
       context = intelPanelContent.pageContent.content;
     } else if (intelPanelContent.type === 'search' && intelPanelContent.searchResults) {
-      const results = intelPanelContent.searchResults.results || [];
-      context = results.slice(0, 5).map((r: SearchResultItem) => `${r.title}: ${r.snippet || ''}`).join('\n');
+      const results = (intelPanelContent.searchResults.results || []) as SearchResultItem[];
+      context = results.slice(0, 5).map((r) => `${r.title}: ${r.snippet || ''}`).join('\n');
       if (intelPanelContent.searchResults.synthesis?.answer) {
         context = intelPanelContent.searchResults.synthesis.answer + '\n\n' + context;
       }
@@ -136,8 +136,8 @@ export const IntelPanel: React.FC = () => {
     if (intelPanelContent.type === 'search' && intelPanelContent.searchResults) {
       const syn = intelPanelContent.searchResults.synthesis;
       if (syn) return `Search: "${intelPanelContent.query}"\n\n${syn.answer}`;
-      const top = (intelPanelContent.searchResults.results || []).slice(0, 3);
-      return `Search: "${intelPanelContent.query}"\n\n` + top.map((r: SearchResultItem) => `- ${r.title}: ${r.snippet || ''}`).join('\n');
+      const top = (intelPanelContent.searchResults.results || []) as SearchResultItem[];
+      return `Search: "${intelPanelContent.query}"\n\n` + top.slice(0, 3).map((r) => `- ${r.title}: ${r.snippet || ''}`).join('\n');
     }
     return '';
   }, [intelPanelContent]);
@@ -306,7 +306,7 @@ export const IntelPanel: React.FC = () => {
             )}
 
             {/* Results List */}
-            {(intelPanelContent.searchResults.results || []).map((result: SearchResultItem, i: number) => (
+            {((intelPanelContent.searchResults.results || []) as SearchResultItem[]).map((result, i) => (
               <button
                 key={i}
                 onClick={() => handleResultClick(result.link)}

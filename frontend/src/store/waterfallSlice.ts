@@ -258,13 +258,13 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
                return {
                  waterfall: {
                    ...state.waterfall,
-                   currentStep: 'planner',
+                   currentStep: 'planner' as const,
                    steps: {
                      ...state.waterfall.steps,
                      planner: {
-                       status: 'paused',
-                       data: { ...state.waterfall.steps.planner.data, estimate },
-                       error: message
+                       status: 'paused' as const,
+                       data: { ...(state.waterfall.steps.planner.data ?? {}), estimate } as WaterfallStepPayload,
+                       error: message as string | null
                      }
                    }
                  }
@@ -319,8 +319,8 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
                };
             }
 
-            const newWaterfall = waterfallStateMachine.transition(state.waterfall, phase, payload);
-            return { waterfall: newWaterfall };
+            const newWaterfall = waterfallStateMachine.transition(state.waterfall as unknown as import('../lib/waterfallStateMachine').WaterfallState, phase, payload);
+            return { waterfall: { ...state.waterfall, ...newWaterfall } } as Partial<AppState>;
           });
         } catch (e: unknown) {
           if (import.meta.env.DEV) console.warn('[Waterfall] Failed to process SSE line:', e);

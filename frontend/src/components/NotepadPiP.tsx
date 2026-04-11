@@ -409,7 +409,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                 <div className="pt-2 mt-2 border-t border-white/5 flex flex-col gap-1">
                   <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">AI Provider</span>
                   <div className="flex gap-1">
-                    {['cloud', 'local', 'auto'].map(p => (
+                    {(['cloud', 'local', 'auto'] as const).map(p => (
                       <button
                         key={p}
                         onClick={() => setGlobalProvider(p)}

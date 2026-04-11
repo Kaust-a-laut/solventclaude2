@@ -260,13 +260,13 @@ export const AgentChatPanel: React.FC = () => {
             case 'tool_result':
             case 'tool_error': {
               const toolEvent: ToolEvent = {
-                type: evt.type as string,
+                type: evt.type as 'tool_start' | 'tool_result' | 'tool_error',
                 tool: evt.tool as string,
                 args: evt.args as Record<string, unknown>,
                 result: evt.result,
                 error: evt.error as string | undefined,
-                iteration: evt.iteration as number | undefined,
-                callId: evt.callId as string | undefined,
+                iteration: (evt.iteration as number) ?? 0,
+                callId: (evt.callId as string) ?? '',
               };
               appendToolEvent(assistantId, toolEvent);
 
@@ -283,7 +283,7 @@ export const AgentChatPanel: React.FC = () => {
             }
 
             case 'text_complete': {
-              const rawResponse = event.content ?? '';
+              const rawResponse = (event as Record<string, unknown>).content as string ?? '';
               const { cleanText, blocks } = extractCodeBlocks(rawResponse);
               updateAgentMessage(assistantId, {
                 content: cleanText,

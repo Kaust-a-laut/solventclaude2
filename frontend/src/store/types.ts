@@ -84,6 +84,7 @@ export interface GraphNode {
   title: string;
   description?: string;
   mode?: string;
+  type?: string;
   x?: number;
   y?: number;
 }

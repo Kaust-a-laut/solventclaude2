@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Cpu, Sliders, Key, Database, Search, Download, Upload,
+  type LucideIcon,
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -164,7 +165,7 @@ export const SettingsModal = () => {
 
   if (!settingsOpen) return null;
 
-  const tabs: { id: TabId; label: string; icon: React.ElementType; shortcut: string }[] = [
+  const tabs: { id: TabId; label: string; icon: LucideIcon; shortcut: string }[] = [
     { id: 'models',    label: 'Models',    icon: Cpu,      shortcut: '\u2318 1' },
     { id: 'behavior',  label: 'Behavior',  icon: Sliders,  shortcut: '\u2318 2' },
     { id: 'api-keys',  label: 'API Keys',  icon: Key,      shortcut: '\u2318 3' },
