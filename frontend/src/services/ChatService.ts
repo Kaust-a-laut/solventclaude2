@@ -1,6 +1,7 @@
 import { fetchWithRetry } from '../lib/api-client';
 import { API_BASE_URL, BASE_URL } from '../lib/config';
 import { parseGraphData } from '../lib/graph-parser';
+import type { SearchResultSet, PageContent } from '../store/types';
 
 const THINKING_MODEL_LOCAL = 'deepseek-r1:8b';
 const THINKING_MODEL_CLOUD = 'deepseek-r1-distill-llama-70b';
@@ -8,29 +9,84 @@ const THINKING_MODEL_CLOUD = 'deepseek-r1-distill-llama-70b';
 import { NATIVE_THINKING_MODELS } from '../lib/thinkingModels';
 export { NATIVE_THINKING_MODELS };
 
+// --- Type Definitions ---
+
+export interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  image?: string | null;
+  timestamp?: number;
+}
+
+export interface ModeConfig {
+  provider: string;
+  model: string;
+  temperature?: number;
+  maxTokens?: number;
+}
+
+export interface DeviceInfo {
+  type: 'desktop' | 'mobile' | 'tablet';
+  browser?: string;
+  os?: string;
+}
+
+export interface SearchResult {
+  title: string;
+  url: string;
+  snippet: string;
+  score?: number;
+}
+
+export interface CodingHistoryEntry {
+  task: string;
+  outcome: 'success' | 'failure' | 'partial';
+  timestamp: number;
+}
+
+export interface BrowserContext {
+  history: string[];
+  lastSearchResults?: SearchResult[];
+}
+
 export interface ChatParams {
-  messages: any[];
+  messages: ChatMessage[];
   currentMode: string;
-  modeConfigs: Record<string, any>;
+  modeConfigs: Record<string, ModeConfig>;
   selectedLocalModel: string;
   selectedCloudModel: string;
   selectedCloudProvider: string;
   globalProvider: 'cloud' | 'local' | 'auto';
   temperature: number;
   maxTokens: number;
-  deviceInfo: any;
+  deviceInfo: DeviceInfo;
   notepadContent: string;
   openFiles?: Array<{ path: string; content: string }>;
-  codingHistory?: any[];
-  browserContext?: {
-    history: string[];
-    lastSearchResults?: any;
-  };
+  codingHistory?: CodingHistoryEntry[];
+  browserContext?: BrowserContext;
   apiKeys: Record<string, string>;
   thinkingModeEnabled?: boolean;
   imageProvider?: string;
   activeFile?: string | null;
   sessionId?: string | null;
+}
+
+export interface ChatResponse {
+  response: string;
+  updatedNotepad: string | null;
+  newGraphData: { nodes: unknown[]; edges: unknown[] };
+  model: string;
+  info?: string;
+  isGeneratedImage?: boolean;
+  imageUrl?: string;
+  provenance?: unknown;
+  traceId?: string;
+}
+
+export interface ImageGenerationOptions {
+  size?: string;
+  quality?: string;
+  [key: string]: unknown;
 }
 
 export class ChatService {
@@ -110,8 +166,9 @@ export class ChatService {
           model: model || 'deepseek-chat',
           info: 'Direct Puter.js delivery'
         };
-      } catch (err: any) {
-        console.error('[Puter] Client-side failure:', err);
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.error('[Puter] Client-side failure:', errorMessage);
         // Fallback to backend if puter fails
       }
     }
@@ -141,12 +198,19 @@ export class ChatService {
         sessionId: params.sessionId || undefined
       }),
       retries: 3
-    }) as any;
+    }) as {
+      response?: string;
+      model?: string;
+      info?: unknown;
+      isGeneratedImage?: boolean;
+      imageUrl?: string;
+      [key: string]: unknown;
+    };
 
     if (!data.response) throw new Error('Invalid response from server.');
 
     // 3. Parse and Process Response
-    let finalResponse = data.response;
+    let finalResponse: string = data.response;
     let updatedNotepad: string | null = null;
 
     const notepadMatch = finalResponse.match(/<update_notepad>([\s\S]*?)<\/update_notepad>/);
@@ -176,46 +240,46 @@ export class ChatService {
     };
   }
 
-  static async generateImage(prompt: string, provider?: string, apiKeys?: Record<string, string>, options: any = {}) {
+  static async generateImage(prompt: string, provider?: string, apiKeys?: Record<string, string>, options: ImageGenerationOptions = {}) {
     const data = await fetchWithRetry(`${API_BASE_URL}/generate-image`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        prompt, 
-        provider: provider || 'gemini', 
-        apiKeys, 
-        ...options 
+      body: JSON.stringify({
+        prompt,
+        provider: provider || 'gemini',
+        apiKeys,
+        ...options
       }),
       retries: 2
-    }) as any;
+    }) as Record<string, unknown>;
 
     if (!data.imageUrl) {
-      throw new Error(data.error || 'Failed to generate image');
+      throw new Error(data.error as string || 'Failed to generate image');
     }
 
     // Prepend BASE_URL if it's a relative path
-    const fullImageUrl = data.imageUrl.startsWith('http') ? data.imageUrl : `${BASE_URL}${data.imageUrl}`;
+    const fullImageUrl = (data.imageUrl as string).startsWith('http') ? data.imageUrl as string : `${BASE_URL}${data.imageUrl}`;
     return fullImageUrl;
   }
 
-  static async search(query: string, page?: number, expandedQuery?: string) {
+  static async search(query: string, page?: number, expandedQuery?: string): Promise<SearchResultSet & { organic?: any[] }> {
     const data = await fetchWithRetry(`${API_BASE_URL}/search`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query, page, expandedQuery }),
       retries: 2
-    }) as any;
+    }) as SearchResultSet & { organic?: any[] };
 
     return data;
   }
 
-  static async browse(url: string) {
+  static async browse(url: string): Promise<PageContent> {
     const data = await fetchWithRetry(`${API_BASE_URL}/browse`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url }),
       retries: 1
-    }) as any;
+    }) as PageContent;
 
     return data;
   }
@@ -226,7 +290,7 @@ export class ChatService {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content, instruction }),
       retries: 1
-    }) as any;
+    }) as Record<string, unknown>;
 
     return data;
   }
@@ -237,7 +301,7 @@ export class ChatService {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content, question }),
       retries: 1
-    }) as any;
+    }) as Record<string, unknown>;
 
     return data;
   }
@@ -248,15 +312,15 @@ export class ChatService {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, reason }),
       retries: 2
-    }) as any;
+    }) as Record<string, unknown>;
     return data;
   }
 
   static async checkLocalImageStatus() {
     try {
-      const data = await fetchWithRetry(`${API_BASE_URL}/local-image-status`) as any;
+      const data = await fetchWithRetry(`${API_BASE_URL}/local-image-status`) as Record<string, unknown>;
       return data;
-    } catch (e) {
+    } catch (e: unknown) {
       return { loaded: false };
     }
   }
