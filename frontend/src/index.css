@@ -33,19 +33,33 @@
     overscroll-behavior: none;
   }
 
-  /* DPI scaling hack: render at 133% then scale to 75% for sharper text on
-     Electron's default zoom. position:fixed prevents focus-induced scrolling
-     of the oversized root (e.g. Monaco editor mount in the Coding Suite). */
+  /* DPI scaling: render at 1/scale then scale down for sharper text.
+     --ui-scale adapts to viewport width so the UI stays proportional
+     across 15" laptops, 24" externals, and 27"+ monitors.
+     position:fixed prevents focus-induced scrolling of the oversized
+     root (e.g. Monaco editor mount in the Coding Suite). */
   #root {
+    --ui-scale: 0.75;
     position: fixed;
     top: 0;
     left: 0;
-    width: 133.33333vw;
-    height: 133.33333vh;
-    transform: scale(0.75);
+    width: calc(100vw / var(--ui-scale));
+    height: calc(100vh / var(--ui-scale));
+    transform: scale(var(--ui-scale));
     transform-origin: top left;
     overflow: hidden;
     overscroll-behavior: none;
+  }
+
+  /* Scale up on larger displays — same sharpening, bigger UI */
+  @media (min-width: 1800px) {
+    #root { --ui-scale: 0.82; }
+  }
+  @media (min-width: 2200px) {
+    #root { --ui-scale: 0.9; }
+  }
+  @media (min-width: 2800px) {
+    #root { --ui-scale: 1.0; }
   }
 
   /* Prevent scroll-chaining on ALL scrollable containers — stops the
