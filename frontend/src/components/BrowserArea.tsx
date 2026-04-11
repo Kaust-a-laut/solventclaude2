@@ -265,9 +265,10 @@ export const BrowserArea = () => {
     setSummary(null);
     try {
       const data = await ChatService.summarizePage(activeTab.pageContent.content, instruction);
-      setSummary(data.summary);
-    } catch (error: any) {
-      setSummary(`Error: ${error.message || 'Summarization failed'}`);
+      setSummary(typeof data.summary === 'string' ? data.summary : null);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Summarization failed';
+      setSummary(`Error: ${msg}`);
     } finally {
       setIsSummarizing(false);
       setShowSummaryInput(false);

@@ -1,5 +1,27 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
+// Web Speech API — not in stock DOM lib; minimal local shapes
+interface SpeechRecognitionLike {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+interface SpeechRecognitionResultLike {
+  isFinal: boolean;
+  [index: number]: { transcript: string };
+}
+interface SpeechRecognitionEventLike {
+  resultIndex: number;
+  results: { length: number;[index: number]: SpeechRecognitionResultLike };
+}
+interface SpeechRecognitionErrorEventLike { error: string }
+type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
+
 interface UseSpeechToTextReturn {
   isListening: boolean;
   transcript: string;
@@ -12,36 +34,38 @@ interface UseSpeechToTextReturn {
 export function useSpeechToText(): UseSpeechToTextReturn {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
-  const browserSupportsSpeechRecognition = typeof window !== 'undefined' && 
-    (window.SpeechRecognition || window.webkitSpeechRecognition);
+  const browserSupportsSpeechRecognition = typeof window !== 'undefined' &&
+    !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 
   useEffect(() => {
     if (!browserSupportsSpeechRecognition) return;
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition = (window.SpeechRecognition || window.webkitSpeechRecognition) as SpeechRecognitionCtor;
     recognitionRef.current = new SpeechRecognition();
     recognitionRef.current.continuous = true;
     recognitionRef.current.interimResults = true;
     recognitionRef.current.lang = 'en-US';
 
-    recognitionRef.current.onresult = (event: any) => {
+    recognitionRef.current.onresult = (event: SpeechRecognitionEventLike) => {
       let interimTranscript = '';
       let finalTranscript = '';
 
       for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
+        const result = event.results[i];
+        if (!result) continue;
+        if (result.isFinal) {
+          finalTranscript += result[0]?.transcript ?? '';
         } else {
-          interimTranscript += event.results[i][0].transcript;
+          interimTranscript += result[0]?.transcript ?? '';
         }
       }
 
       setTranscript(finalTranscript || interimTranscript);
     };
 
-    recognitionRef.current.onerror = (event: any) => {
+    recognitionRef.current.onerror = (event: SpeechRecognitionErrorEventLike) => {
       console.error('Speech recognition error', event.error);
       setIsListening(false);
     };
@@ -88,7 +112,7 @@ export function useSpeechToText(): UseSpeechToTextReturn {
 
 declare global {
   interface Window {
-    SpeechRecognition: any;
-    webkitSpeechRecognition: any;
+    SpeechRecognition?: SpeechRecognitionCtor;
+    webkitSpeechRecognition?: SpeechRecognitionCtor;
   }
 }

@@ -98,7 +98,7 @@ export const createActionSlice: StateCreator<AppState, [], [], ActionSlice> = (s
       if (state.currentMode === 'coding' || result.response.includes('```')) {
         const codeBlocks = result.response.match(/```(?:[a-z]*)\n([\s\S]*?)```/g);
         if (codeBlocks && codeBlocks.length > 0) {
-          const lastBlock = codeBlocks[codeBlocks.length - 1];
+          const lastBlock = codeBlocks[codeBlocks.length - 1] ?? '';
           const cleanedCode = lastBlock.replace(/```[a-z]*\n/g, '').replace(/```/g, '').trim();
           
           if (state.activeFile) {
@@ -121,11 +121,12 @@ export const createActionSlice: StateCreator<AppState, [], [], ActionSlice> = (s
             mergedNodes.push(newNode);
           }
         });
-        const mergedEdges = [...state.graphEdges, ...(result.newGraphData.edges || [])];
+        const mergedEdges = [...state.graphEdges, ...((result.newGraphData.edges || []) as typeof state.graphEdges)];
         state.setGraphData(mergedNodes, mergedEdges);
       }
-    } catch (error: any) {
-      const errorMessage = error.body?.error || error.message || 'Service unavailable.';
+    } catch (error: unknown) {
+      const err = error as { body?: { error?: string }; message?: string };
+      const errorMessage = err.body?.error || err.message || 'Service unavailable.';
       state.addMessage({
         role: 'assistant',
         content: `Error: ${errorMessage}`,
@@ -156,8 +157,9 @@ export const createActionSlice: StateCreator<AppState, [], [], ActionSlice> = (s
         isGeneratedImage: true,
         imageUrl
       });
-    } catch (error: any) {
-      const errorMessage = error.body?.error || error.message || 'Image generation failed.';
+    } catch (error: unknown) {
+      const err = error as { body?: { error?: string }; message?: string };
+      const errorMessage = err.body?.error || err.message || 'Image generation failed.';
       state.addMessage({
         role: 'assistant',
         content: `Error: ${errorMessage}`,

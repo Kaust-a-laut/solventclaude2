@@ -242,15 +242,16 @@ export const createCollaborateSlice: StateCreator<AppState, [], [], CollaborateS
       if (sseBuffer.trim()) {
         processSSELine(sseBuffer.trim());
       }
-    } catch (error: any) {
-      if (error.name === 'AbortError') {
+    } catch (error: unknown) {
+      const err = error as { name?: string; message?: string };
+      if (err.name === 'AbortError') {
         console.log('[Collaborate] Request cancelled');
       } else {
         set((state) => ({
           collaborate: {
             ...state.collaborate,
             status: 'failed',
-            error: error.message,
+            error: err.message ?? null,
             activeAgentId: null,
           },
         }));

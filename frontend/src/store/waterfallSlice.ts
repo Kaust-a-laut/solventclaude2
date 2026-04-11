@@ -347,8 +347,9 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
       if (sseBuffer.trim()) {
         processSSELine(sseBuffer.trim());
       }
-    } catch (error: any) {
-      if (error.name === 'AbortError') {
+    } catch (error: unknown) {
+      const err = error as { name?: string; message?: string };
+      if (err.name === 'AbortError') {
       } else {
         set((state) => ({
           waterfall: {
@@ -358,7 +359,7 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
               [state.waterfall.currentStep || 'planner']: {
                 status: 'error',
                 data: null,
-                error: error.message
+                error: err.message
               }
             }
           }
@@ -410,13 +411,14 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
           }
         }
       }));
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       set((state) => ({
         waterfall: {
           ...state.waterfall,
           steps: {
             ...state.waterfall.steps,
-            [step]: { ...state.waterfall.steps[step], status: 'error', error: error.message }
+            [step]: { ...state.waterfall.steps[step], status: 'error', error: err.message }
           }
         }
       }));

@@ -12,7 +12,7 @@ export { NATIVE_THINKING_MODELS };
 // --- Type Definitions ---
 
 export interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
+  role: 'user' | 'assistant' | 'system' | 'model';
   content: string;
   image?: string | null;
   timestamp?: number;
@@ -26,9 +26,13 @@ export interface ModeConfig {
 }
 
 export interface DeviceInfo {
-  type: 'desktop' | 'mobile' | 'tablet';
+  type?: 'desktop' | 'mobile' | 'tablet';
   browser?: string;
   os?: string;
+  isMobile?: boolean;
+  isTablet?: boolean;
+  isDesktop?: boolean;
+  windowSize?: { width: number; height: number };
 }
 
 export interface SearchResult {
@@ -39,9 +43,12 @@ export interface SearchResult {
 }
 
 export interface CodingHistoryEntry {
-  task: string;
-  outcome: 'success' | 'failure' | 'partial';
-  timestamp: number;
+  task?: string;
+  outcome?: 'success' | 'failure' | 'partial';
+  timestamp?: number;
+  // Accepts raw chat Message shape too (used as conversation history)
+  role?: string;
+  content?: string;
 }
 
 export interface BrowserContext {
@@ -79,7 +86,7 @@ export interface ChatResponse {
   info?: string;
   isGeneratedImage?: boolean;
   imageUrl?: string;
-  provenance?: unknown;
+  provenance?: import('../store/types').ContextProvenance;
   traceId?: string;
 }
 
@@ -90,7 +97,7 @@ export interface ImageGenerationOptions {
 }
 
 export class ChatService {
-  static async sendMessage(params: ChatParams, content: string, image: string | null = null) {
+  static async sendMessage(params: ChatParams, content: string, image: string | null = null): Promise<ChatResponse> {
     const {
       messages, currentMode, modeConfigs, selectedCloudModel,
       selectedLocalModel, selectedCloudProvider, globalProvider,
@@ -201,9 +208,11 @@ export class ChatService {
     }) as {
       response?: string;
       model?: string;
-      info?: unknown;
+      info?: string;
       isGeneratedImage?: boolean;
       imageUrl?: string;
+      provenance?: import('../store/types').ContextProvenance;
+      traceId?: string;
       [key: string]: unknown;
     };
 
@@ -284,24 +293,24 @@ export class ChatService {
     return data;
   }
 
-  static async summarizePage(content: string, instruction?: string) {
+  static async summarizePage(content: string, instruction?: string): Promise<{ summary?: string; [k: string]: unknown }> {
     const data = await fetchWithRetry(`${API_BASE_URL}/browse/summarize`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content, instruction }),
       retries: 1
-    }) as Record<string, unknown>;
+    }) as { summary?: string; [k: string]: unknown };
 
     return data;
   }
 
-  static async askAboutPage(content: string, question: string) {
+  static async askAboutPage(content: string, question: string): Promise<{ answer: string; [k: string]: unknown }> {
     const data = await fetchWithRetry(`${API_BASE_URL}/browse/ask`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content, question }),
       retries: 1
-    }) as Record<string, unknown>;
+    }) as { answer: string; [k: string]: unknown };
 
     return data;
   }
@@ -316,11 +325,11 @@ export class ChatService {
     return data;
   }
 
-  static async checkLocalImageStatus() {
+  static async checkLocalImageStatus(): Promise<{ loaded: boolean; model?: string; fileExists?: boolean }> {
     try {
-      const data = await fetchWithRetry(`${API_BASE_URL}/local-image-status`) as Record<string, unknown>;
+      const data = await fetchWithRetry(`${API_BASE_URL}/local-image-status`) as { loaded: boolean; model?: string; fileExists?: boolean };
       return data;
-    } catch (e: unknown) {
+    } catch {
       return { loaded: false };
     }
   }
