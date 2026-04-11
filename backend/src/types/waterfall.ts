@@ -78,9 +78,12 @@ export interface ReviewIssue {
 
 export interface ReviewerOutput extends Record<string, unknown> {
   approved: boolean;
-  issues: ReviewIssue[];
-  suggestions: string[];
-  overallQuality: number; // 0-100
+  /** Structured issues (reserved for future use — current LLMs return string[]) */
+  structuredIssues?: ReviewIssue[];
+  /** Actionable issue strings as returned by the reviewer LLM */
+  issues?: string[];
+  suggestions?: string[];
+  overallQuality?: number; // 0-100
   // LLM reviewer also returns these fields:
   score?: number;
   breakdown?: Record<string, number>;
@@ -90,7 +93,6 @@ export interface ReviewerOutput extends Record<string, unknown> {
   crystallizable_insight?: string | null;
   _compilationPassed?: boolean;
   raw?: string | null;
-  issues?: string[]; // LLM returns string array, not ReviewIssue[]
 }
 
 // ============================================================================
