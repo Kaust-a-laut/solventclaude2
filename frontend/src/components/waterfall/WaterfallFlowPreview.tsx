@@ -6,7 +6,7 @@ import { WATERFALL_PRESETS_BY_KEY } from '../../lib/waterfallPresets';
 import { ArrowDown, Workflow, ArrowUpCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const STAGE_ORDER: StageKey[] = ['architect', 'reasoner', 'executor', 'reviewer'];
+const STAGE_ORDER: StageKey[] = ['planner', 'executor', 'reviewer'];
 
 // Resolve model label for a stage from the current preset
 function resolveModelLabel(
@@ -77,8 +77,8 @@ export const WaterfallFlowPreview = ({
 
         {/* Header */}
         <div className="flex items-center gap-2.5">
-          <Workflow size={14} className="text-slate-500" />
-          <span className="text-[12px] font-black text-slate-600 uppercase tracking-widest">
+          <Workflow size={14} className="text-slate-300" />
+          <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">
             Pipeline Flow
           </span>
         </div>
@@ -117,7 +117,7 @@ export const WaterfallFlowPreview = ({
                       {model}
                     </span>
                     {provider && (
-                      <span className="text-[11px] text-slate-500 font-medium capitalize">
+                      <span className="text-[11px] text-slate-300 font-medium capitalize">
                         {provider}
                       </span>
                     )}
@@ -160,7 +160,7 @@ export const WaterfallFlowPreview = ({
                           {stageUpgrades.map(u => (
                             <div key={u.key} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.02] border border-white/[0.06]">
                               <div className="flex-1 min-w-0">
-                                <div className="text-[10px] text-slate-600 font-medium truncate">{u.currentModel}</div>
+                                <div className="text-[10px] text-slate-400 font-medium truncate">{u.currentModel}</div>
                                 <div className="text-[11px] text-slate-300 font-medium truncate">→ {u.successor}</div>
                               </div>
                               <button
@@ -171,7 +171,7 @@ export const WaterfallFlowPreview = ({
                               </button>
                               <button
                                 onClick={() => onDismissUpgrade(u.key)}
-                                className="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-slate-700 hover:text-slate-400 transition-colors"
+                                className="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-400 transition-colors"
                               >
                                 <X size={10} />
                               </button>
@@ -188,7 +188,7 @@ export const WaterfallFlowPreview = ({
                   <div className="flex items-center ml-[19px] py-1">
                     <div className="flex flex-col items-center">
                       <div className="w-px h-4 bg-gradient-to-b from-white/10 to-white/5" />
-                      <ArrowDown size={10} className="text-slate-700 -my-0.5" />
+                      <ArrowDown size={10} className="text-slate-400 -my-0.5" />
                       <div className="w-px h-4 bg-gradient-to-b from-white/5 to-white/10" />
                     </div>
                   </div>
@@ -200,8 +200,8 @@ export const WaterfallFlowPreview = ({
 
         {/* Description footer */}
         <div className="pt-3 border-t border-white/[0.04]">
-          <p className="text-[12px] text-slate-600 leading-relaxed">
-            Each stage streams its output to the next. The planner decomposes, the strategist reasons, the executioner implements, and the reviewer scores.
+          <p className="text-[12px] text-slate-400 leading-relaxed">
+            Each stage streams its output to the next. The planner decomposes and strategizes, the executor implements, and the reviewer scores.
           </p>
         </div>
       </div>

@@ -45,7 +45,7 @@ export const ModelPlaygroundArea = () => {
     {
       id: 'waterfall',
       title: 'Waterfall Architect',
-      desc: 'The ultimate reasoning pipeline. 4-stage verification process for zero-error execution of complex tasks.',
+      desc: 'The ultimate reasoning pipeline. 3-stage verification process for zero-error execution of complex tasks.',
       icon: FlaskConical,
       color: 'text-jb-purple',
       bg: 'bg-jb-purple/5',
@@ -89,7 +89,7 @@ export const ModelPlaygroundArea = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
-                  className="text-slate-500 text-xl md:text-2xl font-medium leading-relaxed tracking-tight"
+                  className="text-slate-300 text-xl md:text-2xl font-medium leading-relaxed tracking-tight"
                 >
                    A high-fidelity sandbox for stress-testing, comparing, and orchestrating the world's most capable foundation models.
                 </motion.p>
@@ -113,16 +113,16 @@ export const ModelPlaygroundArea = () => {
         <div className="pt-12 border-t border-white/[0.06] flex flex-col md:flex-row justify-between items-center gap-6">
            <div className="flex gap-8">
               <div className="space-y-1">
-                 <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Latency Matrix</p>
+                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Latency Matrix</p>
                  <p className="text-sm font-mono text-white/40">Sub-100ms Optimization</p>
               </div>
               <div className="space-y-1">
-                 <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Inference Engine</p>
+                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Inference Engine</p>
                  <p className="text-sm font-mono text-white/40">Hybrid Cloud/Edge</p>
               </div>
            </div>
            
-           <p className="text-[11px] font-mono text-slate-700">SOLVENT.PLAYGROUND_V2.0 // BUILD_2026.01.19</p>
+           <p className="text-[11px] font-mono text-slate-400">SOLVENT.PLAYGROUND_V2.0 // BUILD_2026.01.19</p>
         </div>
       </div>
     </div>

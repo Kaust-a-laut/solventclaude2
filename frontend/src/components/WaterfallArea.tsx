@@ -9,19 +9,18 @@ import { WaterfallStageCard, STAGE_CONFIGS } from './waterfall/WaterfallStageCar
 import type { StageKey } from './waterfall/WaterfallStageCard';
 import { WaterfallConnector } from './waterfall/WaterfallConnector';
 import { WaterfallScore } from './waterfall/WaterfallScore';
-import { WaterfallPresetPicker } from './waterfall/WaterfallPresetPicker';
+import { WaterfallPresetPicker, CUSTOM_MODELS } from './waterfall/WaterfallPresetPicker';
 import { WaterfallFlowPreview } from './waterfall/WaterfallFlowPreview';
 import { WaterfallDetailPanel } from './waterfall/WaterfallDetailPanel';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
-const STAGE_ORDER: StageKey[] = ['architect', 'reasoner', 'executor', 'reviewer'];
+const STAGE_ORDER: StageKey[] = ['planner', 'executor', 'reviewer'];
 
 const IDLE_DOTS = [
   { color: 'bg-jb-purple',   glow: 'rgba(157,91,210,0.5)',  delay: 0    },
-  { color: 'bg-jb-accent',   glow: 'rgba(60,113,247,0.5)',  delay: 0.5  },
-  { color: 'bg-jb-orange',   glow: 'rgba(251,146,60,0.5)',  delay: 1.0  },
-  { color: 'bg-emerald-500', glow: 'rgba(16,185,129,0.5)',  delay: 1.5  },
+  { color: 'bg-jb-orange',   glow: 'rgba(251,146,60,0.5)',  delay: 0.5  },
+  { color: 'bg-emerald-500', glow: 'rgba(16,185,129,0.5)',  delay: 1.0  },
 ] as const;
 
 const INIT_DOTS = [
@@ -29,6 +28,23 @@ const INIT_DOTS = [
   { color: 'bg-jb-accent', glow: 'rgba(60,113,247,0.6)', delay: 0.25 },
   { color: 'bg-jb-orange', glow: 'rgba(251,146,60,0.6)', delay: 0.5  },
 ] as const;
+
+// ─── Model label lookup ──────────────────────────────────────────────────────
+
+const modelLabelLookup = new Map(CUSTOM_MODELS.map(m => [`${m.provider}:${m.value}`, m.label]));
+
+const PROVIDER_LABELS: Record<string, string> = {
+  groq: 'Groq', fireworks: 'Fireworks', openrouter: 'OpenRouter',
+  dashscope: 'DashScope', cerebras: 'Cerebras', ollama: 'Ollama',
+  gemini: 'Gemini', deepseek: 'DeepSeek',
+};
+
+function getStageModelLabel(choice: string | { model: string; provider: string }): string | undefined {
+  if (typeof choice !== 'object') return undefined;
+  const name = modelLabelLookup.get(`${choice.provider}:${choice.model}`) ?? choice.model;
+  const provider = PROVIDER_LABELS[choice.provider] ?? choice.provider;
+  return `${name} · ${provider}`;
+}
 
 // ─── Model upgrade types & helpers ────────────────────────────────────────────
 
@@ -105,6 +121,7 @@ export const WaterfallArea = () => {
     applyEditedPlan,
     retryCount,
     setWaterfallCustomStage,
+    waterfallModelSelection,
   } = useAppStore();
 
   const [input, setInput] = useState('');
@@ -150,10 +167,9 @@ export const WaterfallArea = () => {
 
   // ── Stage timing tracking ──────────────────────────────────────────────────
   const stageStartTimes = useRef<Record<StageKey, number | null>>({
-    architect: null,
-    reasoner:  null,
-    executor:  null,
-    reviewer:  null,
+    planner:  null,
+    executor: null,
+    reviewer: null,
   });
   const [stageTimings, setStageTimings] = useState<Partial<Record<StageKey, number>>>({});
 
@@ -171,8 +187,7 @@ export const WaterfallArea = () => {
       }
     });
   }, [
-    waterfall.steps.architect.status,
-    waterfall.steps.reasoner.status,
+    waterfall.steps.planner.status,
     waterfall.steps.executor.status,
     waterfall.steps.reviewer.status,
   ]);
@@ -196,8 +211,7 @@ export const WaterfallArea = () => {
       setSelectedStage(completedStages[completedStages.length - 1] ?? null);
     }
   }, [
-    waterfall.steps.architect.status,
-    waterfall.steps.reasoner.status,
+    waterfall.steps.planner.status,
     waterfall.steps.executor.status,
     waterfall.steps.reviewer.status,
   ]);
@@ -217,7 +231,7 @@ export const WaterfallArea = () => {
   };
 
   const handleStartEditPlan = () => {
-    const planData = waterfall.steps.architect.data;
+    const planData = waterfall.steps.planner.data;
     setEditPlanDraft(JSON.stringify(planData, null, 2));
   };
 
@@ -255,7 +269,7 @@ export const WaterfallArea = () => {
             <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-jb-purple shadow-[0_0_10px_rgba(157,91,210,0.9)] animate-pulse" />
           </div>
           <div>
-            <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.45em] block mb-1.5">
+            <span className="text-[11px] font-black text-slate-300 uppercase tracking-[0.45em] block mb-1.5">
               Tiered Orchestration Pipeline
             </span>
             <h2 className="text-2xl md:text-3xl font-black tracking-tighter leading-none">
@@ -325,7 +339,7 @@ export const WaterfallArea = () => {
                   <div className="rounded-[2rem]">
                     <div className="glass-panel rounded-[2rem] overflow-hidden">
                       <div className="flex flex-col gap-4 p-5">
-                        <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest">
+                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
                           Mission Directive
                         </span>
                         <textarea
@@ -343,7 +357,7 @@ export const WaterfallArea = () => {
                           className="w-full bg-transparent text-[14px] font-medium text-white placeholder:text-slate-800 resize-none outline-none leading-relaxed input-focus-ring disabled:opacity-50 transition-opacity"
                         />
                         <div className="flex items-center justify-between pt-1 border-t border-white/[0.04]">
-                          <span className="text-[11px] text-slate-700 font-mono">⌘↩ to submit</span>
+                          <span className="text-[11px] text-slate-400 font-mono">⌘↩ to submit</span>
                           <button
                             onClick={handleSubmit}
                             disabled={!input.trim() || isStreaming}
@@ -407,7 +421,7 @@ export const WaterfallArea = () => {
                         />
                       ))}
                     </div>
-                    <p className="text-[11px] font-black uppercase tracking-[0.45em] text-slate-700 text-center max-w-xs">
+                    <p className="text-[11px] font-black uppercase tracking-[0.45em] text-slate-400 text-center max-w-xs">
                       Enter a mission directive to begin the cascade
                     </p>
                   </div>
@@ -436,7 +450,7 @@ export const WaterfallArea = () => {
                 <div className={cn('rounded-[2rem]', isStreaming && 'vibrant-border')}>
                   <div className="glass-panel rounded-[2rem] overflow-hidden">
                     <div className="flex flex-col gap-4 p-5">
-                      <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest">
+                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
                         Mission Directive
                       </span>
                       <textarea
@@ -454,7 +468,7 @@ export const WaterfallArea = () => {
                         className="w-full bg-transparent text-[14px] font-medium text-white placeholder:text-slate-800 resize-none outline-none leading-relaxed input-focus-ring disabled:opacity-50 transition-opacity"
                       />
                       <div className="flex items-center justify-between pt-1 border-t border-white/[0.04]">
-                        <span className="text-[11px] text-slate-700 font-mono">⌘↩ to submit</span>
+                        <span className="text-[11px] text-slate-400 font-mono">⌘↩ to submit</span>
                         <button
                           onClick={handleSubmit}
                           disabled={!input.trim() || isStreaming}
@@ -505,7 +519,7 @@ export const WaterfallArea = () => {
                           />
                         ))}
                       </div>
-                      <span className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-600 animate-pulse">
+                      <span className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-400 animate-pulse">
                         Initializing Pipeline...
                       </span>
                       <div className="flex flex-col gap-3 w-64 mt-4">
@@ -530,7 +544,7 @@ export const WaterfallArea = () => {
                         const step    = waterfall.steps[stageKey];
                         const isLast  = i === STAGE_ORDER.length - 1;
                         const nextKey = !isLast ? STAGE_ORDER[i + 1] : null;
-                        const isArchitectConnector = stageKey === 'architect';
+                        const isPlannerConnector = stageKey === 'planner';
 
                         return (
                           <div key={stageKey}>
@@ -546,6 +560,7 @@ export const WaterfallArea = () => {
                               compact
                               isSelected={selectedStage === stageKey}
                               onSelect={() => setSelectedStage(stageKey)}
+                              modelLabel={getStageModelLabel(waterfallModelSelection[stageKey])}
                             />
 
                             {/* Connector between stages */}
@@ -554,15 +569,15 @@ export const WaterfallArea = () => {
                                 fromStatus={step.status}
                                 fromColor={config.color}
                                 toColor={STAGE_CONFIGS[nextKey].color}
-                                showEditPlan={isArchitectConnector}
-                                editPlanDraft={isArchitectConnector ? editPlanDraft : null}
-                                onStartEdit={isArchitectConnector ? handleStartEditPlan : undefined}
-                                onEditChange={isArchitectConnector ? setEditPlanDraft : undefined}
-                                onApplyEdit={isArchitectConnector ? applyEditedPlan : undefined}
-                                onCancelEdit={isArchitectConnector ? () => setEditPlanDraft(null) : undefined}
-                                isPaused={isArchitectConnector ? step.status === 'paused' : false}
-                                onProceed={isArchitectConnector ? proceedWithWaterfall : undefined}
-                                onCancel={isArchitectConnector ? cancelWaterfall : undefined}
+                                showEditPlan={isPlannerConnector}
+                                editPlanDraft={isPlannerConnector ? editPlanDraft : null}
+                                onStartEdit={isPlannerConnector ? handleStartEditPlan : undefined}
+                                onEditChange={isPlannerConnector ? setEditPlanDraft : undefined}
+                                onApplyEdit={isPlannerConnector ? applyEditedPlan : undefined}
+                                onCancelEdit={isPlannerConnector ? () => setEditPlanDraft(null) : undefined}
+                                isPaused={isPlannerConnector ? step.status === 'paused' : false}
+                                onProceed={isPlannerConnector ? proceedWithWaterfall : undefined}
+                                onCancel={isPlannerConnector ? cancelWaterfall : undefined}
                               />
                             )}
                           </div>

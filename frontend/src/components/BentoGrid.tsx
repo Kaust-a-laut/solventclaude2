@@ -140,7 +140,7 @@ export const BentoCard = ({
 export const BentoItem = ({ children, title, className, delay = 0 }: { children: React.ReactNode, title?: string, className?: string, delay?: number }) => (
   <div className={cn("bg-black/40 backdrop-blur-xl p-6 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden", className)}>
     <div className="absolute -right-10 -top-10 w-24 h-24 bg-white/5 rounded-full blur-3xl pointer-events-none" />
-    {title && <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-4 opacity-60">{title}</h3>}
+    {title && <h3 className="text-xs font-black text-slate-300 uppercase tracking-[0.2em] mb-4 opacity-60">{title}</h3>}
     {children}
   </div>
 );

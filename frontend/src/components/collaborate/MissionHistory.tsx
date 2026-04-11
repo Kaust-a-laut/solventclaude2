@@ -50,8 +50,8 @@ export const MissionHistory: React.FC<MissionHistoryProps> = ({
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.02] transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Clock size={12} className="text-slate-500" />
-          <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">
+          <Clock size={12} className="text-slate-300" />
+          <span className="text-[11px] font-black uppercase tracking-widest text-slate-300">
             Mission History
             {completed.length > 0 && (
               <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-white/5 text-slate-400">
@@ -61,9 +61,9 @@ export const MissionHistory: React.FC<MissionHistoryProps> = ({
           </span>
         </div>
         {isOpen ? (
-          <ChevronUp size={12} className="text-slate-600" />
+          <ChevronUp size={12} className="text-slate-400" />
         ) : (
-          <ChevronDown size={12} className="text-slate-600" />
+          <ChevronDown size={12} className="text-slate-400" />
         )}
       </button>
 
@@ -79,7 +79,7 @@ export const MissionHistory: React.FC<MissionHistoryProps> = ({
           >
             <div className="p-3 space-y-2 max-h-64 overflow-y-auto no-scrollbar">
               {completed.length === 0 ? (
-                <p className="text-[11px] text-slate-700 uppercase tracking-widest text-center py-4">
+                <p className="text-[11px] text-slate-400 uppercase tracking-widest text-center py-4">
                   No completed missions yet
                 </p>
               ) : (
@@ -101,12 +101,12 @@ export const MissionHistory: React.FC<MissionHistoryProps> = ({
                         <span className="text-[11px] text-slate-400 flex-1 truncate font-medium">
                           {mission.goal}
                         </span>
-                        <span className="text-[11px] text-slate-700 flex-shrink-0">
+                        <span className="text-[11px] text-slate-400 flex-shrink-0">
                           {relativeTime(mission.startedAt)}
                         </span>
                         <ChevronDown
                           size={10}
-                          className={cn('text-slate-600 flex-shrink-0 transition-transform', isExpanded && 'rotate-180')}
+                          className={cn('text-slate-400 flex-shrink-0 transition-transform', isExpanded && 'rotate-180')}
                         />
                       </button>
 

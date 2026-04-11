@@ -29,7 +29,7 @@ export const UserInterjectionInput: React.FC<UserInterjectionInputProps> = ({
           onChange={e => setValue(e.target.value)}
           placeholder="Jump into the conversation..."
           disabled={disabled}
-          className="flex-1 bg-transparent text-sm text-slate-300 placeholder:text-slate-700 outline-none disabled:opacity-40"
+          className="flex-1 bg-transparent text-sm text-slate-300 placeholder:text-slate-400 outline-none disabled:opacity-40"
         />
         <button
           type="submit"
@@ -38,7 +38,7 @@ export const UserInterjectionInput: React.FC<UserInterjectionInputProps> = ({
             'p-2 rounded-xl transition-all',
             value.trim() && !disabled
               ? 'bg-jb-accent/15 text-jb-accent hover:bg-jb-accent/25'
-              : 'text-slate-700',
+              : 'text-slate-400',
           )}
         >
           <Send size={14} />

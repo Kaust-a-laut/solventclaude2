@@ -63,7 +63,7 @@ export const HarnessOptimizerPanel: React.FC = () => {
     switch (status) {
       case 'running': return <Loader2 size={12} className="animate-spin text-blue-400" />;
       case 'completed': return <CheckCircle2 size={12} className="text-emerald-400" />;
-      case 'cancelled': return <Square size={12} className="text-slate-500" />;
+      case 'cancelled': return <Square size={12} className="text-slate-300" />;
       case 'failed': return <AlertTriangle size={12} className="text-rose-400" />;
       default: return null;
     }
@@ -96,7 +96,7 @@ export const HarnessOptimizerPanel: React.FC = () => {
           min={1}
           max={50}
         />
-        <span className="text-[11px] text-slate-500">iterations</span>
+        <span className="text-[11px] text-slate-300">iterations</span>
         <button
           onClick={handleStart}
           disabled={loading || activeRun?.status === 'running'}
@@ -123,20 +123,20 @@ export const HarnessOptimizerPanel: React.FC = () => {
               "font-bold uppercase",
               activeRun.status === 'running' ? 'text-blue-400' :
               activeRun.status === 'completed' ? 'text-emerald-400' :
-              activeRun.status === 'failed' ? 'text-rose-400' : 'text-slate-500'
+              activeRun.status === 'failed' ? 'text-rose-400' : 'text-slate-300'
             )}>
               {activeRun.status}
             </span>
-            <span className="text-slate-600">·</span>
-            <span className="text-slate-500">
+            <span className="text-slate-400">·</span>
+            <span className="text-slate-300">
               Iteration {activeRun.iterations}/{activeRun.config?.maxIterations}
             </span>
-            <span className="text-slate-600">·</span>
-            <span className="text-slate-500">
+            <span className="text-slate-400">·</span>
+            <span className="text-slate-300">
               {activeRun.proposals?.length || 0} proposals
             </span>
-            <span className="text-slate-600">·</span>
-            <span className="text-slate-500">
+            <span className="text-slate-400">·</span>
+            <span className="text-slate-300">
               {activeRun.paretoFrontier?.length || 0} Pareto-optimal
             </span>
           </div>
@@ -153,18 +153,18 @@ export const HarnessOptimizerPanel: React.FC = () => {
             {paretoPoints.map((point, i) => (
               <details key={point.proposalId} className="mb-1.5 group" open={i === 0}>
                 <summary className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.03] border border-white/5 cursor-pointer hover:bg-white/[0.05]">
-                  <ChevronRight size={10} className="text-slate-600 group-open:rotate-90 transition-transform" />
+                  <ChevronRight size={10} className="text-slate-400 group-open:rotate-90 transition-transform" />
                   <div className="flex-1">
                     <div className="flex items-center gap-3 text-[11px]">
                       <span className="text-emerald-400 font-mono">
                         {(point.acceptanceRate * 100).toFixed(1)}% accept
                       </span>
-                      <span className="text-slate-600">·</span>
+                      <span className="text-slate-400">·</span>
                       <span className="text-slate-400 font-mono">
                         {point.avgTokens.toFixed(0)} tok
                       </span>
-                      <span className="text-slate-600">·</span>
-                      <span className="text-slate-500">
+                      <span className="text-slate-400">·</span>
+                      <span className="text-slate-300">
                         iter {point.iteration}
                       </span>
                     </div>
@@ -173,7 +173,7 @@ export const HarnessOptimizerPanel: React.FC = () => {
                 <div className="ml-4 mt-1 p-2 bg-black/30 rounded text-[10px] space-y-1">
                   <div className="text-slate-400">{point.rationale}</div>
                   {Object.entries(point.deltas).map(([key, val]) => (
-                    <div key={key} className="flex justify-between text-slate-500">
+                    <div key={key} className="flex justify-between text-slate-300">
                       <span>{key}</span>
                       <span className="font-mono text-slate-300">{(val as number).toFixed(3)}</span>
                     </div>
@@ -194,13 +194,13 @@ export const HarnessOptimizerPanel: React.FC = () => {
               <button
                 key={run.id}
                 onClick={() => setActiveRun(run)}
-                className="w-full flex items-center gap-2 p-1.5 rounded text-[10px] text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-colors text-left"
+                className="w-full flex items-center gap-2 p-1.5 rounded text-[10px] text-slate-300 hover:text-slate-300 hover:bg-white/5 transition-colors text-left"
               >
                 {statusIcon(run.status)}
                 <span>{new Date(run.ts).toLocaleDateString()}</span>
-                <span className="text-slate-700">·</span>
+                <span className="text-slate-400">·</span>
                 <span>{run.iterations} iter</span>
-                <span className="text-slate-700">·</span>
+                <span className="text-slate-400">·</span>
                 <span>{run.paretoFrontier?.length || 0} Pareto</span>
               </button>
             ))}
@@ -210,9 +210,9 @@ export const HarnessOptimizerPanel: React.FC = () => {
         {/* Empty state */}
         {!activeRun && runs.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center p-8">
-            <Play size={24} className="text-slate-700 mb-3" />
-            <p className="text-[11px] text-slate-600 font-bold">No optimization runs yet</p>
-            <p className="text-[10px] text-slate-700 mt-1">Start a run to discover better retrieval configurations</p>
+            <Play size={24} className="text-slate-400 mb-3" />
+            <p className="text-[11px] text-slate-400 font-bold">No optimization runs yet</p>
+            <p className="text-[10px] text-slate-400 mt-1">Start a run to discover better retrieval configurations</p>
           </div>
         )}
       </div>

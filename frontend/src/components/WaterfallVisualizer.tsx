@@ -54,7 +54,7 @@ const StatusIcon = ({ status }: { status: string }) => {
     case 'processing': return <Loader2 size={12} className="text-jb-accent animate-spin" />;
     case 'paused': return <Pause size={12} className="text-amber-400" />;
     case 'error': return <AlertCircle size={12} className="text-rose-400" />;
-    default: return <Circle size={12} className="text-slate-700" />;
+    default: return <Circle size={12} className="text-slate-400" />;
   }
 };
 
@@ -85,12 +85,12 @@ const StagePreview = ({ id, data }: { id: StageId; data: any }) => {
           </span>
         )}
         {data.steps?.length > 0 && (
-          <span className="text-[11px] text-slate-600 font-mono">{data.steps.length} steps planned</span>
+          <span className="text-[11px] text-slate-400 font-mono">{data.steps.length} steps planned</span>
         )}
         {data.techStack?.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {data.techStack.slice(0, 5).map((t: string, i: number) => (
-              <span key={i} className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[11px] font-mono text-slate-500">{t}</span>
+              <span key={i} className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[11px] font-mono text-slate-300">{t}</span>
             ))}
           </div>
         )}
@@ -119,7 +119,7 @@ const StagePreview = ({ id, data }: { id: StageId; data: any }) => {
         {data.score != null && (
           <div className="flex items-center gap-2">
             <span className={cn('text-lg font-black tabular-nums', scoreColor(data.score))}>{data.score}</span>
-            <span className="text-[11px] text-slate-600 font-black uppercase">/100</span>
+            <span className="text-[11px] text-slate-400 font-black uppercase">/100</span>
           </div>
         )}
         {data.summary && <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{data.summary}</p>}
@@ -148,10 +148,10 @@ const CompactPresetPicker = () => {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Preset</span>
+        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Preset</span>
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-400 transition-colors"
+          className="flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-slate-400 transition-colors"
         >
           {selected?.name || 'Select'}
           <ChevronDown size={8} className={cn('transition-transform', expanded && 'rotate-180')} />
@@ -182,13 +182,13 @@ const CompactPresetPicker = () => {
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <span className={cn('text-[11px] font-bold', isActive ? 'text-white' : 'text-slate-400')}>{p.name}</span>
-                      <span className="text-[11px] text-slate-600 truncate">{p.description}</span>
+                      <span className="text-[11px] text-slate-400 truncate">{p.description}</span>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
-                      {p.speed === '~30s' ? <Zap size={8} className="text-emerald-400" /> : <Clock size={8} className="text-slate-600" />}
+                      {p.speed === '~30s' ? <Zap size={8} className="text-emerald-400" /> : <Clock size={8} className="text-slate-400" />}
                       <span className={cn(
                         'text-[11px] font-black tabular-nums',
-                        p.grade?.startsWith('A') ? 'text-emerald-400' : p.grade?.startsWith('B') ? 'text-sky-400' : 'text-slate-500',
+                        p.grade?.startsWith('A') ? 'text-emerald-400' : p.grade?.startsWith('B') ? 'text-sky-400' : 'text-slate-300',
                       )}>
                         {p.grade ?? '—'}
                       </span>
@@ -206,7 +206,7 @@ const CompactPresetPicker = () => {
                         'px-2 py-1 rounded-md border text-[11px] font-bold transition-all',
                         waterfallPresetKey === p.key
                           ? 'bg-jb-purple/10 border-jb-purple/25 text-white'
-                          : 'bg-white/[0.02] border-white/[0.05] text-slate-600 hover:text-slate-400',
+                          : 'bg-white/[0.02] border-white/[0.05] text-slate-400 hover:text-slate-400',
                       )}
                     >
                       {p.name}
@@ -262,10 +262,10 @@ export const WaterfallVisualizer = () => {
             }}
             placeholder="Describe the task for the pipeline..."
             rows={3}
-            className="w-full bg-transparent px-3 py-2.5 text-[11px] font-mono text-slate-300 placeholder:text-slate-700 resize-none outline-none leading-relaxed"
+            className="w-full bg-transparent px-3 py-2.5 text-[11px] font-mono text-slate-300 placeholder:text-slate-400 resize-none outline-none leading-relaxed"
           />
           <div className="flex items-center justify-between px-3 py-2 border-t border-white/[0.04]">
-            <span className="text-[11px] text-slate-700 font-mono">⌘↩ to launch</span>
+            <span className="text-[11px] text-slate-400 font-mono">⌘↩ to launch</span>
             <button
               onClick={handleSubmit}
               disabled={!prompt.trim()}
@@ -283,7 +283,7 @@ export const WaterfallVisualizer = () => {
         {/* Link to full view */}
         <button
           onClick={() => setCurrentMode('waterfall' as any)}
-          className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/5 text-slate-600 text-[11px] font-black uppercase tracking-wider hover:bg-white/[0.06] hover:text-slate-400 transition-all"
+          className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/5 text-slate-400 text-[11px] font-black uppercase tracking-wider hover:bg-white/[0.06] hover:text-slate-400 transition-all"
         >
           <ExternalLink size={9} />
           Open Full View
@@ -318,7 +318,7 @@ export const WaterfallVisualizer = () => {
       {/* Prompt preview */}
       {waterfall.prompt && (
         <div className="px-3 py-2 rounded-lg bg-white/[0.02] border border-white/5">
-          <p className="text-[11px] text-slate-500 line-clamp-2 font-mono leading-relaxed">{waterfall.prompt}</p>
+          <p className="text-[11px] text-slate-300 line-clamp-2 font-mono leading-relaxed">{waterfall.prompt}</p>
         </div>
       )}
 
@@ -349,13 +349,13 @@ export const WaterfallVisualizer = () => {
                   <Icon size={12} className={stage.textColor} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className={cn('text-[11px] font-black uppercase tracking-wider', step.status === 'idle' ? 'text-slate-700' : 'text-slate-300')}>
+                  <span className={cn('text-[11px] font-black uppercase tracking-wider', step.status === 'idle' ? 'text-slate-400' : 'text-slate-300')}>
                     {stage.label}
                   </span>
                 </div>
                 <StatusIcon status={step.status} />
                 {hasData && (
-                  <ChevronRight size={10} className={cn('text-slate-600 transition-transform', isExpanded && 'rotate-90')} />
+                  <ChevronRight size={10} className={cn('text-slate-400 transition-transform', isExpanded && 'rotate-90')} />
                 )}
               </button>
 
@@ -386,8 +386,8 @@ export const WaterfallVisualizer = () => {
             {waterfall.steps.reviewer.data.score}
           </span>
           <div>
-            <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest block">Quality Score</span>
-            <span className="text-[11px] text-slate-700 font-mono">
+            <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest block">Quality Score</span>
+            <span className="text-[11px] text-slate-400 font-mono">
               {waterfall.steps.reviewer.data.issues?.length || 0} issues
             </span>
           </div>
@@ -397,7 +397,7 @@ export const WaterfallVisualizer = () => {
       {/* Open in main app */}
       <button
         onClick={() => setCurrentMode('waterfall' as any)}
-        className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/5 text-slate-500 text-[11px] font-black uppercase tracking-wider hover:bg-white/[0.06] hover:text-white transition-all"
+        className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/5 text-slate-300 text-[11px] font-black uppercase tracking-wider hover:bg-white/[0.06] hover:text-white transition-all"
       >
         <ExternalLink size={9} />
         View Full Results

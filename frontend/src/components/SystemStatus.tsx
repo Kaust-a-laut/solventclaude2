@@ -61,7 +61,7 @@ export const SystemStatus = ({ collapsed = false }: { collapsed?: boolean }) => 
       </div>
 
       {!collapsed && (
-        <span className="text-[11px] font-black text-slate-600 uppercase tracking-[0.2em] ml-2">
+        <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">
           System Validated
         </span>
       )}

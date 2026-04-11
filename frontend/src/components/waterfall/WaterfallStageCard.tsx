@@ -9,7 +9,7 @@ import {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type StageKey = 'architect' | 'reasoner' | 'executor' | 'reviewer';
+export type StageKey = 'planner' | 'executor' | 'reviewer';
 export type StageStatus = 'idle' | 'processing' | 'completed' | 'error' | 'paused';
 
 export interface StageConfig {
@@ -40,13 +40,15 @@ export interface WaterfallStageCardProps {
   isSelected?: boolean;
   /** Click handler for the whole card (split-layout mode) */
   onSelect?: () => void;
+  /** Model name + provider shown below stage name */
+  modelLabel?: string;
 }
 
 // ─── Stage Configs ─────────────────────────────────────────────────────────────
 
 export const STAGE_CONFIGS: Record<StageKey, StageConfig> = {
-  architect: {
-    key: 'architect',
+  planner: {
+    key: 'planner',
     displayName: 'PLANNER',
     icon: Brain,
     color: 'jb-purple',
@@ -55,19 +57,7 @@ export const STAGE_CONFIGS: Record<StageKey, StageConfig> = {
     textColor: 'text-jb-purple',
     glowColor: 'rgba(157,91,210,0.25)',
     borderRgba: 'rgba(157,91,210,',
-    description: 'Decomposing mission into a structured execution plan',
-  },
-  reasoner: {
-    key: 'reasoner',
-    displayName: 'STRATEGIST',
-    icon: GitBranch,
-    color: 'jb-accent',
-    borderColor: 'border-jb-accent',
-    bgColor: 'bg-jb-accent/10',
-    textColor: 'text-jb-accent',
-    glowColor: 'rgba(60,113,247,0.25)',
-    borderRgba: 'rgba(60,113,247,',
-    description: 'Building logic chains and architectural strategy',
+    description: 'Analyzing requirements and building execution plan',
   },
   executor: {
     key: 'executor',
@@ -131,13 +121,13 @@ const GateContent = ({ data }: { data: any }) => {
       <div className="grid grid-cols-2 gap-3">
         {estimate.estimatedTokens && (
           <div>
-            <div className="text-[11px] text-slate-600 uppercase font-black mb-0.5">Est. Tokens</div>
+            <div className="text-[11px] text-slate-400 uppercase font-black mb-0.5">Est. Tokens</div>
             <div className="text-[13px] font-black text-white font-mono">{estimate.estimatedTokens.toLocaleString()}</div>
           </div>
         )}
         {estimate.estimatedCost && (
           <div>
-            <div className="text-[11px] text-slate-600 uppercase font-black mb-0.5">Est. Cost</div>
+            <div className="text-[11px] text-slate-400 uppercase font-black mb-0.5">Est. Cost</div>
             <div className="text-[13px] font-black text-white font-mono">${Number(estimate.estimatedCost).toFixed(4)}</div>
           </div>
         )}
@@ -192,7 +182,7 @@ const StageOutput = ({ stageKey, data, textColor }: { stageKey: StageKey; data: 
           </ul>
         )}
         {data.assumptions && (
-          <p className="text-xs text-slate-500 italic">{data.assumptions}</p>
+          <p className="text-xs text-slate-300 italic">{data.assumptions}</p>
         )}
       </div>
     );
@@ -211,7 +201,7 @@ const StageOutput = ({ stageKey, data, textColor }: { stageKey: StageKey; data: 
         )}
         <div className="bg-black/60 border border-white/5 rounded-xl overflow-hidden">
           <div className="px-4 py-1.5 border-b border-white/5 bg-white/[0.02]">
-            <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Generated Code</span>
+            <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Generated Code</span>
           </div>
           <pre className="p-4 font-mono text-xs text-slate-300 max-h-48 overflow-y-auto scrollbar-thin leading-relaxed">
             {data.code}
@@ -243,6 +233,7 @@ export const WaterfallStageCard = ({
   compact = false,
   isSelected = false,
   onSelect,
+  modelLabel,
 }: WaterfallStageCardProps) => {
   const Icon = config.icon;
 
@@ -314,7 +305,7 @@ export const WaterfallStageCard = ({
             </div>
 
             {/* Labels */}
-            <div>
+            <div className="space-y-0.5">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[11px] font-black uppercase tracking-[0.3em] text-white">
                   {config.displayName}
@@ -326,7 +317,12 @@ export const WaterfallStageCard = ({
                   </span>
                 )}
               </div>
-              <span className="text-[11px] text-slate-600 font-mono uppercase tracking-widest">
+              {modelLabel && status !== 'idle' && (
+                <span className="block text-[11px] text-slate-300 font-medium truncate max-w-[200px]">
+                  {modelLabel}
+                </span>
+              )}
+              <span className="block text-[11px] text-slate-400 font-mono uppercase tracking-widest">
                 {status === 'idle' && config.description}
                 {status === 'processing' && 'Processing...'}
                 {status === 'completed' && `Completed${timing ? ` · ${(timing / 1000).toFixed(1)}s` : ''}`}
@@ -345,8 +341,8 @@ export const WaterfallStageCard = ({
                 className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
               >
                 {isExpanded
-                  ? <ChevronUp size={13} className="text-slate-500" />
-                  : <ChevronDown size={13} className="text-slate-500" />
+                  ? <ChevronUp size={13} className="text-slate-300" />
+                  : <ChevronDown size={13} className="text-slate-300" />
                 }
               </button>
             )}
@@ -371,7 +367,7 @@ export const WaterfallStageCard = ({
                 />
               ))}
               {data?.message && (
-                <span className="text-[11px] text-slate-600 font-mono ml-1 animate-pulse">
+                <span className="text-[11px] text-slate-400 font-mono ml-1 animate-pulse">
                   {data.message}
                 </span>
               )}

@@ -41,7 +41,7 @@ export const VisionToolControls: React.FC<ToolControlProps> = ({ activeTool, onA
               value={localInput}
               onChange={(e) => setLocalInput(e.target.value)}
               placeholder="What should I generate or fill in?"
-              className="w-full h-20 bg-white/[0.03] border border-white/10 rounded-xl p-3 text-[11px] font-bold text-white outline-none focus:border-jb-orange/40 transition-all resize-none placeholder:text-slate-700"
+              className="w-full h-20 bg-white/[0.03] border border-white/10 rounded-xl p-3 text-[11px] font-bold text-white outline-none focus:border-jb-orange/40 transition-all resize-none placeholder:text-slate-400"
             />
             <button 
               onClick={() => onAction('Gen-Fill', localInput)}
@@ -96,7 +96,7 @@ export const VisionToolControls: React.FC<ToolControlProps> = ({ activeTool, onA
                  <button 
                    key={aspect}
                    onClick={() => onAction('Crop Prep', aspect)}
-                   className="py-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-[11px] font-black uppercase text-slate-500 hover:text-white hover:border-white/10 transition-all"
+                   className="py-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-[11px] font-black uppercase text-slate-300 hover:text-white hover:border-white/10 transition-all"
                  >
                    {aspect}
                  </button>

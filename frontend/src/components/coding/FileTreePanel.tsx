@@ -68,7 +68,7 @@ export const FileTreePanel: React.FC<Props> = ({ onFileSelect }) => {
           style={{ paddingLeft: `${depth * 12 + 8}px` }}
         >
           {node.type === 'directory' && (
-            <span className="text-slate-500 shrink-0">
+            <span className="text-slate-300 shrink-0">
               {expanded[node.path] ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
             </span>
           )}

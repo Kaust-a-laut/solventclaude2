@@ -108,7 +108,7 @@ export const MessageList = ({ compact }: MessageListProps) => {
               <span className="w-1.5 h-1.5 rounded-full bg-jb-accent/50 animate-bounce" style={{ animationDelay: '150ms' }} />
               <span className="w-1.5 h-1.5 rounded-full bg-jb-accent/30 animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
-            <span className="text-[11px] font-bold text-slate-600">
+            <span className="text-[11px] font-bold text-slate-400">
               {activeModel} is thinking
             </span>
          </div>

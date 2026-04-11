@@ -90,7 +90,7 @@ export const ExportTool: React.FC<ExportToolProps> = ({ selectedImage, disabled 
     <div className="space-y-4">
       {/* Format selector */}
       <div>
-        <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-2">
+        <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest block mb-2">
           Format
         </span>
         <div className="grid grid-cols-3 gap-1.5">
@@ -102,7 +102,7 @@ export const ExportTool: React.FC<ExportToolProps> = ({ selectedImage, disabled 
                 'py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all border',
                 format === f
                   ? 'bg-jb-accent/15 border-jb-accent/30 text-jb-accent'
-                  : 'bg-white/[0.03] border-white/5 text-slate-500 hover:text-white hover:border-white/10',
+                  : 'bg-white/[0.03] border-white/5 text-slate-300 hover:text-white hover:border-white/10',
               )}
             >
               {FORMAT_LABELS[f]}
@@ -133,7 +133,7 @@ export const ExportTool: React.FC<ExportToolProps> = ({ selectedImage, disabled 
 
       {/* Resize toggle */}
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Resize</span>
+        <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest">Resize</span>
         <ToggleSwitch value={resizeEnabled} onChange={setResizeEnabled} />
       </div>
 
@@ -151,7 +151,7 @@ export const ExportTool: React.FC<ExportToolProps> = ({ selectedImage, disabled 
             const setter = axis === 'W' ? setResizeW : setResizeH;
             return (
               <div key={axis}>
-                <span className="text-[11px] text-slate-600 uppercase tracking-widest block mb-1">{axis}</span>
+                <span className="text-[11px] text-slate-400 uppercase tracking-widest block mb-1">{axis}</span>
                 <input
                   type="number"
                   min={1}
@@ -178,7 +178,7 @@ export const ExportTool: React.FC<ExportToolProps> = ({ selectedImage, disabled 
 
       {/* Size info when no image */}
       {!selectedImage && (
-        <p className="text-[11px] text-slate-600 text-center font-medium">Load an image to export it.</p>
+        <p className="text-[11px] text-slate-400 text-center font-medium">Load an image to export it.</p>
       )}
     </div>
   );

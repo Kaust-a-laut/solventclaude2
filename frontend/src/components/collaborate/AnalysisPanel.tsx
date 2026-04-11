@@ -52,14 +52,14 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
               </motion.div>
             ) : (
               <motion.div key="brain" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <Brain size={14} className={isAwaiting ? 'text-slate-600' : 'text-jb-purple'} />
+                <Brain size={14} className={isAwaiting ? 'text-slate-400' : 'text-jb-purple'} />
               </motion.div>
             )}
           </AnimatePresence>
 
           <span className={cn(
             'text-[11px] font-black uppercase tracking-widest transition-colors duration-300',
-            isAwaiting   ? 'text-slate-600'
+            isAwaiting   ? 'text-slate-400'
               : isComplete ? 'text-emerald-400'
               : 'text-jb-purple',
           )}>
@@ -81,7 +81,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
           {isComplete && (
             <button
               onClick={() => setIsExpanded((v) => !v)}
-              className="text-slate-600 hover:text-slate-400 transition-colors"
+              className="text-slate-400 hover:text-slate-400 transition-colors"
             >
               {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
             </button>
@@ -112,7 +112,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
                 />
               ))}
             </div>
-            <p className="text-[11px] text-slate-600 font-medium">
+            <p className="text-[11px] text-slate-400 font-medium">
               Awaiting agent findings...
             </p>
           </motion.div>
@@ -128,14 +128,14 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
             transition={{ duration: 0.3 }}
             className="space-y-3"
           >
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[11px] text-slate-300">
               Agent findings ready — run analysis to synthesize deeper insights
             </p>
             <textarea
               value={userContext}
               onChange={(e) => setUserContext(e.target.value)}
               placeholder="Add context or framing for deeper analysis... (optional)"
-              className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-slate-300 text-xs font-medium placeholder:text-slate-700 outline-none resize-none h-16 focus:border-jb-purple/40 transition-colors no-scrollbar"
+              className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-slate-300 text-xs font-medium placeholder:text-slate-400 outline-none resize-none h-16 focus:border-jb-purple/40 transition-colors no-scrollbar"
             />
           </motion.div>
         )}
@@ -163,7 +163,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
                 )
               )}
             </div>
-            <p className="text-[11px] text-slate-500 uppercase tracking-widest font-bold">
+            <p className="text-[11px] text-slate-300 uppercase tracking-widest font-bold">
               Synthesizing expert findings...
             </p>
           </motion.div>

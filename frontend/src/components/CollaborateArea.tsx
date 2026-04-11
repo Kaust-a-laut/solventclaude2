@@ -261,13 +261,13 @@ export const CollaborateArea = () => {
                 />
               </div>
             </div>
-            <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">
+            <p className="text-[11px] font-black uppercase tracking-widest text-slate-300 mb-1">
               Multi-Agent Orchestration Engine
             </p>
             <h2 className="text-3xl font-black text-white tracking-tight">
               Agentic <span className="text-vibrant">War Room</span>
             </h2>
-            <p className="text-sm text-slate-500 mt-2 max-w-md mx-auto">
+            <p className="text-sm text-slate-300 mt-2 max-w-md mx-auto">
               Launch a roundtable of specialized AI agents to analyze, debate, and synthesize around your goal.
             </p>
           </div>
@@ -278,7 +278,7 @@ export const CollaborateArea = () => {
               value={goalInput}
               onChange={(e) => setGoalInput(e.target.value)}
               placeholder="Define the engineering mission goal..."
-              className="w-full bg-transparent text-slate-300 outline-none resize-none h-28 text-base font-medium placeholder:text-slate-700"
+              className="w-full bg-transparent text-slate-300 outline-none resize-none h-28 text-base font-medium placeholder:text-slate-400"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -287,7 +287,7 @@ export const CollaborateArea = () => {
               }}
             />
             <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-white/5">
-              <span className="text-[11px] text-slate-600 uppercase tracking-widest font-black">Template:</span>
+              <span className="text-[11px] text-slate-400 uppercase tracking-widest font-black">Template:</span>
               {MISSION_TEMPLATES.map((t) => (
                 <button
                   key={t.id}
@@ -297,7 +297,7 @@ export const CollaborateArea = () => {
                     'px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider border transition-all',
                     missionType === t.id
                       ? t.activeCls
-                      : 'bg-white/5 border-white/10 text-slate-500 hover:text-slate-300',
+                      : 'bg-white/5 border-white/10 text-slate-300 hover:text-slate-300',
                   )}
                 >
                   {t.label}
@@ -335,7 +335,7 @@ export const CollaborateArea = () => {
           <div className="flex-shrink-0 relative z-10 px-6 pt-6">
             <div className="max-w-5xl mx-auto w-full">
               <div className="glass-panel rounded-2xl px-4 py-2.5 flex items-center gap-3">
-                <span className="text-[11px] text-slate-600 uppercase tracking-widest font-black">Goal:</span>
+                <span className="text-[11px] text-slate-400 uppercase tracking-widest font-black">Goal:</span>
                 <span className="text-sm text-slate-300 flex-1 truncate">{goal || goalInput}</span>
                 <div className="flex items-center gap-1.5">
                   {isComplete && <CheckCircle2 size={12} className="text-emerald-400" />}
@@ -346,7 +346,7 @@ export const CollaborateArea = () => {
                     isComplete ? 'text-emerald-400'
                       : isFailed ? 'text-rose-400'
                       : isSynthesizing ? 'text-jb-purple'
-                      : 'text-slate-500',
+                      : 'text-slate-300',
                   )}>
                     {isFailed ? (error || 'Failed') : isSynthesizing ? 'Synthesizing...' : isComplete ? 'Complete' : 'Active'}
                   </span>

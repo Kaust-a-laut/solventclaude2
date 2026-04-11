@@ -111,7 +111,7 @@ export const ConversationBubble: React.FC<ConversationBubbleProps> = ({
             </span>
           )}
           {message.addressing && (
-            <span className="text-[11px] text-slate-600 font-medium">
+            <span className="text-[11px] text-slate-400 font-medium">
               responding to <span className="text-slate-400">{message.addressing}</span>
             </span>
           )}
@@ -136,7 +136,7 @@ export const ConversationBubble: React.FC<ConversationBubbleProps> = ({
         {/* Delegation badge */}
         {effectiveType === 'delegation' && message.addressing && (
           <div className="flex items-center gap-1.5 pt-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-white/5 px-2 py-0.5 rounded-full">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300 bg-white/5 px-2 py-0.5 rounded-full">
               Handing off to {message.addressing}
             </span>
           </div>

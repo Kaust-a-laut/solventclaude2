@@ -71,7 +71,7 @@ export const CompareArea = () => {
             </div>
             <div>
                 <h2 className="text-3xl md:text-4xl font-[900] text-white tracking-tighter">Model Comparison <span className="text-vibrant">Lab</span></h2>
-                <p className="text-[11px] text-slate-500 font-black uppercase tracking-[0.3em] mt-1">Cross-benchmarking Neural Intelligence</p>
+                <p className="text-[11px] text-slate-300 font-black uppercase tracking-[0.3em] mt-1">Cross-benchmarking Neural Intelligence</p>
             </div>
         </div>
 
@@ -85,7 +85,7 @@ export const CompareArea = () => {
                   onChange={(e) => setPrompt(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleCompare()}
                   className={cn(
-                    "bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-sm outline-none focus:border-jb-accent/50 transition-all text-white placeholder:text-slate-600 font-bold backdrop-blur-xl",
+                    "bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-sm outline-none focus:border-jb-accent/50 transition-all text-white placeholder:text-slate-400 font-bold backdrop-blur-xl",
                     deviceInfo.isMobile ? "w-full" : "w-[450px]"
                   )}
                   placeholder="Enter benchmarking objective..."
@@ -150,8 +150,8 @@ export const CompareArea = () => {
                     <div className="flex flex-col">
                         <span className="text-white font-black text-sm uppercase tracking-tight">{model1Label}</span>
                         <div className="flex items-center gap-2 mt-0.5">
-                            <Cloud size={10} className="text-slate-500" />
-                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{fromKey(model1Key).provider}</span>
+                            <Cloud size={10} className="text-slate-300" />
+                            <span className="text-[11px] font-bold text-slate-300 uppercase tracking-widest">{fromKey(model1Key).provider}</span>
                         </div>
                     </div>
                 </div>
@@ -188,8 +188,8 @@ export const CompareArea = () => {
                     <div className="flex flex-col">
                         <span className="text-white font-black text-sm uppercase tracking-tight">{model2Label}</span>
                         <div className="flex items-center gap-2 mt-0.5">
-                            <Shield size={10} className="text-slate-500" />
-                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{fromKey(model2Key).provider}</span>
+                            <Shield size={10} className="text-slate-300" />
+                            <span className="text-[11px] font-bold text-slate-300 uppercase tracking-widest">{fromKey(model2Key).provider}</span>
                         </div>
                     </div>
                 </div>

@@ -5,6 +5,7 @@ import { GROQ_ALL_MODELS, GROQ_CHAT_MODELS } from './groqModels';
 import { OPENROUTER_FREE_ALL_MODELS, OPENROUTER_FREE_CHAT_MODELS } from './openrouterModels';
 import { DASHSCOPE_ALL_MODELS, DASHSCOPE_CHAT_MODELS } from './dashscopeModels';
 import { CEREBRAS_ALL_MODELS, CEREBRAS_CHAT_MODELS } from './cerebrasModels';
+import { FIREWORKS_ALL_MODELS, FIREWORKS_CHAT_MODELS } from './fireworksModels';
 
 // ── Ollama Cloud models ──────────────────────────────────────────────────────
 
@@ -50,6 +51,7 @@ export const ALL_MODELS = [
   ...OPENROUTER_FREE_ALL_MODELS,
   ...DASHSCOPE_ALL_MODELS,
   ...CEREBRAS_ALL_MODELS,
+  ...FIREWORKS_ALL_MODELS,
   ...OLLAMA_CLOUD_CHAT_MODELS.map(m => ({
     provider: 'ollama' as const,
     model: m.value,
@@ -98,6 +100,11 @@ export const PROVIDER_GROUPS = [
     id: 'cerebras',
     label: 'Cerebras',
     models: [...CEREBRAS_CHAT_MODELS],
+  },
+  {
+    id: 'fireworks',
+    label: 'Fireworks',
+    models: [...FIREWORKS_CHAT_MODELS],
   },
   {
     id: 'ollama',

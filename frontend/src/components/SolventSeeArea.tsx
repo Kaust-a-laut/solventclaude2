@@ -69,7 +69,7 @@ const ToolGridComponent: React.FC<ToolGridProps> = ({ activeTool, setActiveTool,
   <div className="space-y-3 shrink-0">
     {TOOL_GRID.map((section) => (
       <div key={section.label}>
-        <span className="text-[11px] font-black text-slate-700 uppercase tracking-[0.3em] block mb-1.5 px-0.5">
+        <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] block mb-1.5 px-0.5">
           {section.label}
         </span>
         <div className="grid grid-cols-3 gap-1.5">
@@ -87,7 +87,7 @@ const ToolGridComponent: React.FC<ToolGridProps> = ({ activeTool, setActiveTool,
                   'flex flex-col items-center gap-1.5 py-2.5 px-1 rounded-xl transition-all border',
                   isActive
                     ? cn(tool.accent, 'border-white/10', tool.color)
-                    : 'bg-white/[0.02] border-white/5 text-slate-600 hover:text-slate-300 hover:bg-white/[0.04] hover:border-white/8',
+                    : 'bg-white/[0.02] border-white/5 text-slate-400 hover:text-slate-300 hover:bg-white/[0.04] hover:border-white/8',
                 )}
               >
                 <Icon size={14} />
@@ -411,7 +411,7 @@ export const SolventSeeArea = () => {
         {/* Toolbar */}
         <div className="h-16 border-b border-white/5 flex items-center px-4 lg:px-6 bg-black/40 backdrop-blur-xl relative z-30 shadow-2xl gap-3">
           <div className="flex flex-col shrink-0">
-            <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.4em]">SolventSee</span>
+            <span className="text-[11px] font-black text-slate-300 uppercase tracking-[0.4em]">SolventSee</span>
             <span className="text-white font-black text-[11px] uppercase tracking-tight truncate max-w-[150px]">
               {selectedImage ? 'Image Loaded' : 'No Image'}
             </span>
@@ -421,7 +421,7 @@ export const SolventSeeArea = () => {
 
           {/* Active tool badge */}
           <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest shrink-0">
-            <span className="text-slate-600">Tool:</span>
+            <span className="text-slate-400">Tool:</span>
             <span className="text-white capitalize">{activeTool}</span>
           </div>
 
@@ -562,7 +562,7 @@ export const SolventSeeArea = () => {
                   {isOverlayTool && previewFilter.rotation !== 0 && (
                     <div className="absolute inset-0 rounded-[2.5rem] bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center gap-2 pointer-events-none">
                       <span className="text-[11px] font-black text-amber-400 uppercase tracking-widest">Apply rotation first</span>
-                      <span className="text-[11px] text-slate-500">Use the Apply button in Transform before cropping.</span>
+                      <span className="text-[11px] text-slate-300">Use the Apply button in Transform before cropping.</span>
                     </div>
                   )}
 
@@ -620,7 +620,7 @@ export const SolventSeeArea = () => {
                 <p className="text-2xl font-[900] text-white tracking-tighter">
                   Drop an image to <span className="text-vibrant">get started</span>
                 </p>
-                <p className="text-[11px] text-slate-500 font-black uppercase tracking-[0.3em]">
+                <p className="text-[11px] text-slate-300 font-black uppercase tracking-[0.3em]">
                   Upload, edit manually, or generate with AI
                 </p>
               </div>
@@ -665,12 +665,12 @@ export const SolventSeeArea = () => {
                   </div>
                   <div>
                     <span className="text-[11px] font-black text-white uppercase tracking-[0.2em] block">Tools</span>
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mt-0.5 block">SolventSee Studio</span>
+                    <span className="text-[11px] font-bold text-slate-300 uppercase tracking-widest mt-0.5 block">SolventSee Studio</span>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowPanel(false)}
-                  className="p-2 hover:bg-white/5 rounded-lg text-slate-500 hover:text-white transition-all"
+                  className="p-2 hover:bg-white/5 rounded-lg text-slate-300 hover:text-white transition-all"
                 >
                   <X size={16} />
                 </button>
@@ -745,7 +745,7 @@ export const SolventSeeArea = () => {
                 {/* ── AI Chat history (AI tools only) ───────────────────── */}
                 {isAiTool && (
                   <div className="flex flex-col space-y-2">
-                    <label className="text-[11px] font-black text-slate-600 uppercase tracking-[0.3em]">AI Chat</label>
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">AI Chat</label>
                     <div className="h-64 border border-white/5 rounded-[1.5rem] bg-black/20 overflow-hidden flex flex-col">
                       <MessageList />
                     </div>
@@ -760,7 +760,7 @@ export const SolventSeeArea = () => {
                     value={instruction}
                     onChange={(e) => setInstruction(e.target.value)}
                     placeholder="Ask AI to edit or analyze this image..."
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-12 text-[11px] font-bold text-white outline-none focus:border-jb-orange/40 transition-all placeholder:text-slate-700"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-12 text-[11px] font-bold text-white outline-none focus:border-jb-orange/40 transition-all placeholder:text-slate-400"
                     onKeyDown={(e) => e.key === 'Enter' && handleSendInstruction()}
                   />
                   <button
@@ -788,7 +788,7 @@ export const SolventSeeArea = () => {
                   </button>
                 </div>
 
-                <p className="text-[11px] text-slate-700 text-center font-medium">
+                <p className="text-[11px] text-slate-400 text-center font-medium">
                   More tools coming soon
                 </p>
               </div>

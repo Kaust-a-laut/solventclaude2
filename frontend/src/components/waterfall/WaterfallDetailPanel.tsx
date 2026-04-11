@@ -34,8 +34,8 @@ function normalizeData(data: any): any {
   return data;
 }
 
-/** SSE processing markers have { phase: 'architecting', message: '...' } — not real output */
-const SSE_PHASES = ['architecting', 'reasoning', 'executing', 'reviewing', 'completed', 'retrying'];
+/** SSE processing markers have { phase: 'planning', message: '...' } — not real output */
+const SSE_PHASES = ['planning', 'executing', 'reviewing', 'completed', 'retrying'];
 function isProcessingMarker(data: any): boolean {
   if (!data || typeof data !== 'object') return false;
   return SSE_PHASES.includes(data.phase);
@@ -52,67 +52,17 @@ function hasAny(data: any, keys: string[]): boolean {
   });
 }
 
-// ─── Architect output ──────────────────────────────────────────────────────
+// ─── Planner output (merged architect + reasoner) ─────────────────────────
 
-const ArchitectOutput = ({ data, textColor }: { data: any; textColor: string }) => {
+const PlannerOutput = ({ data, textColor }: { data: any; textColor: string }) => {
   if (!data) return null;
   const d = normalizeData(data);
 
   // Raw string fallback
   if (d.raw && typeof d.raw === 'string') return <RawOutput text={d.raw} />;
 
-  // Check if data has any known architect fields
-  if (!hasAny(d, ['logic', 'keyDecisions', 'assumptions', 'techStack', 'complexity'])) {
-    return <GenericOutput data={d} />;
-  }
-
-  return (
-    <div className="space-y-5">
-      {d.logic && (
-        <Section label="Architecture Logic">
-          <FormattedText text={d.logic} />
-        </Section>
-      )}
-      {d.complexity && (
-        <div className="flex items-center gap-2">
-          <Label>Complexity</Label>
-          <ComplexityBadge level={d.complexity} />
-        </div>
-      )}
-      {d.keyDecisions?.length > 0 && (
-        <Section label="Key Decisions">
-          <NumberedList items={d.keyDecisions} color={textColor} />
-        </Section>
-      )}
-      {d.assumptions?.length > 0 && (
-        <Section label="Assumptions">
-          <BulletList
-            items={Array.isArray(d.assumptions) ? d.assumptions : [d.assumptions]}
-            className="text-slate-500 italic"
-          />
-        </Section>
-      )}
-      {d.techStack?.length > 0 && (
-        <Section label="Tech Stack">
-          <ChipList items={d.techStack} />
-        </Section>
-      )}
-    </div>
-  );
-};
-
-// ─── Reasoner output ───────────────────────────────────────────────────────
-
-const ReasonerOutput = ({ data, textColor }: { data: any; textColor: string }) => {
-  if (!data) return null;
-  const d = normalizeData(data);
-
-  if (d.raw && typeof d.raw === 'string') return <RawOutput text={d.raw} />;
-  if (!hasAny(d, ['plan', 'steps', 'carriedDecisions', 'openQuestions'])) {
-    // Might be architect-like data (logic field) if reasoner returned similar shape
-    if (hasAny(d, ['logic', 'keyDecisions'])) {
-      return <ArchitectOutput data={d} textColor={textColor} />;
-    }
+  // Check if data has any known planner fields
+  if (!hasAny(d, ['plan', 'steps', 'keyDecisions', 'assumptions', 'techStack', 'complexity', 'openQuestions'])) {
     return <GenericOutput data={d} />;
   }
 
@@ -123,6 +73,12 @@ const ReasonerOutput = ({ data, textColor }: { data: any; textColor: string }) =
           <FormattedText text={d.plan} />
         </Section>
       )}
+      {d.complexity && (
+        <div className="flex items-center gap-2">
+          <Label>Complexity</Label>
+          <ComplexityBadge level={d.complexity} />
+        </div>
+      )}
       {d.steps?.length > 0 && (
         <Section label={`Execution Steps (${d.steps.length})`}>
           <div className="space-y-3">
@@ -130,7 +86,7 @@ const ReasonerOutput = ({ data, textColor }: { data: any; textColor: string }) =
               <div key={i} className="flex items-start gap-3">
                 <span className={cn(
                   'w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-black shrink-0 mt-0.5',
-                  'bg-jb-accent/10 text-jb-accent border border-jb-accent/20',
+                  'bg-jb-purple/10 text-jb-purple border border-jb-purple/20',
                 )}>
                   {i + 1}
                 </span>
@@ -145,9 +101,22 @@ const ReasonerOutput = ({ data, textColor }: { data: any; textColor: string }) =
           </div>
         </Section>
       )}
-      {d.carriedDecisions?.length > 0 && (
-        <Section label="Carried Decisions" icon={<GitBranch size={10} />}>
-          <BulletList items={d.carriedDecisions} className="text-slate-400" icon={<CheckCircle2 size={9} className="text-emerald-500/60 mt-0.5 shrink-0" />} />
+      {d.keyDecisions?.length > 0 && (
+        <Section label="Key Decisions">
+          <NumberedList items={d.keyDecisions} color={textColor} />
+        </Section>
+      )}
+      {d.assumptions?.length > 0 && (
+        <Section label="Assumptions">
+          <BulletList
+            items={Array.isArray(d.assumptions) ? d.assumptions : [d.assumptions]}
+            className="text-slate-300 italic"
+          />
+        </Section>
+      )}
+      {d.techStack?.length > 0 && (
+        <Section label="Tech Stack">
+          <ChipList items={d.techStack} />
         </Section>
       )}
       {d.openQuestions?.length > 0 && (
@@ -170,7 +139,7 @@ const CopyButton = ({ text }: { text: string }) => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }}
-      className="flex items-center gap-1 px-2 py-1 rounded-md bg-white/[0.04] border border-white/10 text-slate-500 text-[11px] font-bold uppercase tracking-wider hover:bg-white/[0.08] hover:text-slate-300 transition-all"
+      className="flex items-center gap-1 px-2 py-1 rounded-md bg-white/[0.04] border border-white/10 text-slate-300 text-[11px] font-bold uppercase tracking-wider hover:bg-white/[0.08] hover:text-slate-300 transition-all"
     >
       {copied ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} />}
       {copied ? 'Copied' : 'Copy'}
@@ -216,7 +185,7 @@ const ExecutorOutput = ({ data }: { data: any }) => {
             {codeBlocks.map((block, i) => (
               <div key={i} className="bg-black/60 border border-white/5 rounded-xl overflow-hidden">
                 <div className="px-4 py-2 border-b border-white/5 bg-white/[0.02] flex items-center gap-2">
-                  <FileCode size={11} className="text-slate-600" />
+                  <FileCode size={11} className="text-slate-400" />
                   <span className="text-[12px] font-mono text-slate-400 font-medium flex-1">
                     {block.filename || 'output'}
                   </span>
@@ -268,7 +237,7 @@ const ReviewerOutput = ({ data }: { data: any }) => {
             <span className={cn('text-2xl font-black tabular-nums', sc!.text)}>{d.score}</span>
           </div>
           <div>
-            <span className="text-[12px] font-black text-slate-500 uppercase tracking-widest block">Quality Score</span>
+            <span className="text-[12px] font-black text-slate-300 uppercase tracking-widest block">Quality Score</span>
             {d.compilationStatus && (
               <span className={cn(
                 'text-[11px] font-mono mt-1 block',
@@ -288,7 +257,7 @@ const ReviewerOutput = ({ data }: { data: any }) => {
             {Object.entries(d.breakdown).map(([key, val]) => (
               <div key={key} className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-center">
                 <div className="text-[18px] font-black text-white tabular-nums">{val as number}</div>
-                <div className="text-[11px] font-black text-slate-600 uppercase tracking-wider mt-0.5">{key}</div>
+                <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider mt-0.5">{key}</div>
               </div>
             ))}
           </div>
@@ -341,8 +310,8 @@ const ReviewerOutput = ({ data }: { data: any }) => {
 
 const Label = ({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) => (
   <div className="flex items-center gap-1.5 mb-2">
-    {icon && <span className="text-slate-600">{icon}</span>}
-    <span className="text-[12px] font-black text-slate-600 uppercase tracking-widest">{children}</span>
+    {icon && <span className="text-slate-400">{icon}</span>}
+    <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">{children}</span>
   </div>
 );
 
@@ -387,7 +356,7 @@ const BulletList = ({ items, className, icon }: { items: string[]; className?: s
   <div className="space-y-1.5">
     {items.map((item, i) => (
       <div key={i} className={cn('flex items-start gap-2 text-[14px] leading-relaxed', className)}>
-        {icon || <span className="text-slate-600 shrink-0 mt-0.5">•</span>}
+        {icon || <span className="text-slate-400 shrink-0 mt-0.5">•</span>}
         <span>{item}</span>
       </div>
     ))}
@@ -499,7 +468,7 @@ const GenericOutput = ({ data }: { data: any }) => {
   );
 
   if (entries.length === 0) {
-    return <p className="text-[13px] text-slate-600 font-mono">No displayable output</p>;
+    return <p className="text-[13px] text-slate-400 font-mono">No displayable output</p>;
   }
 
   return (
@@ -601,7 +570,7 @@ export const WaterfallDetailPanel = ({ selectedStage, steps }: WaterfallDetailPa
                       <span className="text-[13px] font-black uppercase tracking-[0.3em] text-white block">
                         {cfg.displayName}
                       </span>
-                      <span className="text-[12px] text-slate-600 font-mono">{cfg.description}</span>
+                      <span className="text-[12px] text-slate-400 font-mono">{cfg.description}</span>
                     </div>
 
                     {/* Action buttons */}
@@ -630,7 +599,7 @@ export const WaterfallDetailPanel = ({ selectedStage, steps }: WaterfallDetailPa
                   {/* Panel body */}
                   <div className="flex-1 overflow-y-auto scrollbar-thin pt-5 pb-4">
                     {step.status === 'idle' && (
-                      <p className="text-[13px] text-slate-700 font-mono">Waiting for pipeline to reach this stage...</p>
+                      <p className="text-[13px] text-slate-400 font-mono">Waiting for pipeline to reach this stage...</p>
                     )}
                     {step.status === 'processing' && (
                       <div className="flex flex-col items-center justify-center py-32 gap-6">
@@ -645,7 +614,7 @@ export const WaterfallDetailPanel = ({ selectedStage, steps }: WaterfallDetailPa
                           <span className={cn('text-[14px] font-black uppercase tracking-[0.5em]', cfg.textColor)}>
                             {cfg.displayName}
                           </span>
-                          <span className="text-[15px] text-slate-500 font-medium animate-pulse text-center max-w-sm">
+                          <span className="text-[15px] text-slate-300 font-medium animate-pulse text-center max-w-sm">
                             {step.data?.message || cfg.description}
                           </span>
                         </div>
@@ -659,11 +628,8 @@ export const WaterfallDetailPanel = ({ selectedStage, steps }: WaterfallDetailPa
                     )}
                     {step.status === 'completed' && step.data && !isProcessingMarker(step.data) && (
                       <>
-                        {selectedStage === 'architect' && (
-                          <ArchitectOutput data={step.data} textColor={cfg.textColor} />
-                        )}
-                        {selectedStage === 'reasoner' && (
-                          <ReasonerOutput data={step.data} textColor={cfg.textColor} />
+                        {selectedStage === 'planner' && (
+                          <PlannerOutput data={step.data} textColor={cfg.textColor} />
                         )}
                         {selectedStage === 'executor' && <ExecutorOutput data={step.data} />}
                         {selectedStage === 'reviewer' && <ReviewerOutput data={step.data} />}
@@ -683,7 +649,7 @@ export const WaterfallDetailPanel = ({ selectedStage, steps }: WaterfallDetailPa
                           <span className={cn('text-[14px] font-black uppercase tracking-[0.5em]', cfg.textColor)}>
                             {cfg.displayName}
                           </span>
-                          <span className="text-[15px] text-slate-500 font-medium animate-pulse text-center max-w-sm">
+                          <span className="text-[15px] text-slate-300 font-medium animate-pulse text-center max-w-sm">
                             Compiling results...
                           </span>
                         </div>
@@ -691,7 +657,7 @@ export const WaterfallDetailPanel = ({ selectedStage, steps }: WaterfallDetailPa
                     )}
                     {/* Fallback: completed but no data at all */}
                     {step.status === 'completed' && !step.data && (
-                      <p className="text-[13px] text-slate-700 font-mono">Stage completed with no output data</p>
+                      <p className="text-[13px] text-slate-400 font-mono">Stage completed with no output data</p>
                     )}
                   </div>
                 </>

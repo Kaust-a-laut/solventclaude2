@@ -573,7 +573,7 @@ export const CodingArea = () => {
             >
               <div className="h-8 bg-slate-100 flex items-center px-3 gap-2 shrink-0">
                 <Globe size={12} className="text-slate-400" aria-hidden="true" />
-                <span className="text-[11px] font-mono text-slate-500 flex-1 truncate">{iframeUrl}</span>
+                <span className="text-[11px] font-mono text-slate-300 flex-1 truncate">{iframeUrl}</span>
                 <button type="button" onClick={() => setShowPreview(false)} aria-label="Close preview">
                   <X size={14} className="text-slate-400 cursor-pointer" aria-hidden="true" />
                 </button>

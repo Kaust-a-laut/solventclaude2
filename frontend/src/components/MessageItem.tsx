@@ -19,7 +19,7 @@ const ScoreChip = ({ score, signals }: { score: number; signals?: string[] }) =>
       {score.toFixed(2)}
     </span>
     {signals?.map((s, i) => (
-      <span key={i} className="text-[9px] text-slate-500 bg-white/5 px-1 rounded">{s}</span>
+      <span key={i} className="text-[9px] text-slate-300 bg-white/5 px-1 rounded">{s}</span>
     ))}
   </span>
 );
@@ -113,7 +113,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         isUser && "text-right"
       )}>
         <div className={cn(
-           "flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-500 mb-0.5",
+           "flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-300 mb-0.5",
            isUser && "justify-end"
         )}>
           <span className={cn("transition-colors", isUser ? "text-jb-accent" : "text-slate-300 group-hover:text-white")}>
@@ -131,7 +131,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                     "flex items-center gap-2.5 px-3 py-1.5 rounded-full transition-all duration-300 text-[11px] font-bold uppercase tracking-widest border",
                     showThinking 
                       ? "bg-jb-purple/10 border-jb-purple/30 text-jb-purple" 
-                      : "bg-white/5 border-white/5 text-slate-500 hover:text-slate-300 hover:bg-white/10"
+                      : "bg-white/5 border-white/5 text-slate-300 hover:text-slate-300 hover:bg-white/10"
                  )}
               >
                  <Brain size={13} className={cn(showThinking && "animate-pulse")} />
@@ -205,7 +205,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
            {/* Context Trace (Provenance) HUD */}
            {!isUser && message.provenance && (
               <div className="mt-6 flex flex-wrap gap-2 pt-4 border-t border-white/5 opacity-60 hover:opacity-100 transition-opacity duration-500">
-                 <div className="text-[11px] font-black uppercase tracking-widest text-slate-500 w-full mb-1">
+                 <div className="text-[11px] font-black uppercase tracking-widest text-slate-300 w-full mb-1">
                     Context Trace Telemetry
                  </div>
                  
@@ -221,7 +221,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                               <div className="text-[11px] font-black text-slate-400 uppercase tracking-tighter mb-2 border-b border-white/10 pb-1">
                                  Active File Context
                                  {message.provenance.promptTokens && (
-                                    <span className="ml-2 font-mono text-slate-500 normal-case">
+                                    <span className="ml-2 font-mono text-slate-300 normal-case">
                                        {message.provenance.promptTokens.workspace} tok
                                     </span>
                                  )}
@@ -257,7 +257,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                                           {!deprecatedIds.has(p.id) && (
                                              <button 
                                                 onClick={() => handleDeprecate(p.id, p.text)}
-                                                className="opacity-0 group-hover/item:opacity-100 text-slate-500 hover:text-rose-400 transition-all p-0.5"
+                                                className="opacity-0 group-hover/item:opacity-100 text-slate-300 hover:text-rose-400 transition-all p-0.5"
                                                 title="Kill this memory"
                                              >
                                                 <Trash2 size={10} />
@@ -305,7 +305,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                                           {!deprecatedIds.has(p.id) && (
                                              <button 
                                                 onClick={() => handleDeprecate(p.id, p.text)}
-                                                className="opacity-0 group-hover/item:opacity-100 text-slate-500 hover:text-rose-400 transition-all p-0.5"
+                                                className="opacity-0 group-hover/item:opacity-100 text-slate-300 hover:text-rose-400 transition-all p-0.5"
                                                 title="Deprecate this pattern globally"
                                              >
                                                 <Ban size={10} />
@@ -319,7 +319,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
 
                                 {/* Suppressed Conflicts */}
                                 {message.provenance.suppressed.filter((p: any) => p.source === 'GLOBAL').map((p: any, i: number) => (
-                                   <div key={i} className="text-[11px] text-slate-500 leading-relaxed border-l-2 border-rose-500/50 pl-2 opacity-80">
+                                   <div key={i} className="text-[11px] text-slate-300 leading-relaxed border-l-2 border-rose-500/50 pl-2 opacity-80">
                                       <span className="text-rose-400 font-black uppercase text-[11px] flex items-center gap-1">
                                          <div className="w-1 h-1 rounded-full bg-rose-400" />
                                          Suppressed Pattern
@@ -360,7 +360,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
 
                   {/* Timing Chip */}
                   {message.provenance.promptTokens && (
-                     <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/10 text-slate-500 text-[11px] font-mono">
+                     <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/10 text-slate-300 text-[11px] font-mono">
                         <span>{message.provenance.promptTokens.total.toLocaleString()} tok</span>
                      </div>
                   )}
@@ -420,7 +420,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                      'mt-2 flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded transition-colors',
                      correctionSent
                         ? 'text-red-400 bg-red-500/10 cursor-default'
-                        : 'text-slate-500 hover:text-red-400 hover:bg-red-500/10 cursor-pointer'
+                        : 'text-slate-300 hover:text-red-400 hover:bg-red-500/10 cursor-pointer'
                   )}
                   title={correctionSent ? 'Marked as correction' : 'Mark retrieval as incorrect'}
                   disabled={correctionSent}

@@ -72,7 +72,7 @@ export const WaterfallScore = ({ score, size = 120 }: WaterfallScoreProps) => {
           >
             {score}
           </motion.span>
-          <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest">/ 100</span>
+          <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">/ 100</span>
         </div>
       </div>
 

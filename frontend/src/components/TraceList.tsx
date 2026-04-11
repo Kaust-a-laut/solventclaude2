@@ -42,7 +42,7 @@ const OUTCOME_LABELS: Record<string, string> = {
 };
 
 function OutcomeBadge({ outcome }: { outcome: string | null }) {
-  if (!outcome) return <span className="text-slate-600 text-[10px] font-mono">—</span>;
+  if (!outcome) return <span className="text-slate-400 text-[10px] font-mono">—</span>;
   return (
     <span className={`text-[10px] font-mono px-1 py-0.5 rounded ${OUTCOME_STYLES[outcome] ?? 'bg-slate-500/20 text-slate-400'}`}>
       {OUTCOME_LABELS[outcome] ?? outcome}
@@ -55,7 +55,7 @@ function BudgetBar({ pt }: { pt: TraceRow['promptTokens'] }) {
   const pct = Math.min((pt.total / pt.budget) * 100, 100);
   return (
     <div className="mt-3">
-      <div className="flex justify-between text-[10px] text-slate-500 mb-1">
+      <div className="flex justify-between text-[10px] text-slate-300 mb-1">
         <span>Context Budget</span>
         <span className={cn("font-mono", pct >= 95 ? 'text-rose-400' : pct >= 85 ? 'text-amber-400' : 'text-slate-400')}>
           {pt.total.toLocaleString()} / {pt.budget.toLocaleString()} tok
@@ -165,14 +165,14 @@ export const TraceList: React.FC = () => {
           <div className="grid grid-cols-2 gap-3 text-[10px]">
             {comparePair.map(t => (
               <div key={t.id}>
-                <div className="text-slate-500 mb-1">{formatTime(t.ts)} · {t.mode} · {t.query.slice(0, 50)}</div>
+                <div className="text-slate-300 mb-1">{formatTime(t.ts)} · {t.mode} · {t.query.slice(0, 50)}</div>
                 <div className="text-emerald-400 font-black mb-0.5">ACTIVE ({t.active.length})</div>
                 {t.active.map((a: any) => (
                   <div key={a.id} className="text-slate-400 truncate">· {a.text?.slice(0, 60)}</div>
                 ))}
                 <div className="text-rose-400 font-black mt-1 mb-0.5">SUPPRESSED ({t.suppressed.length})</div>
                 {t.suppressed.slice(0, 3).map((s: any) => (
-                  <div key={s.id} className="text-slate-500 truncate">· {s.text?.slice(0, 60)}</div>
+                  <div key={s.id} className="text-slate-300 truncate">· {s.text?.slice(0, 60)}</div>
                 ))}
               </div>
             ))}
@@ -183,10 +183,10 @@ export const TraceList: React.FC = () => {
       {/* Trace list */}
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         {loading && (
-          <div className="text-center text-slate-600 text-[12px] p-4">Loading traces...</div>
+          <div className="text-center text-slate-400 text-[12px] p-4">Loading traces...</div>
         )}
         {!loading && traces.length === 0 && (
-          <div className="text-center text-slate-600 text-[12px] p-8">
+          <div className="text-center text-slate-400 text-[12px] p-8">
             No traces yet. Send a message in chat to generate the first trace.
           </div>
         )}
@@ -214,14 +214,14 @@ export const TraceList: React.FC = () => {
                 )} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 text-[11px]">
-                    <span className="text-slate-500 font-mono">{formatTime(trace.ts)}</span>
-                    <span className="text-slate-600">·</span>
+                    <span className="text-slate-300 font-mono">{formatTime(trace.ts)}</span>
+                    <span className="text-slate-400">·</span>
                     <span className="text-slate-400">{trace.mode}</span>
-                    <span className="text-slate-600">·</span>
-                    <span className="text-slate-500 text-[10px]">{trace.provider}</span>
+                    <span className="text-slate-400">·</span>
+                    <span className="text-slate-300 text-[10px]">{trace.provider}</span>
                   </div>
                   <div className="text-[12px] text-slate-300 truncate">{trace.query}</div>
-                  <div className="flex gap-3 text-[10px] text-slate-600 mt-0.5">
+                  <div className="flex gap-3 text-[10px] text-slate-400 mt-0.5">
                     <span>{trace.active.length} active</span>
                     <span>{trace.suppressed.length} suppressed</span>
                     {trace.promptTokens && (
@@ -240,7 +240,7 @@ export const TraceList: React.FC = () => {
                     className="w-3 h-3 accent-blue-500"
                     title="Select for compare"
                   />
-                  {isExpanded ? <ChevronDown size={12} className="text-slate-500" /> : <ChevronRight size={12} className="text-slate-500" />}
+                  {isExpanded ? <ChevronDown size={12} className="text-slate-300" /> : <ChevronRight size={12} className="text-slate-300" />}
                 </div>
               </div>
 
@@ -256,10 +256,10 @@ export const TraceList: React.FC = () => {
                       <div key={a.id} className="text-[10px] text-slate-400 border-l border-emerald-500/30 pl-2 mb-1.5">
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-emerald-400">{a.score?.toFixed(2)}</span>
-                          <span className="text-slate-600 uppercase text-[9px]">{a.type}</span>
-                          <span className="text-slate-600 text-[9px]">{a.source}</span>
+                          <span className="text-slate-400 uppercase text-[9px]">{a.type}</span>
+                          <span className="text-slate-400 text-[9px]">{a.source}</span>
                         </div>
-                        <div className="text-slate-500 truncate">{a.text}</div>
+                        <div className="text-slate-300 truncate">{a.text}</div>
                       </div>
                     ))}
                   </div>
@@ -271,10 +271,10 @@ export const TraceList: React.FC = () => {
                         Suppressed ({trace.suppressed.length})
                       </div>
                       {trace.suppressed.map((s: any) => (
-                        <div key={s.id} className="text-[10px] text-slate-500 border-l border-rose-500/20 pl-2 mb-1.5">
+                        <div key={s.id} className="text-[10px] text-slate-300 border-l border-rose-500/20 pl-2 mb-1.5">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-slate-600">{s.score?.toFixed(2)}</span>
-                            <span className={cn("text-[9px] px-1 rounded", REASON_COLORS[s.reason] || 'text-slate-500 bg-white/5')}>
+                            <span className="font-mono text-slate-400">{s.score?.toFixed(2)}</span>
+                            <span className={cn("text-[9px] px-1 rounded", REASON_COLORS[s.reason] || 'text-slate-300 bg-white/5')}>
                               {s.reason}
                             </span>
                           </div>
@@ -289,13 +289,13 @@ export const TraceList: React.FC = () => {
 
                   {/* Harness snapshot — collapsed by default */}
                   <details className="mt-2">
-                    <summary className="text-[10px] font-black text-slate-600 uppercase cursor-pointer hover:text-slate-400">
+                    <summary className="text-[10px] font-black text-slate-400 uppercase cursor-pointer hover:text-slate-400">
                       Harness Snapshot
                     </summary>
                     <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-0.5">
                       {Object.entries(trace.harnessSnapshot || {}).map(([k, v]) => (
                         <div key={k} className="flex justify-between text-[9px]">
-                          <span className="text-slate-600 truncate">{k}</span>
+                          <span className="text-slate-400 truncate">{k}</span>
                           <span className="font-mono text-slate-400">{String(v)}</span>
                         </div>
                       ))}
@@ -304,7 +304,7 @@ export const TraceList: React.FC = () => {
 
                   {/* Outcome badge + manual override */}
                   <div className="flex items-center gap-2 mt-2">
-                    <span className="text-[10px] text-slate-500">Outcome:</span>
+                    <span className="text-[10px] text-slate-300">Outcome:</span>
                     <OutcomeBadge outcome={trace.outcome} />
                     <select
                       className="text-[10px] bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-slate-300"

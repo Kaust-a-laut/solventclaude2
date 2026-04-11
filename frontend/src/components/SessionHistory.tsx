@@ -65,7 +65,7 @@ export const SessionHistory = ({ isOpen, onClose }: SessionHistoryModalProps) =>
               <div className="flex items-center gap-3">
                 <History size={15} className="text-jb-accent" />
                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white">Session Archives</span>
-                <span className="text-[11px] font-mono text-slate-600 bg-white/5 px-1.5 py-0.5 rounded">{allSessions.length}</span>
+                <span className="text-[11px] font-mono text-slate-400 bg-white/5 px-1.5 py-0.5 rounded">{allSessions.length}</span>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -74,7 +74,7 @@ export const SessionHistory = ({ isOpen, onClose }: SessionHistoryModalProps) =>
                 >
                   <Plus size={10} /> New
                 </button>
-                <button onClick={onClose} className="p-1.5 text-slate-600 hover:text-white transition-colors">
+                <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-white transition-colors">
                   <X size={14} />
                 </button>
               </div>
@@ -83,14 +83,14 @@ export const SessionHistory = ({ isOpen, onClose }: SessionHistoryModalProps) =>
             {/* Search */}
             <div className="px-5 py-3 border-b border-white/5">
               <div className="relative">
-                <Search size={11} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" />
+                <Search size={11} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   placeholder="Search sessions..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
                   autoFocus
-                  className="w-full bg-white/[0.03] border border-white/5 rounded-xl py-2 pl-8 pr-4 text-[11px] font-mono text-white placeholder:text-slate-700 outline-none focus:border-jb-accent/30 transition-all"
+                  className="w-full bg-white/[0.03] border border-white/5 rounded-xl py-2 pl-8 pr-4 text-[11px] font-mono text-white placeholder:text-slate-400 outline-none focus:border-jb-accent/30 transition-all"
                 />
               </div>
             </div>
@@ -104,16 +104,16 @@ export const SessionHistory = ({ isOpen, onClose }: SessionHistoryModalProps) =>
                     onClick={() => loadSession(session.id)}
                     className="group flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:border-jb-accent/20 hover:bg-jb-accent/5 cursor-pointer transition-all"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-500 group-hover:text-jb-accent transition-colors flex-shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-300 group-hover:text-jb-accent transition-colors flex-shrink-0">
                       <MessageSquare size={13} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[11px] font-bold text-slate-300 truncate group-hover:text-white">{session.title}</p>
-                      <p className="text-[11px] font-black uppercase tracking-wider text-slate-600 mt-0.5">{session.count} messages</p>
+                      <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mt-0.5">{session.count} messages</p>
                     </div>
                     <button
                       onClick={e => e.stopPropagation()}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-600 hover:text-rose-400 transition-all"
+                      className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-rose-400 transition-all"
                     >
                       <Trash2 size={11} />
                     </button>
@@ -122,7 +122,7 @@ export const SessionHistory = ({ isOpen, onClose }: SessionHistoryModalProps) =>
               ) : (
                 <div className="h-32 flex flex-col items-center justify-center text-center">
                   <Clock size={20} className="text-slate-800 mb-2" />
-                  <p className="text-[11px] font-black uppercase tracking-widest text-slate-600">
+                  <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">
                     {searchTerm ? 'No sessions match' : 'No sessions yet'}
                   </p>
                 </div>
@@ -133,7 +133,7 @@ export const SessionHistory = ({ isOpen, onClose }: SessionHistoryModalProps) =>
             <div className="px-5 py-3 border-t border-white/5 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-jb-accent shadow-[0_0_6px_rgba(60,113,247,0.6)]" />
-                <span className="text-[11px] font-black uppercase tracking-widest text-slate-600">Memory Synced</span>
+                <span className="text-[11px] font-black uppercase tracking-widest text-slate-400">Memory Synced</span>
               </div>
               <span className="text-[11px] font-mono text-jb-accent/50">98%</span>
             </div>

@@ -112,6 +112,7 @@ export interface PageContent {
   author?: string;
   publishedDate?: string;
   url: string;
+  restricted?: boolean;
 }
 
 export interface SearchResultSet {

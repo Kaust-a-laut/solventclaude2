@@ -156,7 +156,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
               key="idle"
               className="flex-1 flex items-center justify-center"
             >
-              <p className="text-[11px] text-slate-700 uppercase tracking-widest font-bold">
+              <p className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">
                 Standby
               </p>
             </motion.div>

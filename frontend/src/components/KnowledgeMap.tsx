@@ -259,7 +259,7 @@ export const KnowledgeMap = () => {
       {graphNodes.length === 0 && (
          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="text-center opacity-20">
-               <div className="text-[11px] font-black uppercase tracking-[0.5em] text-slate-500">Awaiting Data</div>
+               <div className="text-[11px] font-black uppercase tracking-[0.5em] text-slate-300">Awaiting Data</div>
             </div>
          </div>
       )}
@@ -280,7 +280,7 @@ export const KnowledgeMap = () => {
           >
              <div className="flex items-start justify-between mb-2">
                 <h3 className="text-sm font-black text-white uppercase tracking-wider">{hoveredNode.title}</h3>
-                <span className="text-[11px] font-mono text-slate-500 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">{hoveredNode.id}</span>
+                <span className="text-[11px] font-mono text-slate-300 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">{hoveredNode.id}</span>
              </div>
              <p className="text-[11px] text-slate-300 leading-relaxed font-medium">
                 {hoveredNode.description || "No detailed metrics available for this node."}
@@ -310,7 +310,7 @@ export const KnowledgeMap = () => {
                 </div>
                 <button 
                     onClick={() => setSelectedEdge(null)}
-                    className="p-2 hover:bg-white/10 rounded-lg text-slate-500 hover:text-white transition-all"
+                    className="p-2 hover:bg-white/10 rounded-lg text-slate-300 hover:text-white transition-all"
                 >
                     <X size={14} />
                 </button>

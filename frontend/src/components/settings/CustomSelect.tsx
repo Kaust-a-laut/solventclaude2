@@ -150,10 +150,10 @@ export const CustomSelect = ({
           open && "border-white/20"
         )}
       >
-        <span className={cn(!selectedOption && "text-slate-600")}>
+        <span className={cn(!selectedOption && "text-slate-400")}>
           {selectedOption?.label || placeholder}
         </span>
-        <ChevronDown size={12} className={cn("text-slate-500 transition-transform", open && "rotate-180")} />
+        <ChevronDown size={12} className={cn("text-slate-300 transition-transform", open && "rotate-180")} />
       </button>
 
       {/* Dropdown */}
@@ -173,13 +173,13 @@ export const CustomSelect = ({
             {/* Search */}
             {searchable && (
               <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/5">
-                <Search size={12} className="text-slate-600 flex-shrink-0" />
+                <Search size={12} className="text-slate-400 flex-shrink-0" />
                 <input
                   ref={searchInputRef}
                   value={search}
                   onChange={e => { setSearch(e.target.value); setHighlightIndex(0); }}
                   placeholder="Filter..."
-                  className="flex-1 bg-transparent border-none outline-none text-xs text-slate-300 placeholder:text-slate-700"
+                  className="flex-1 bg-transparent border-none outline-none text-xs text-slate-300 placeholder:text-slate-400"
                 />
               </div>
             )}
@@ -187,12 +187,12 @@ export const CustomSelect = ({
             {/* Options */}
             <div ref={listRef} className="max-h-[320px] overflow-y-auto scrollbar-thin p-1.5">
               {filtered.length === 0 ? (
-                <div className="px-4 py-3 text-[11px] text-slate-600 text-center">No matches</div>
+                <div className="px-4 py-3 text-[11px] text-slate-400 text-center">No matches</div>
               ) : (
                 Array.from(groups.entries()).map(([group, opts]) => (
                   <div key={group}>
                     {group && (
-                      <div className="px-3 pt-2.5 pb-1 text-[11px] font-black text-slate-600 uppercase tracking-widest">
+                      <div className="px-3 pt-2.5 pb-1 text-[11px] font-black text-slate-400 uppercase tracking-widest">
                         {group}
                       </div>
                     )}

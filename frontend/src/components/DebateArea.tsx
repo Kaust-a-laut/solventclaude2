@@ -114,7 +114,7 @@ const DebatePanel = ({ role, content, agentName, isLoading }: DebatePanelProps) 
               animate={{ opacity: 1 }}
               className="flex items-center justify-center py-12"
             >
-              <p className="text-[11px] font-black uppercase tracking-widest text-slate-700">
+              <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">
                 Awaiting debate
               </p>
             </motion.div>
@@ -200,7 +200,7 @@ export const DebateArea = () => {
             <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-jb-orange shadow-[0_0_10px_rgba(251,146,60,0.9)] animate-pulse" />
           </div>
           <div>
-            <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.45em] block mb-1.5">
+            <span className="text-[11px] font-black text-slate-300 uppercase tracking-[0.45em] block mb-1.5">
               Adversarial Debate Lab
             </span>
             <h2 className="text-2xl md:text-3xl font-black tracking-tighter leading-none">
@@ -220,7 +220,7 @@ export const DebateArea = () => {
         <div className="glass-panel rounded-[2rem] overflow-hidden">
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 p-5">
             <div className="flex-1">
-              <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest block mb-2">
+              <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">
                 Debate Topic
               </span>
               <input
@@ -229,7 +229,7 @@ export const DebateArea = () => {
                 onKeyDown={(e) => { if (e.key === 'Enter') handleStartDebate(); }}
                 placeholder="Enter a topic for the dialectic..."
                 disabled={isDebating}
-                className="w-full bg-transparent text-[14px] font-medium text-white placeholder:text-slate-700 outline-none input-focus-ring disabled:opacity-50 transition-opacity"
+                className="w-full bg-transparent text-[14px] font-medium text-white placeholder:text-slate-400 outline-none input-focus-ring disabled:opacity-50 transition-opacity"
               />
             </div>
 
@@ -261,7 +261,7 @@ export const DebateArea = () => {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.85 }}
                     onClick={() => setDebate(EMPTY_DEBATE)}
-                    className="p-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-slate-500 hover:text-white transition-colors"
+                    className="p-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-slate-300 hover:text-white transition-colors"
                   >
                     <RefreshCw size={14} />
                   </motion.button>
@@ -403,7 +403,7 @@ export const DebateArea = () => {
                 />
               ))}
             </div>
-            <p className="text-[11px] font-black uppercase tracking-[0.5em] text-slate-700 text-center">
+            <p className="text-[11px] font-black uppercase tracking-[0.5em] text-slate-400 text-center">
               Enter a topic to ignite the dialectic
             </p>
           </motion.div>

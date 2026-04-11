@@ -172,7 +172,7 @@ export const IntelPanel: React.FC = () => {
 
   const hasContent = intelPanelContent.type !== 'idle';
   const relevanceColor = (score: number) =>
-    score >= 80 ? 'text-emerald-400' : score >= 50 ? 'text-amber-400' : 'text-slate-600';
+    score >= 80 ? 'text-emerald-400' : score >= 50 ? 'text-amber-400' : 'text-slate-400';
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -184,7 +184,7 @@ export const IntelPanel: React.FC = () => {
             "flex-1 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors",
             activeTab === 'search'
               ? "text-white border-b-2 border-white"
-              : "text-slate-500 hover:text-slate-300"
+              : "text-slate-300 hover:text-slate-300"
           )}
         >
           Search
@@ -195,7 +195,7 @@ export const IntelPanel: React.FC = () => {
             "flex-1 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors",
             activeTab === 'traces'
               ? "text-white border-b-2 border-white"
-              : "text-slate-500 hover:text-slate-300"
+              : "text-slate-300 hover:text-slate-300"
           )}
         >
           Traces
@@ -206,7 +206,7 @@ export const IntelPanel: React.FC = () => {
             "flex-1 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors",
             activeTab === 'optimize'
               ? "text-white border-b-2 border-white"
-              : "text-slate-500 hover:text-slate-300"
+              : "text-slate-300 hover:text-slate-300"
           )}
         >
           Optimize
@@ -222,19 +222,19 @@ export const IntelPanel: React.FC = () => {
           {/* Search/URL Bar */}
           <div className="px-3 pt-3 pb-2 flex-shrink-0">
         <div className="flex items-center gap-2 bg-black/40 rounded-lg border border-white/5 px-3 py-1.5">
-          <Globe size={12} className="text-slate-600 shrink-0" />
+          <Globe size={12} className="text-slate-400 shrink-0" />
           <input
             type="text"
             value={inputValue}
             onChange={e => setInputValue(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSubmit()}
             placeholder="Search or enter URL..."
-            className="flex-1 bg-transparent text-[12px] text-white placeholder:text-slate-700 outline-none font-mono"
+            className="flex-1 bg-transparent text-[12px] text-white placeholder:text-slate-400 outline-none font-mono"
           />
           {intelPanelContent.isLoading ? (
-            <Loader2 size={12} className="animate-spin text-slate-500" />
+            <Loader2 size={12} className="animate-spin text-slate-300" />
           ) : (
-            <button onClick={handleSubmit} className="text-slate-600 hover:text-white transition-colors">
+            <button onClick={handleSubmit} className="text-slate-400 hover:text-white transition-colors">
               <Search size={12} />
             </button>
           )}
@@ -247,10 +247,10 @@ export const IntelPanel: React.FC = () => {
         {intelPanelContent.type === 'idle' && (
           <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
             <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
-              <Search size={20} className="text-slate-700" />
+              <Search size={20} className="text-slate-400" />
             </div>
             <div>
-              <p className="text-[11px] text-slate-600 font-bold">Search or enter a URL</p>
+              <p className="text-[11px] text-slate-400 font-bold">Search or enter a URL</p>
               <p className="text-[10px] text-slate-800 mt-1">Research without leaving Command Center</p>
             </div>
             {intelRecentSearches.length > 0 && (
@@ -259,7 +259,7 @@ export const IntelPanel: React.FC = () => {
                   <button
                     key={i}
                     onClick={() => { setInputValue(q); }}
-                    className="px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/5 text-[10px] text-slate-500 hover:text-white hover:border-white/10 transition-all font-mono"
+                    className="px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/5 text-[10px] text-slate-300 hover:text-white hover:border-white/10 transition-all font-mono"
                   >
                     {q}
                   </button>
@@ -305,13 +305,13 @@ export const IntelPanel: React.FC = () => {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <span className="text-[9px] font-mono text-slate-700 block truncate">
+                    <span className="text-[9px] font-mono text-slate-400 block truncate">
                       {extractHostname(result.link)}
                     </span>
                     <span className="text-[11px] text-slate-300 font-bold block truncate group-hover:text-white transition-colors">
                       {result.title}
                     </span>
-                    <span className="text-[10px] text-slate-600 block truncate mt-0.5">
+                    <span className="text-[10px] text-slate-400 block truncate mt-0.5">
                       {result.snippet}
                     </span>
                   </div>
@@ -327,13 +327,13 @@ export const IntelPanel: React.FC = () => {
             {/* Related Searches */}
             {intelPanelContent.searchResults.relatedSearches && intelPanelContent.searchResults.relatedSearches.length > 0 && (
               <div className="pt-2 mt-2 border-t border-white/5">
-                <span className="text-[9px] text-slate-700 uppercase font-black tracking-widest">Related</span>
+                <span className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Related</span>
                 <div className="flex flex-wrap gap-1 mt-1.5">
                   {intelPanelContent.searchResults.relatedSearches.slice(0, 5).map((rs, i) => (
                     <button
                       key={i}
                       onClick={() => { setInputValue(rs.query); }}
-                      className="px-2 py-0.5 rounded-full bg-white/[0.03] border border-white/5 text-[10px] text-slate-600 hover:text-white hover:border-white/10 transition-all"
+                      className="px-2 py-0.5 rounded-full bg-white/[0.03] border border-white/5 text-[10px] text-slate-400 hover:text-white hover:border-white/10 transition-all"
                     >
                       {rs.query}
                     </button>
@@ -345,7 +345,7 @@ export const IntelPanel: React.FC = () => {
             {/* No results */}
             {(intelPanelContent.searchResults.results || []).length === 0 && !intelPanelContent.searchResults.error && (
               <div className="text-center py-6">
-                <p className="text-[11px] text-slate-600">No results found</p>
+                <p className="text-[11px] text-slate-400">No results found</p>
               </div>
             )}
 
@@ -371,7 +371,7 @@ export const IntelPanel: React.FC = () => {
                       searchResults: intelPanelContent.searchResults,
                       query: intelPanelContent.query,
                     })}
-                    className="flex items-center gap-1 text-[10px] text-slate-600 hover:text-white transition-colors mb-2"
+                    className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-white transition-colors mb-2"
                   >
                     <ArrowLeft size={10} /> Back to results
                   </button>
@@ -382,7 +382,7 @@ export const IntelPanel: React.FC = () => {
                 </h2>
 
                 {/* Metadata bar */}
-                <div className="flex items-center gap-2 mt-1 mb-3 text-[10px] text-slate-600 font-mono">
+                <div className="flex items-center gap-2 mt-1 mb-3 text-[10px] text-slate-400 font-mono">
                   {intelPanelContent.pageContent.siteName && <span>{intelPanelContent.pageContent.siteName}</span>}
                   {intelPanelContent.pageContent.author && (
                     <>
@@ -424,7 +424,7 @@ export const IntelPanel: React.FC = () => {
             ) : (
               <div className="text-center py-6">
                 <p className="text-[11px] text-rose-400">Could not load page</p>
-                <p className="text-[10px] text-slate-700 mt-1">Try opening in the full Browser</p>
+                <p className="text-[10px] text-slate-400 mt-1">Try opening in the full Browser</p>
               </div>
             )}
           </div>
@@ -436,7 +436,7 @@ export const IntelPanel: React.FC = () => {
         <div className="flex-shrink-0 border-t border-white/5">
           <button
             onClick={() => setQaOpen(!qaOpen)}
-            className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-black uppercase text-slate-600 hover:text-white transition-colors tracking-widest"
+            className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-black uppercase text-slate-400 hover:text-white transition-colors tracking-widest"
           >
             <span>Ask</span>
             {qaOpen ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
@@ -449,8 +449,8 @@ export const IntelPanel: React.FC = () => {
                 <div className="max-h-[120px] overflow-y-auto no-scrollbar space-y-1.5 mb-2">
                   {intelQAHistory.slice(-4).map((entry, i) => (
                     <div key={i} className="space-y-1">
-                      <p className="text-[10px] text-slate-500 font-mono">
-                        <span className="text-slate-700">Q:</span> {entry.question}
+                      <p className="text-[10px] text-slate-300 font-mono">
+                        <span className="text-slate-400">Q:</span> {entry.question}
                       </p>
                       <p className="text-[10px] text-slate-400 font-mono bg-black/30 rounded p-1.5 leading-relaxed">
                         {entry.answer}
@@ -468,13 +468,13 @@ export const IntelPanel: React.FC = () => {
                   onChange={e => setQaInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleQASubmit()}
                   placeholder="Ask about this content..."
-                  className="flex-1 bg-transparent text-[11px] text-white placeholder:text-slate-700 outline-none font-mono"
+                  className="flex-1 bg-transparent text-[11px] text-white placeholder:text-slate-400 outline-none font-mono"
                   disabled={qaLoading}
                 />
                 {qaLoading ? (
-                  <Loader2 size={11} className="animate-spin text-slate-500" />
+                  <Loader2 size={11} className="animate-spin text-slate-300" />
                 ) : (
-                  <button onClick={handleQASubmit} className="text-slate-600 hover:text-white transition-colors">
+                  <button onClick={handleQASubmit} className="text-slate-400 hover:text-white transition-colors">
                     <Send size={11} />
                   </button>
                 )}
@@ -499,7 +499,7 @@ export const IntelPanel: React.FC = () => {
             <button
               onClick={sendToMission}
               title="Send to Mission"
-              className="flex items-center gap-1 px-2 py-1 rounded-md text-slate-600 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all"
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all"
             >
               <Target size={11} />
               <span className="text-[9px] font-black uppercase tracking-wider">Mission</span>
@@ -507,7 +507,7 @@ export const IntelPanel: React.FC = () => {
             <button
               onClick={sendToOverseer}
               title="Send to Overseer"
-              className="flex items-center gap-1 px-2 py-1 rounded-md text-slate-600 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
             >
               <Shield size={11} />
               <span className="text-[9px] font-black uppercase tracking-wider">Overseer</span>
@@ -515,7 +515,7 @@ export const IntelPanel: React.FC = () => {
             <button
               onClick={sendToChat}
               title="Send to Chat"
-              className="flex items-center gap-1 px-2 py-1 rounded-md text-slate-600 hover:text-blue-400 hover:bg-blue-500/10 transition-all"
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 transition-all"
             >
               <MessageSquare size={11} />
               <span className="text-[9px] font-black uppercase tracking-wider">Chat</span>
@@ -529,7 +529,7 @@ export const IntelPanel: React.FC = () => {
               'p-1.5 rounded-md transition-all',
               intelAmbientContext
                 ? 'text-emerald-400 bg-emerald-500/10 shadow-[0_0_6px_rgba(16,185,129,0.2)]'
-                : 'text-slate-700 hover:text-slate-500'
+                : 'text-slate-400 hover:text-slate-300'
             )}
           >
             {intelAmbientContext ? <Eye size={12} /> : <EyeOff size={12} />}

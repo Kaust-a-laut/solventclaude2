@@ -168,7 +168,7 @@ export const SupervisorHistory = () => {
           <span className="text-[11px] font-black uppercase tracking-widest text-white">
             {totalCount} {totalCount === 1 ? 'Item' : 'Items'}
           </span>
-          <ChevronUp size={14} className="text-slate-500 group-hover:text-white transition-colors" />
+          <ChevronUp size={14} className="text-slate-300 group-hover:text-white transition-colors" />
         </motion.button>
       </ErrorBoundary>
     );
@@ -200,7 +200,7 @@ export const SupervisorHistory = () => {
               <p className="text-[11px] font-black uppercase tracking-widest text-white">
                 Supervisor
               </p>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-slate-300">
                 {pendingDecisions.length > 0 ? `${pendingDecisions.length} pending approval` : insights.length > 0 ? `${insights.length} recorded` : 'Monitoring...'}
               </p>
             </div>
@@ -210,7 +210,7 @@ export const SupervisorHistory = () => {
             {insights.length > 0 && (
               <button
                 onClick={clearHistory}
-                className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
+                className="p-2 text-slate-300 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
                 title="Clear history"
               >
                 <X size={14} />
@@ -218,7 +218,7 @@ export const SupervisorHistory = () => {
             )}
             <button
               onClick={() => setIsMinimized(true)}
-              className="p-2 text-slate-500 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+              className="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-all"
               title="Minimize"
             >
               <ChevronDown size={14} />
@@ -271,7 +271,7 @@ export const SupervisorHistory = () => {
                           <div className="flex items-center justify-between">
                             <span className={cn(
                               "text-[11px] font-mono",
-                              isExpiring ? "text-rose-400 animate-pulse" : "text-slate-500"
+                              isExpiring ? "text-rose-400 animate-pulse" : "text-slate-300"
                             )}>
                               {formatTimeRemaining(remaining)}
                             </span>
@@ -302,7 +302,7 @@ export const SupervisorHistory = () => {
                 {insights.length > 0 && (
                   <div className="space-y-2">
                     {pendingDecisions.length > 0 && (
-                      <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-500 pt-2 border-t border-white/5">
+                      <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-300 pt-2 border-t border-white/5">
                         History
                       </div>
                     )}
@@ -330,7 +330,7 @@ export const SupervisorHistory = () => {
                             )}>
                               {insight.message}
                             </p>
-                            <p className="text-[11px] text-slate-500 mt-1.5 font-mono">
+                            <p className="text-[11px] text-slate-300 mt-1.5 font-mono">
                               {insight.timestamp.toLocaleTimeString()}
                             </p>
                           </div>
@@ -342,7 +342,7 @@ export const SupervisorHistory = () => {
 
                 {insights.length === 0 && pendingDecisions.length === 0 && (
                   <div className="text-center py-6">
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[11px] text-slate-300">
                       No insights yet. The supervisor is observing...
                     </p>
                   </div>

@@ -133,7 +133,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({ value, onChange, l
                     </div>
                     <div className="flex-1 text-left">
                       <span className="text-[11px] font-bold text-white block leading-tight">{opt.displayName}</span>
-                      <span className="text-[11px] text-slate-500 leading-none">{opt.sublabel}</span>
+                      <span className="text-[11px] text-slate-300 leading-none">{opt.sublabel}</span>
                     </div>
                     {isActive && (
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]" />
@@ -151,7 +151,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({ value, onChange, l
   return (
     <div className="relative flex flex-col gap-1">
       {label && (
-        <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest">{label}</span>
+        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
       )}
       <button
         ref={triggerRef}
@@ -171,7 +171,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({ value, onChange, l
         </span>
         <ChevronDown
           size={10}
-          className={cn('text-slate-500 transition-transform duration-200', isOpen && 'rotate-180')}
+          className={cn('text-slate-300 transition-transform duration-200', isOpen && 'rotate-180')}
         />
       </button>
 

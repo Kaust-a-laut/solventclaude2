@@ -65,7 +65,7 @@ export const SearchSynthesisCard: React.FC<SynthesisCardProps> = ({ synthesis, i
           <Sparkles size={14} className="text-emerald-400" />
           <span className="text-[11px] font-black text-emerald-400 uppercase tracking-[0.3em]">AI Synthesis</span>
         </div>
-        <span className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">
+        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
           from {synthesis.sources.length} source{synthesis.sources.length !== 1 ? 's' : ''}
         </span>
       </div>
@@ -87,7 +87,7 @@ export const SearchSynthesisCard: React.FC<SynthesisCardProps> = ({ synthesis, i
           </button>
         ))}
         {overflowCount > 0 && (
-          <span className="px-2.5 py-1 bg-white/5 border border-white/10 text-[10px] font-bold text-slate-500 uppercase tracking-widest rounded-lg">
+          <span className="px-2.5 py-1 bg-white/5 border border-white/10 text-[10px] font-bold text-slate-300 uppercase tracking-widest rounded-lg">
             +{overflowCount} more
           </span>
         )}

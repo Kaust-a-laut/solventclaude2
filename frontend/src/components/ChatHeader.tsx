@@ -99,7 +99,7 @@ export const ChatHeader = ({ compact }: ChatHeaderProps) => {
         {/* Left: Mode + Model */}
         <div className={cn("flex items-center", compact ? "gap-6" : (isMobile ? "gap-4" : "gap-10"))}>
           <div className="flex flex-col">
-            {!compact && <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.5em] mb-1.5 opacity-60">Mode</span>}
+            {!compact && <span className="text-[11px] font-black text-slate-300 uppercase tracking-[0.5em] mb-1.5 opacity-60">Mode</span>}
             <span className={cn("font-extrabold text-white uppercase tracking-[0.2em]", compact ? "text-[11px]" : "text-[12px]")}>
               {({
                 chat: 'Chat', coding: 'Code', vision: 'Vision', browser: 'Browser',
@@ -112,7 +112,7 @@ export const ChatHeader = ({ compact }: ChatHeaderProps) => {
 
           {/* Clickable Model Pill */}
           <div className="flex flex-col relative" ref={dropRef}>
-            {!compact && <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.5em] mb-1.5 opacity-60">Model</span>}
+            {!compact && <span className="text-[11px] font-black text-slate-300 uppercase tracking-[0.5em] mb-1.5 opacity-60">Model</span>}
             <button
               onClick={() => setShowModelDrop(v => !v)}
               className="flex items-center gap-2 group border border-white/[0.08] hover:border-jb-orange/40 bg-white/[0.03] rounded-xl px-2.5 py-1.5 transition-all"
@@ -143,7 +143,7 @@ export const ChatHeader = ({ compact }: ChatHeaderProps) => {
                         onClick={() => handleToggleProvider('cloud')}
                         className={cn(
                           "flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all",
-                          !isLocal ? "bg-jb-accent/20 text-jb-accent border border-jb-accent/30" : "text-slate-600 hover:text-slate-400"
+                          !isLocal ? "bg-jb-accent/20 text-jb-accent border border-jb-accent/30" : "text-slate-400 hover:text-slate-400"
                         )}
                       >
                         <Cloud size={9} /> Cloud
@@ -152,7 +152,7 @@ export const ChatHeader = ({ compact }: ChatHeaderProps) => {
                         onClick={() => handleToggleProvider('local')}
                         className={cn(
                           "flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all",
-                          isLocal ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-slate-600 hover:text-slate-400"
+                          isLocal ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-slate-400 hover:text-slate-400"
                         )}
                       >
                         <Cpu size={9} /> Local
@@ -167,7 +167,7 @@ export const ChatHeader = ({ compact }: ChatHeaderProps) => {
                         <Cpu size={12} className="text-emerald-400 flex-shrink-0" />
                         <div>
                           <p className="text-[11px] font-bold text-slate-300">{selectedLocalModel}</p>
-                          <p className="text-[11px] text-slate-600 mt-0.5">Managed in Settings → Models</p>
+                          <p className="text-[11px] text-slate-400 mt-0.5">Managed in Settings → Models</p>
                         </div>
                       </div>
                     ) : (
@@ -182,7 +182,7 @@ export const ChatHeader = ({ compact }: ChatHeaderProps) => {
                                 "flex-1 py-1 rounded-md text-[11px] font-black uppercase tracking-wider transition-all",
                                 cloudProvider === g.id
                                   ? "bg-jb-accent/20 text-jb-accent border border-jb-accent/30"
-                                  : "text-slate-600 hover:text-slate-400"
+                                  : "text-slate-400 hover:text-slate-400"
                               )}
                             >
                               {g.label}
@@ -204,7 +204,7 @@ export const ChatHeader = ({ compact }: ChatHeaderProps) => {
                                     : "bg-white/[0.02] border-white/[0.05] hover:bg-white/[0.05] hover:border-white/10"
                                 )}
                               >
-                                <span className="text-[11px] font-black uppercase tracking-wider text-slate-600">{cloudProvider}</span>
+                                <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">{cloudProvider}</span>
                                 <span className={cn("text-[11px] font-bold leading-tight", isSelected ? "text-jb-accent" : "text-slate-300")}>{m.label}</span>
                                 {isSelected && <Check size={8} className="text-jb-accent mt-0.5" />}
                               </button>
@@ -217,7 +217,7 @@ export const ChatHeader = ({ compact }: ChatHeaderProps) => {
 
                   {/* Footer hint */}
                   <div className="px-3 py-2 border-t border-white/5">
-                    <p className="text-[11px] text-slate-700 text-center">More models in Settings → Models</p>
+                    <p className="text-[11px] text-slate-400 text-center">More models in Settings → Models</p>
                   </div>
                 </motion.div>
               )}
@@ -231,8 +231,8 @@ export const ChatHeader = ({ compact }: ChatHeaderProps) => {
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/5 hover:border-jb-accent/20 hover:bg-jb-accent/5 transition-all group"
           title="Session History"
         >
-          <History size={12} className="text-slate-500 group-hover:text-jb-accent transition-colors" />
-          {!compact && !isMobile && <span className="text-[11px] font-black uppercase tracking-wider text-slate-600 group-hover:text-jb-accent transition-colors">History</span>}
+          <History size={12} className="text-slate-300 group-hover:text-jb-accent transition-colors" />
+          {!compact && !isMobile && <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 group-hover:text-jb-accent transition-colors">History</span>}
         </button>
       </div>
     </>

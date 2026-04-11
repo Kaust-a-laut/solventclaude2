@@ -16,7 +16,7 @@ export const HomeArea = () => {
     {
       id: 'waterfall',
       title: 'Waterfall Architect',
-      desc: 'Autonomous multi-model reasoning pipeline. Collapses complex projects into 4-stage verified execution.',
+      desc: 'Autonomous multi-model reasoning pipeline. Collapses complex projects into 3-stage verified execution.',
       icon: FlaskConical,
       color: 'text-jb-purple',
       bg: 'bg-jb-purple/5',
@@ -99,9 +99,9 @@ export const HomeArea = () => {
       id: 'waterfall',
       category: 'Reasoning Pipeline',
       title: 'Waterfall Architect',
-      desc: 'Autonomous multi-model reasoning that collapses complex projects into four sequential, verified execution stages. Nothing advances until the previous stage is confirmed.',
+      desc: 'Autonomous multi-model reasoning that collapses complex projects into three sequential, verified execution stages. Nothing advances until the previous stage is confirmed.',
       bullets: [
-        'Decomposes any project goal into Decompose → Plan → Execute → Verify stages',
+        'Decomposes any project goal into Plan → Execute → Verify stages',
         'Each stage is cross-checked before the next begins — no hallucination propagation',
         'Coordinates multiple models in sequence, not competition',
       ],

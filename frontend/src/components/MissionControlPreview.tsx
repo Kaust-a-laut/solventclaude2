@@ -12,7 +12,7 @@ export const MissionControlPreview = () => {
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 bg-white/[0.03] border-b border-white/5 shrink-0">
         <div className="flex items-center gap-2">
-          <GripHorizontal size={10} className="text-slate-700" />
+          <GripHorizontal size={10} className="text-slate-400" />
           <div className="flex items-center gap-1.5">
             <Terminal size={12} className="text-jb-purple" />
             <span className="text-[11px] font-black text-white uppercase tracking-widest">Mission Control</span>
@@ -26,7 +26,7 @@ export const MissionControlPreview = () => {
            </div>
            <div className="w-[1px] h-3 bg-white/10" />
            <ExternalLink size={10} className="text-jb-accent animate-pulse" />
-           <X size={10} className="text-slate-600" />
+           <X size={10} className="text-slate-400" />
         </div>
       </div>
 
@@ -56,7 +56,7 @@ export const MissionControlPreview = () => {
         {/* Live Context Plans */}
         <div className="flex-1 space-y-3">
            <div className="space-y-1.5">
-              <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Active Directives</p>
+              <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.2em] px-1">Active Directives</p>
               
               <div className="space-y-1">
                  <div className="p-2 rounded-lg bg-white/[0.03] border border-white/5 flex items-center justify-between">
@@ -72,7 +72,7 @@ export const MissionControlPreview = () => {
                        <Globe size={10} className="text-jb-cyan" />
                        <span className="text-[11px] font-bold text-slate-300">Trip to Paris - Logic</span>
                     </div>
-                    <span className="text-[6px] font-mono text-slate-600">DRAFT</span>
+                    <span className="text-[6px] font-mono text-slate-400">DRAFT</span>
                  </div>
 
                  <div className="p-2 rounded-lg bg-white/[0.03] border border-white/5 flex items-center justify-between opacity-40">
@@ -101,7 +101,7 @@ export const MissionControlPreview = () => {
               <Smartphone size={8} className="text-jb-accent" />
               <span className="text-[11px] font-black text-jb-accent uppercase tracking-widest">PiP Mode Detachable</span>
            </div>
-           <span className="text-[11px] font-mono text-slate-700">KERNEL_SYNC_OK</span>
+           <span className="text-[11px] font-mono text-slate-400">KERNEL_SYNC_OK</span>
         </div>
       </div>
 

@@ -41,7 +41,7 @@ export function EmptyState({
 
       <div className="flex flex-col items-center gap-2 max-w-xs text-center">
         <p className="text-sm font-semibold text-slate-300">{title}</p>
-        <p className="text-[13px] text-slate-500 leading-relaxed">{description}</p>
+        <p className="text-[13px] text-slate-300 leading-relaxed">{description}</p>
       </div>
 
       {action && (
@@ -60,8 +60,8 @@ export function EmptyState({
       {shortcuts && shortcuts.length > 0 && (
         <div className="flex flex-wrap gap-3 mt-2">
           {shortcuts.map((s) => (
-            <div key={s.key} className="flex items-center gap-2 text-[11px] text-slate-600">
-              <kbd className="font-mono px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.08] text-slate-500">
+            <div key={s.key} className="flex items-center gap-2 text-[11px] text-slate-400">
+              <kbd className="font-mono px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.08] text-slate-300">
                 {s.key}
               </kbd>
               <span>{s.label}</span>

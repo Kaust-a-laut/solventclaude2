@@ -87,7 +87,7 @@ export const AgentRoster: React.FC<AgentRosterProps> = ({
               </div>
               <span className={cn(
                 'text-[11px] font-black uppercase tracking-wider',
-                isActive ? (config?.textColor || 'text-white') : 'text-slate-600',
+                isActive ? (config?.textColor || 'text-white') : 'text-slate-400',
               )}>
                 {agent.name.split(' ').pop()}
               </span>
@@ -101,7 +101,7 @@ export const AgentRoster: React.FC<AgentRosterProps> = ({
 
       {/* Round indicator */}
       <div className="flex items-center gap-2">
-        <span className="text-[11px] font-black uppercase tracking-wider text-slate-600">
+        <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
           Round
         </span>
         <div className="flex items-center gap-1">
@@ -122,7 +122,7 @@ export const AgentRoster: React.FC<AgentRosterProps> = ({
         <>
           <div className="w-px h-5 bg-white/10" />
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-600 flex-shrink-0">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 flex-shrink-0">
               Consensus
             </span>
             <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
@@ -142,7 +142,7 @@ export const AgentRoster: React.FC<AgentRosterProps> = ({
             </div>
             <span className={cn(
               'text-[11px] font-black tabular-nums',
-              consensusScore >= 80 ? 'text-emerald-400' : 'text-slate-500',
+              consensusScore >= 80 ? 'text-emerald-400' : 'text-slate-300',
             )}>
               {consensusScore}%
             </span>

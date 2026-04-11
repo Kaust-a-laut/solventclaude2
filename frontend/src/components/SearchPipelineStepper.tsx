@@ -82,9 +82,9 @@ export const SearchPipelineStepper: React.FC<StepperProps> = ({ stage, stats, ex
                 <span className={cn(
                   'text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap',
                   isComplete && 'text-[9px]',
-                  isDone && !isActive && 'text-slate-500',
+                  isDone && !isActive && 'text-slate-300',
                   isActive && `${s.color} font-black`,
-                  isPending && 'text-slate-700',
+                  isPending && 'text-slate-400',
                 )}>
                   {isDone && !isActive && stats
                     ? i === 1 ? `${stats.totalFound} found` : i === 2 ? `${stats.totalRelevant} relevant` : i === 3 ? 'Synthesized' : s.label
@@ -101,7 +101,7 @@ export const SearchPipelineStepper: React.FC<StepperProps> = ({ stage, stats, ex
         <motion.p
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-[11px] text-slate-500 italic text-center mt-3 truncate px-4"
+          className="text-[11px] text-slate-300 italic text-center mt-3 truncate px-4"
         >
           Refined: {expandedQuery}
         </motion.p>

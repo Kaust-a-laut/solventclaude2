@@ -114,9 +114,9 @@ export const ImageProviderSelector: React.FC<ImageProviderSelectorProps> = ({ lo
         )}
 
         {expanded ? (
-          <ChevronUp size={12} className="text-slate-600 shrink-0" />
+          <ChevronUp size={12} className="text-slate-400 shrink-0" />
         ) : (
-          <ChevronDown size={12} className="text-slate-600 shrink-0" />
+          <ChevronDown size={12} className="text-slate-400 shrink-0" />
         )}
       </button>
 
@@ -189,7 +189,7 @@ export const ImageProviderSelector: React.FC<ImageProviderSelectorProps> = ({ lo
 
             {/* Footer hint for paid providers */}
             <div className="px-3 pb-3">
-              <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+              <p className="text-[11px] text-slate-300 font-medium leading-relaxed">
                 API keys for paid providers can be configured in Settings.
               </p>
             </div>

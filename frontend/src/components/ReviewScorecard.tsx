@@ -39,14 +39,14 @@ export const ReviewScorecard: React.FC<ScorecardProps> = ({ score, breakdown, is
             <span className="text-[11px] font-black uppercase tracking-widest text-white">
               {status === 'analyzing' ? 'Auditing Code...' : status === 'rejected' ? 'Validation Failed' : 'Production Ready'}
             </span>
-            <span className="text-[11px] font-mono text-slate-500">Attempt #{attempt}</span>
+            <span className="text-[11px] font-mono text-slate-300">Attempt #{attempt}</span>
           </div>
         </div>
         <div className={cn(
           "text-xl font-black font-mono",
           isPassing ? "text-emerald-400" : "text-rose-400"
         )}>
-          {score}<span className="text-[11px] text-slate-500 ml-0.5">/100</span>
+          {score}<span className="text-[11px] text-slate-300 ml-0.5">/100</span>
         </div>
       </div>
 
@@ -77,7 +77,7 @@ export const ReviewScorecard: React.FC<ScorecardProps> = ({ score, breakdown, is
                     {issue}
                   </li>
                 ))}
-                {issues.length > 3 && <li className="text-[11px] text-slate-600 italic">...and {issues.length - 3} more</li>}
+                {issues.length > 3 && <li className="text-[11px] text-slate-400 italic">...and {issues.length - 3} more</li>}
               </ul>
             </motion.div>
           )}
@@ -99,7 +99,7 @@ export const ReviewScorecard: React.FC<ScorecardProps> = ({ score, breakdown, is
 
 const RubricItem = ({ label, value, max }: { label: string, value: number, max: number }) => (
   <div className="flex flex-col gap-1">
-    <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-slate-500">
+    <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-slate-300">
       <span>{label}</span>
       <span>{value}/{max}</span>
     </div>

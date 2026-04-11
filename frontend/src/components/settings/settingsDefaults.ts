@@ -25,6 +25,8 @@ export const API_KEY_CONFIGS = [
   { id: 'openrouter',  label: 'OpenRouter',        description: 'Access hundreds of models through a single API endpoint',           placeholder: 'sk-or-v1-...', docsUrl: 'https://openrouter.ai/keys' },
   { id: 'dashscope',   label: 'DashScope (Qwen)',  description: 'Qwen3-Coder, Qwen3.5, Qwen-Max — Alibaba Cloud native API',       placeholder: 'sk-...',        docsUrl: 'https://dashscope.console.aliyun.com/apiKey' },
   { id: 'cerebras',    label: 'Cerebras',          description: 'Ultra-fast wafer-scale inference — Llama, GPT-OSS, Qwen3, GLM-4.7', placeholder: 'csk-...',       docsUrl: 'https://cloud.cerebras.ai/' },
+  { id: 'fireworks',   label: 'Fireworks AI',      description: 'Fast inference — Llama 4, DeepSeek V3, Qwen, Mixtral',              placeholder: 'fw_...',        docsUrl: 'https://fireworks.ai/account/api-keys' },
+  { id: 'ollama',      label: 'Ollama Cloud',      description: 'GLM-4.7, Kimi K2.5, DeepSeek V3.2, Qwen 3.5 — free cloud models', placeholder: 'your-key...',   docsUrl: 'https://ollama.com/settings/keys' },
   { id: 'huggingface', label: 'Hugging Face',      description: 'Free SDXL image generation via the Hugging Face Inference API',     placeholder: 'hf_...',        docsUrl: 'https://huggingface.co/settings/tokens' },
   { id: 'serper',      label: 'Serper (Search)',    description: 'Enables web search — required for Browse and Waterfall tools',      placeholder: 'your-key...',   docsUrl: 'https://serper.dev/api-key' },
 ] as const;
@@ -77,5 +79,7 @@ export const SETTINGS_REGISTRY: SettingsEntry[] = [
   { id: 'api-groq',              label: 'Groq API Key',            description: 'Groq LPU credentials',                                  tab: 'api-keys', keywords: ['groq', 'key'] },
   { id: 'api-deepseek',          label: 'DeepSeek API Key',        description: 'DeepSeek credentials',                                  tab: 'api-keys', keywords: ['deepseek', 'key'] },
   { id: 'api-openrouter',        label: 'OpenRouter API Key',      description: 'OpenRouter credentials',                                 tab: 'api-keys', keywords: ['openrouter', 'key'] },
+  { id: 'api-fireworks',         label: 'Fireworks AI API Key',    description: 'Fireworks AI credentials',                               tab: 'api-keys', keywords: ['fireworks', 'key'] },
+  { id: 'api-ollama',            label: 'Ollama Cloud API Key',    description: 'Ollama Cloud credentials',                               tab: 'api-keys', keywords: ['ollama', 'cloud', 'key'] },
   { id: 'memory-index',          label: 'Memory Index',            description: 'Resync workspace memory index',                          tab: 'memory',   keywords: ['memory', 'index', 'resync', 'context'] },
 ];

@@ -47,7 +47,7 @@ export const CropTool: React.FC<CropToolProps> = (props) => {
       <div className="space-y-3">
         {/* Aspect ratio presets */}
         <div>
-          <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-2">
+          <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest block mb-2">
             Aspect Ratio
           </span>
           <div className="grid grid-cols-4 gap-1.5">
@@ -59,7 +59,7 @@ export const CropTool: React.FC<CropToolProps> = (props) => {
                   'py-2 rounded-xl text-[11px] font-black uppercase tracking-wide transition-all border',
                   props.activeAspect === r
                     ? 'bg-jb-purple/15 border-jb-purple/30 text-jb-purple'
-                    : 'bg-white/[0.03] border-white/5 text-slate-500 hover:text-white hover:border-white/10',
+                    : 'bg-white/[0.03] border-white/5 text-slate-300 hover:text-white hover:border-white/10',
                 )}
               >
                 {r}
@@ -70,14 +70,14 @@ export const CropTool: React.FC<CropToolProps> = (props) => {
 
         {/* Instruction when nothing drawn */}
         {!hasSelection && (
-          <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
+          <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
             Drag on the image to draw a crop selection.
           </p>
         )}
 
         {/* Selection size readout */}
         {hasSelection && props.selection && (
-          <div className="p-2 rounded-xl bg-white/[0.02] border border-white/5 font-mono text-[11px] text-slate-500">
+          <div className="p-2 rounded-xl bg-white/[0.02] border border-white/5 font-mono text-[11px] text-slate-300">
             {Math.round(props.selection.w)} × {Math.round(props.selection.h)} px
           </div>
         )}
@@ -86,7 +86,7 @@ export const CropTool: React.FC<CropToolProps> = (props) => {
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={props.onCancel}
-            className="py-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-[11px] font-black uppercase text-slate-500 hover:text-white hover:border-white/10 transition-all"
+            className="py-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-[11px] font-black uppercase text-slate-300 hover:text-white hover:border-white/10 transition-all"
           >
             Cancel
           </button>
@@ -106,13 +106,13 @@ export const CropTool: React.FC<CropToolProps> = (props) => {
   return (
     <div className="space-y-3">
       {!hasSelection && (
-        <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
+        <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
           Drag on the image to draw a selection, then cut or copy the region.
         </p>
       )}
 
       {hasSelection && props.selection && (
-        <div className="p-2 rounded-xl bg-white/[0.02] border border-white/5 font-mono text-[11px] text-slate-500">
+        <div className="p-2 rounded-xl bg-white/[0.02] border border-white/5 font-mono text-[11px] text-slate-300">
           {Math.round(props.selection.w)} × {Math.round(props.selection.h)} px selected
         </div>
       )}
@@ -136,7 +136,7 @@ export const CropTool: React.FC<CropToolProps> = (props) => {
 
       <button
         onClick={props.onCancel}
-        className="w-full py-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-[11px] font-black uppercase text-slate-500 hover:text-white hover:border-white/10 transition-all"
+        className="w-full py-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-[11px] font-black uppercase text-slate-300 hover:text-white hover:border-white/10 transition-all"
       >
         Cancel Selection
       </button>

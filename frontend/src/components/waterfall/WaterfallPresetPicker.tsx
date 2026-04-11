@@ -91,7 +91,7 @@ function getPresetUpgrades(
 
 const gradeBadge = (grade: string | null, category: string) => {
   if (category === 'demo') return { text: 'text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/20', label: 'DEMO' };
-  if (grade === null) return { text: 'text-slate-500', bg: 'bg-white/5', border: 'border-white/10', label: 'NEW' };
+  if (grade === null) return { text: 'text-slate-300', bg: 'bg-white/5', border: 'border-white/10', label: 'NEW' };
   if (grade.startsWith('A')) return { text: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/20', label: grade };
   if (grade.startsWith('B')) return { text: 'text-sky-400', bg: 'bg-sky-500/15', border: 'border-sky-500/20', label: grade };
   if (grade.startsWith('C')) return { text: 'text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/20', label: grade };
@@ -131,7 +131,7 @@ const ProviderSwapPanel = ({ preset }: { preset: WaterfallPresetMeta }) => {
               <div className={cn('w-4 h-4 rounded flex items-center justify-center shrink-0', cfg.bgColor)}>
                 <Icon size={8} className={cfg.textColor} />
               </div>
-              <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider w-16 shrink-0">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider w-16 shrink-0">
                 {cfg.displayName}
               </span>
               <div className="flex items-center gap-1">
@@ -146,7 +146,7 @@ const ProviderSwapPanel = ({ preset }: { preset: WaterfallPresetMeta }) => {
                       'px-1.5 py-0.5 rounded text-[8px] font-bold transition-all border',
                       v.provider === alts.current.provider
                         ? 'bg-jb-purple/15 border-jb-purple/30 text-jb-purple'
-                        : 'bg-white/[0.03] border-white/[0.06] text-slate-600 hover:text-slate-400 hover:border-white/15',
+                        : 'bg-white/[0.03] border-white/[0.06] text-slate-400 hover:text-slate-400 hover:border-white/15',
                     )}
                   >
                     {v.providerLabel}
@@ -204,13 +204,13 @@ const RecommendedRow = ({
           )}>
             {preset.name}
           </span>
-          <span className="text-[9px] text-[#64748b] truncate">
+          <span className="text-[9px] text-slate-300 truncate">
             — {preset.tagline}
           </span>
           <div className="flex-1" />
           <span className={cn(
             'text-[9px] font-mono shrink-0',
-            isFast ? 'text-[#34d399]' : 'text-[#475569]',
+            isFast ? 'text-[#34d399]' : 'text-slate-300',
           )}>
             {preset.speed}
           </span>
@@ -222,13 +222,13 @@ const RecommendedRow = ({
           )}
           <button
             onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}
-            className="shrink-0 text-slate-700 hover:text-slate-400 transition-colors"
+            className="shrink-0 text-slate-400 hover:text-slate-400 transition-colors"
           >
             <ChevronDown size={10} className={cn('transition-transform', isExpanded && 'rotate-180')} />
           </button>
         </div>
         <div className="mt-1.5">
-          <span className="text-[8px] text-[#334155]">
+          <span className="text-[8px] text-slate-400">
             {preset.stageLabels.planner} → {preset.stageLabels.executor} → {preset.stageLabels.reviewer}
           </span>
         </div>
@@ -300,7 +300,7 @@ const SoloPill = ({
         'rounded-[5px] border transition-all duration-200 px-1.5 py-1 text-center',
         isSelected
           ? 'bg-[rgba(157,91,210,0.06)] border-[rgba(157,91,210,0.2)] text-[#94a3b8]'
-          : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.04)] text-[#64748b] hover:border-[rgba(255,255,255,0.15)]',
+          : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.04)] text-slate-300 hover:border-[rgba(255,255,255,0.15)]',
       )}
     >
       <span className="text-[8px] font-semibold">{displayName}</span>
@@ -493,7 +493,7 @@ const CustomStageRow = ({
           <div className={cn('w-6 h-6 rounded-lg flex items-center justify-center', cfg.bgColor)}>
             <Icon size={12} className={cfg.textColor} />
           </div>
-          <span className="text-[12px] font-black text-slate-500 uppercase tracking-wider">
+          <span className="text-[12px] font-black text-slate-300 uppercase tracking-wider">
             {cfg.displayName}
           </span>
         </div>
@@ -527,7 +527,7 @@ const CustomStageRow = ({
                 'px-2 py-0.5 rounded-md text-[10px] font-bold transition-all border',
                 v.provider === alternatives.current.provider
                   ? 'bg-jb-purple/15 border-jb-purple/30 text-jb-purple'
-                  : 'bg-white/[0.03] border-white/[0.06] text-slate-600 hover:text-slate-400 hover:border-white/15',
+                  : 'bg-white/[0.03] border-white/[0.06] text-slate-400 hover:text-slate-400 hover:border-white/15',
               )}
             >
               {v.providerLabel}
@@ -586,8 +586,8 @@ export const WaterfallPresetPicker = ({
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <Layers size={14} className="text-slate-500" />
-            <span className="text-[12px] font-black text-slate-600 uppercase tracking-widest">
+            <Layers size={14} className="text-slate-300" />
+            <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">
               Pipeline Preset
             </span>
           </div>
@@ -597,7 +597,7 @@ export const WaterfallPresetPicker = ({
               'flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[12px] font-bold uppercase tracking-wider transition-all',
               showCustom
                 ? 'bg-jb-purple/10 border-jb-purple/25 text-jb-purple'
-                : 'bg-white/[0.03] border-white/[0.08] text-slate-600 hover:text-slate-400 hover:border-white/15',
+                : 'bg-white/[0.03] border-white/[0.08] text-slate-400 hover:text-slate-400 hover:border-white/15',
             )}
           >
             <SlidersHorizontal size={11} />
@@ -609,7 +609,7 @@ export const WaterfallPresetPicker = ({
           <>
             {/* ── RECOMMENDED ── */}
             <div className="space-y-2">
-              <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
                 RECOMMENDED · benchmarked across 4 prompts
               </span>
               <div className="space-y-1.5">
@@ -630,7 +630,7 @@ export const WaterfallPresetPicker = ({
 
             {/* ── TOP TIER ── */}
             <div className="space-y-2">
-              <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
                 TOP TIER
               </span>
               <div className="grid grid-cols-2 gap-1.5">
@@ -656,7 +656,7 @@ export const WaterfallPresetPicker = ({
 
             {/* ── SOLO ── */}
             <div className="space-y-2">
-              <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
                 SOLO · single model, all stages
               </span>
               <div className="grid grid-cols-3 gap-1.5">
@@ -684,7 +684,7 @@ export const WaterfallPresetPicker = ({
               className="overflow-hidden"
             >
               <div className="pt-3 border-t border-white/[0.04] space-y-3">
-                <span className="text-[12px] text-slate-700 font-mono block">Select a model for each pipeline stage</span>
+                <span className="text-[12px] text-slate-400 font-mono block">Select a model for each pipeline stage</span>
                 {STAGE_ORDER.map((stage) => (
                   <CustomStageRow
                     key={stage}
@@ -701,8 +701,8 @@ export const WaterfallPresetPicker = ({
         {/* Footer hint */}
         <div className="pt-2 border-t border-white/[0.04]">
           <div className="flex items-center gap-2">
-            <Trophy size={11} className="text-slate-700" />
-            <span className="text-[12px] text-slate-700 font-mono">
+            <Trophy size={11} className="text-slate-400" />
+            <span className="text-[12px] text-slate-400 font-mono">
               Scores from automated pipeline benchmarks · results may vary
             </span>
           </div>

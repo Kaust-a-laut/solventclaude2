@@ -64,7 +64,7 @@ export const Navigation = () => {
           "w-full flex items-center transition-all duration-300 group relative overflow-hidden",
           isActive
             ? `${getActiveBg(color)} text-white shadow-[inset_0_0_20px_rgba(255,255,255,0.02)]`
-            : "text-slate-500 hover:text-slate-200",
+            : "text-slate-300 hover:text-slate-200",
           isCollapsed ? "justify-center px-0 py-3 rounded-xl" : "justify-between px-4 py-3 rounded-2xl"
         )}
         title={isCollapsed ? label : undefined}
@@ -112,7 +112,7 @@ export const Navigation = () => {
            <button
               onClick={() => setIsCollapsed(!isCollapsed)}
               className={cn(
-                 "p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-colors",
+                 "p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition-colors",
                  isCollapsed ? "mt-1" : ""
               )}
               title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
@@ -122,7 +122,7 @@ export const Navigation = () => {
         )}
 
         {isMobile && (
-          <button onClick={() => setIsOpen(false)} className="p-2 text-slate-500 hover:text-white">
+          <button onClick={() => setIsOpen(false)} className="p-2 text-slate-300 hover:text-white">
             <CloseIcon size={24} />
           </button>
         )}
@@ -133,7 +133,7 @@ export const Navigation = () => {
           {!isCollapsed && (
             <div className="flex items-center gap-2 px-4 mb-4">
               <span className="w-1 h-1 rounded-full bg-jb-accent/60" />
-              <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.3em]">Modes</p>
+              <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.3em]">Modes</p>
             </div>
           )}
           <NavItem mode="home" icon={Home} label="Overview" color="text-slate-300" />
@@ -153,7 +153,7 @@ export const Navigation = () => {
            {!isCollapsed && (
              <div className="flex items-center gap-2 px-4 mb-4">
                <span className="w-1 h-1 rounded-full bg-jb-purple/60" />
-               <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.3em]">Model Lab</p>
+               <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.3em]">Model Lab</p>
              </div>
            )}
            <NavItem mode="model_playground" icon={Sparkles} label="Lab Center" color="text-jb-purple" />
@@ -176,7 +176,7 @@ export const Navigation = () => {
                if (isMobile) setIsOpen(false);
              }}
              className={cn(
-               "w-full flex items-center rounded-2xl text-slate-500 hover:text-white transition-all group",
+               "w-full flex items-center rounded-2xl text-slate-300 hover:text-white transition-all group",
                isCollapsed ? "justify-center py-3" : "gap-3 px-4 py-3"
              )}
              title="Settings"

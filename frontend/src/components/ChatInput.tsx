@@ -169,7 +169,7 @@ export const ChatInput = ({ compact = false }: ChatInputProps) => {
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[11px] font-black text-white max-w-[120px] truncate uppercase tracking-widest">{attachedFile.originalName}</span>
-                    <span className="text-[11px] text-slate-500 mt-0.5 uppercase">Staged</span>
+                    <span className="text-[11px] text-slate-300 mt-0.5 uppercase">Staged</span>
                   </div>
                   <button onClick={() => setAttachedFile(null)} className="absolute -top-2 -right-2 bg-rose-500 text-white p-1 rounded-full shadow-lg">
                     <X size={10} />
@@ -193,7 +193,7 @@ export const ChatInput = ({ compact = false }: ChatInputProps) => {
                <button 
                 onClick={() => setShowMenu(!showMenu)}
                 className={cn(
-                  "flex items-center justify-center transition-all rounded-2xl bg-black/40 hover:bg-black/60 text-slate-500 hover:text-white border border-white/5 hover:border-white/10",
+                  "flex items-center justify-center transition-all rounded-2xl bg-black/40 hover:bg-black/60 text-slate-300 hover:text-white border border-white/5 hover:border-white/10",
                   compact ? "w-8 h-8" : (deviceInfo.isMobile ? "w-8 h-8" : "w-10 h-10")
                 )}
                >
@@ -233,7 +233,7 @@ export const ChatInput = ({ compact = false }: ChatInputProps) => {
                     size={compact ? 15 : (deviceInfo.isMobile ? 16 : 18)}
                     className={cn(
                       "transition-all duration-500",
-                      thinkingModeEnabled ? "text-jb-purple animate-pulse drop-shadow-[0_0_8px_rgba(157,91,210,0.8)]" : "text-slate-500"
+                      thinkingModeEnabled ? "text-jb-purple animate-pulse drop-shadow-[0_0_8px_rgba(157,91,210,0.8)]" : "text-slate-300"
                     )}
                   />
                </button>
@@ -256,7 +256,7 @@ export const ChatInput = ({ compact = false }: ChatInputProps) => {
                               key={item.id}
                               onClick={() => { item.action(); setShowMenu(false); }}
                               className={cn(
-                                "flex items-center justify-between px-3 py-2.5 rounded-xl transition-all group hover:bg-white/[0.03] text-slate-500 hover:text-white"
+                                "flex items-center justify-between px-3 py-2.5 rounded-xl transition-all group hover:bg-white/[0.03] text-slate-300 hover:text-white"
                               )}
                             >
                                <div className="flex items-center gap-3">
@@ -291,7 +291,7 @@ export const ChatInput = ({ compact = false }: ChatInputProps) => {
                 <button 
                   onClick={toggleListening}
                   className={cn(
-                    "transition-all rounded-2xl border bg-black/40 border-white/5 text-slate-500 hover:text-white hover:border-white/10",
+                    "transition-all rounded-2xl border bg-black/40 border-white/5 text-slate-300 hover:text-white hover:border-white/10",
                     deviceInfo.isMobile ? "p-2" : "p-2.5"
                   )}
                 >

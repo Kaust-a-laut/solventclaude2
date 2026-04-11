@@ -8,14 +8,14 @@ interface WaterfallConnectorProps {
   fromStatus: StageStatus;
   fromColor: string;
   toColor: string;
-  // Human-in-the-Loop (architect->reasoner only)
+  // Human-in-the-Loop (planner->executor only)
   showEditPlan?: boolean;
   editPlanDraft?: string | null;
   onStartEdit?: () => void;
   onEditChange?: (val: string) => void;
   onApplyEdit?: () => void;
   onCancelEdit?: () => void;
-  // Gate controls (architect->reasoner when paused)
+  // Gate controls (planner->executor when paused)
   isPaused?: boolean;
   onProceed?: () => void;
   onCancel?: () => void;
@@ -64,7 +64,7 @@ export const WaterfallConnector = ({
         )}
       </div>
 
-      {/* Edit Plan button (architect->reasoner, after planner done, not editing) */}
+      {/* Edit Plan button (planner->executor, after planner done, not editing) */}
       <AnimatePresence>
         {showEditPlan && isFromCompleted && !isEditing && !isPaused && (
           <motion.button
@@ -101,7 +101,7 @@ export const WaterfallConnector = ({
                   </button>
                   <button
                     onClick={onCancelEdit}
-                    className="p-1 rounded-lg text-slate-500 hover:text-rose-400 transition-colors"
+                    className="p-1 rounded-lg text-slate-300 hover:text-rose-400 transition-colors"
                   >
                     <X size={12} />
                   </button>

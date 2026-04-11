@@ -56,7 +56,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ entries }) => {
                 className="flex items-center gap-2"
               >
                 <div className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', cfg.dot)} />
-                <span className="text-[11px] text-slate-600 font-mono flex-shrink-0 tabular-nums">
+                <span className="text-[11px] text-slate-400 font-mono flex-shrink-0 tabular-nums">
                   {fmtTime(entry.timestamp)}
                 </span>
                 <span className={cn('text-[11px] font-bold uppercase tracking-wider truncate', cfg.label)}>

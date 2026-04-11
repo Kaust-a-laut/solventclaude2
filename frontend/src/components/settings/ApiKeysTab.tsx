@@ -47,7 +47,7 @@ export const ApiKeysTab = () => {
           <div className="flex items-start justify-between gap-4">
             <div className="flex flex-col gap-1">
               <span className="text-xs font-black text-slate-300">{label}</span>
-              <span className="text-[11px] text-slate-500 font-medium leading-snug">{description}</span>
+              <span className="text-[11px] text-slate-300 font-medium leading-snug">{description}</span>
             </div>
             <a
               href={docsUrl}
@@ -65,11 +65,11 @@ export const ApiKeysTab = () => {
               value={apiKeys[id] || ''}
               onChange={e => setApiKey(id, e.target.value)}
               placeholder={placeholder}
-              className="flex-1 bg-black/40 border border-white/10 rounded-2xl px-5 py-3 text-xs font-mono text-jb-accent outline-none focus:border-jb-accent/50 transition-all placeholder:text-slate-700"
+              className="flex-1 bg-black/40 border border-white/10 rounded-2xl px-5 py-3 text-xs font-mono text-jb-accent outline-none focus:border-jb-accent/50 transition-all placeholder:text-slate-400"
             />
             <button
               onClick={() => toggleKeyVisibility(id)}
-              className="p-3 text-slate-600 hover:text-white transition-colors flex-shrink-0"
+              className="p-3 text-slate-400 hover:text-white transition-colors flex-shrink-0"
             >
               {showKeys[id] ? <EyeOff size={14} /> : <Eye size={14} />}
             </button>

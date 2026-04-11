@@ -92,7 +92,7 @@ export const MemoryTab = () => {
               )}
             >
               <span className={cn('text-lg font-black', stat.color)}>{memoryLoading ? '—' : stat.value}</span>
-              <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">{stat.label}</span>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{stat.label}</span>
             </button>
           );
         })}
@@ -103,7 +103,7 @@ export const MemoryTab = () => {
         <motion.div variants={staggerItem} className="bg-white/[0.02] border border-white/[0.06] rounded-2xl overflow-hidden">
           <button
             onClick={() => setShowTypeBreakdown(v => !v)}
-            className="w-full flex items-center justify-between px-4 py-2.5 text-[11px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-400 transition-colors"
+            className="w-full flex items-center justify-between px-4 py-2.5 text-[11px] font-black text-slate-300 uppercase tracking-widest hover:text-slate-400 transition-colors"
           >
             <span className="flex items-center gap-1.5"><Hash size={10} /> Type Distribution</span>
             {showTypeBreakdown ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
@@ -127,10 +127,10 @@ export const MemoryTab = () => {
                           'px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all',
                           memoryTypeFilter === type
                             ? 'bg-jb-accent/20 text-jb-accent border-jb-accent/40'
-                            : 'bg-white/[0.03] text-slate-500 border-white/[0.08] hover:border-white/20 hover:text-slate-400'
+                            : 'bg-white/[0.03] text-slate-300 border-white/[0.08] hover:border-white/20 hover:text-slate-400'
                         )}
                       >
-                        {type.replace(/_/g, ' ')} <span className="text-slate-700 ml-0.5">{count}</span>
+                        {type.replace(/_/g, ' ')} <span className="text-slate-400 ml-0.5">{count}</span>
                       </button>
                     ))}
                 </div>
@@ -142,19 +142,19 @@ export const MemoryTab = () => {
 
       {/* Search */}
       <motion.div variants={staggerItem} className="relative">
-        <Search size={13} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" />
+        <Search size={13} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           value={memorySearch}
           onChange={e => setMemorySearch(e.target.value)}
           placeholder="Search memories..."
-          className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl pl-10 pr-4 py-3 text-[11px] font-bold text-slate-300 placeholder:text-slate-700 focus:outline-none focus:border-jb-purple/40 transition-colors"
+          className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl pl-10 pr-4 py-3 text-[11px] font-bold text-slate-300 placeholder:text-slate-400 focus:outline-none focus:border-jb-purple/40 transition-colors"
         />
       </motion.div>
 
       {/* Active Filters */}
       {(memoryTierFilter || memoryTypeFilter) && (
         <div className="flex items-center gap-1.5 flex-wrap">
-          <Filter size={10} className="text-slate-600" />
+          <Filter size={10} className="text-slate-400" />
           {memoryTierFilter && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/[0.1] text-[11px] font-bold text-slate-400">
               tier: {memoryTierFilter}
@@ -174,11 +174,11 @@ export const MemoryTab = () => {
       <motion.div variants={staggerItem} className="bg-white/[0.01] border border-white/[0.06] rounded-[28px] overflow-hidden">
         <div className="max-h-[380px] overflow-y-auto divide-y divide-white/[0.04]">
           {memoryLoading && memoryEntries.length === 0 ? (
-            <div className="flex items-center justify-center gap-2 py-10 text-slate-600 text-[11px]">
+            <div className="flex items-center justify-center gap-2 py-10 text-slate-400 text-[11px]">
               <Loader2 size={14} className="animate-spin" /> Loading memories...
             </div>
           ) : memoryEntries.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-10 text-slate-700">
+            <div className="flex flex-col items-center justify-center gap-2 py-10 text-slate-400">
               <Database size={28} className="opacity-30" />
               <p className="text-[11px] font-bold">
                 {memorySearch ? 'No results found' : 'No memories yet — resync to build index'}
@@ -189,9 +189,9 @@ export const MemoryTab = () => {
               crystallized: 'bg-jb-purple/20 text-jb-purple border-jb-purple/30',
               episodic: 'bg-jb-accent/20 text-jb-accent border-jb-accent/30',
               'meta-summary': 'bg-white/10 text-slate-400 border-white/20',
-              archived: 'bg-white/5 text-slate-600 border-white/10',
+              archived: 'bg-white/5 text-slate-400 border-white/10',
             };
-            const tierClass = tierColors[entry.tier] || 'bg-white/5 text-slate-500 border-white/10';
+            const tierClass = tierColors[entry.tier] || 'bg-white/5 text-slate-300 border-white/10';
             const confidence = typeof entry.confidence === 'string'
               ? entry.confidence
               : entry.confidence != null
@@ -216,7 +216,7 @@ export const MemoryTab = () => {
                     if (isEditing) { setEditingEntryId(null); }
                   }}
                 >
-                  <div className="mt-0.5 text-slate-700 flex-shrink-0">
+                  <div className="mt-0.5 text-slate-400 flex-shrink-0">
                     {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -227,7 +227,7 @@ export const MemoryTab = () => {
                         </span>
                       )}
                       {entry.type && (
-                        <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-white/[0.05] text-slate-500 border border-white/[0.08]">
+                        <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-white/[0.05] text-slate-300 border border-white/[0.08]">
                           {entry.type.replace(/_/g, ' ')}
                         </span>
                       )}
@@ -243,7 +243,7 @@ export const MemoryTab = () => {
                           <Star size={8} className="fill-amber-400/80" /> {entry.importance}
                         </span>
                       )}
-                      {relTime && <span className="text-[11px] text-slate-700">{relTime}</span>}
+                      {relTime && <span className="text-[11px] text-slate-400">{relTime}</span>}
                     </div>
                     <p className={cn('text-[11px] text-slate-400 leading-relaxed font-medium', !isExpanded && 'line-clamp-2')}>
                       {entry.content}
@@ -257,7 +257,7 @@ export const MemoryTab = () => {
                         setEditingEntryId(entry.id);
                         setEditContent(entry.content || '');
                       }}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-jb-accent/20 text-slate-700 hover:text-jb-accent transition-all"
+                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-jb-accent/20 text-slate-400 hover:text-jb-accent transition-all"
                       title="Edit this memory"
                     >
                       <Pencil size={11} />
@@ -272,7 +272,7 @@ export const MemoryTab = () => {
                           setMemoryEntries(prev => [...prev, entry]);
                         }
                       }}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-rose-500/20 text-slate-700 hover:text-rose-400 transition-all"
+                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-all"
                       title="Delete this memory"
                     >
                       <Trash2 size={11} />
@@ -285,9 +285,9 @@ export const MemoryTab = () => {
                   <div className="px-4 pb-3 pl-[40px] space-y-2">
                     {entry.tags && entry.tags.length > 0 && (
                       <div className="flex items-center gap-1 flex-wrap">
-                        <Tag size={9} className="text-slate-700" />
+                        <Tag size={9} className="text-slate-400" />
                         {entry.tags.map((tag: string) => (
-                          <span key={tag} className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-white/[0.04] text-slate-600 border border-white/[0.06]">
+                          <span key={tag} className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-white/[0.04] text-slate-400 border border-white/[0.06]">
                             {tag}
                           </span>
                         ))}
@@ -331,7 +331,7 @@ export const MemoryTab = () => {
                               e.stopPropagation();
                               setEditingEntryId(null);
                             }}
-                            className="px-3 py-1.5 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] rounded-lg text-[11px] font-bold text-slate-500 transition-all"
+                            className="px-3 py-1.5 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] rounded-lg text-[11px] font-bold text-slate-300 transition-all"
                           >
                             Cancel
                           </button>

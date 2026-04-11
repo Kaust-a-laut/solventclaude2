@@ -136,7 +136,7 @@ export const KnowledgeMapMini = () => {
       {/* Tooltip on hover */}
       <div className="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-black/90 border border-white/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
         <p className="text-[11px] font-bold text-white">Knowledge Map</p>
-        <p className="text-[11px] text-slate-500">
+        <p className="text-[11px] text-slate-300">
           {graphNodes.length} nodes • {graphEdges.length} connections
         </p>
       </div>

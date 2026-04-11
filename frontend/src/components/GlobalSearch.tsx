@@ -185,9 +185,9 @@ export const GlobalSearch: React.FC = () => {
     <>
       {/* Trigger hint */}
       <div className="fixed bottom-4 left-4 z-30 flex items-center gap-2 px-3 py-1.5 bg-black/80 backdrop-blur border border-white/10 rounded-lg">
-        <Command size={12} className="text-slate-500" />
-        <span className="text-[11px] font-mono text-slate-500">K</span>
-        <span className="text-[11px] text-slate-600">to search</span>
+        <Command size={12} className="text-slate-300" />
+        <span className="text-[11px] font-mono text-slate-300">K</span>
+        <span className="text-[11px] text-slate-400">to search</span>
       </div>
 
       <AnimatePresence>
@@ -212,7 +212,7 @@ export const GlobalSearch: React.FC = () => {
               <div className="bg-[#0a0a0f] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
                 {/* Search Input */}
                 <div className="flex items-center gap-3 p-4 border-b border-white/5">
-                  <Search size={18} className="text-slate-500" />
+                  <Search size={18} className="text-slate-300" />
                   <input
                     type="text"
                     value={query}
@@ -220,12 +220,12 @@ export const GlobalSearch: React.FC = () => {
                     onKeyDown={handleKeyDown}
                     placeholder="Search sessions, memories, and messages..."
                     autoFocus
-                    className="flex-1 bg-transparent text-white text-sm outline-none placeholder:text-slate-600"
+                    className="flex-1 bg-transparent text-white text-sm outline-none placeholder:text-slate-400"
                   />
                   {query && (
                     <button
                       onClick={() => { setQuery(''); setResults([]); }}
-                      className="p-1 text-slate-500 hover:text-white transition-colors"
+                      className="p-1 text-slate-300 hover:text-white transition-colors"
                     >
                       <X size={14} />
                     </button>
@@ -238,7 +238,7 @@ export const GlobalSearch: React.FC = () => {
                     <div className="p-8 text-center">
                       <AlertTriangle size={24} className="text-rose-500 mx-auto mb-2" />
                       <p className="text-[11px] text-rose-400 uppercase tracking-widest">Search Error</p>
-                      <p className="text-[11px] text-slate-500 mt-1">{error}</p>
+                      <p className="text-[11px] text-slate-300 mt-1">{error}</p>
                       <button
                         onClick={() => { setError(null); setQuery(''); }}
                         className="mt-3 px-3 py-1.5 bg-rose-500/20 border border-rose-500/30 rounded-lg text-[11px] text-rose-300 hover:bg-rose-500/30 transition-all"
@@ -249,13 +249,13 @@ export const GlobalSearch: React.FC = () => {
                   ) : isLoading ? (
                     <div className="p-8 text-center">
                       <div className="inline-block w-5 h-5 border-2 border-jb-accent border-t-transparent rounded-full animate-spin" />
-                      <p className="text-[11px] text-slate-500 mt-2 uppercase tracking-widest">Searching...</p>
+                      <p className="text-[11px] text-slate-300 mt-2 uppercase tracking-widest">Searching...</p>
                     </div>
                   ) : groupedResults.length > 0 ? (
                     <div className="p-2">
                       {groupedResults.map((group, groupIndex) => (
                         <div key={group.type} className="mb-3 last:mb-0">
-                          <div className="flex items-center gap-2 px-2 py-1.5 text-[11px] font-black uppercase tracking-widest text-slate-500">
+                          <div className="flex items-center gap-2 px-2 py-1.5 text-[11px] font-black uppercase tracking-widest text-slate-300">
                             {group.icon}
                             {group.label}
                             <span className="text-[11px] bg-white/5 px-1 rounded">{group.results.length}</span>
@@ -289,25 +289,25 @@ export const GlobalSearch: React.FC = () => {
                                   <div className="flex items-center gap-2 mb-0.5">
                                     <p className="text-[11px] font-bold text-white truncate">{result.title}</p>
                                     {result.metadata?.mode && (
-                                      <span className="text-[6px] font-mono text-slate-500 bg-white/5 px-1 rounded">
+                                      <span className="text-[6px] font-mono text-slate-300 bg-white/5 px-1 rounded">
                                         {result.metadata.mode}
                                       </span>
                                     )}
                                     {result.score && (
-                                      <span className="text-[6px] font-mono text-slate-500">
+                                      <span className="text-[6px] font-mono text-slate-300">
                                         {(result.score * 100).toFixed(0)}% match
                                       </span>
                                     )}
                                   </div>
                                   <p className="text-[11px] text-slate-400 line-clamp-2">{result.excerpt}</p>
                                   {result.metadata?.date && (
-                                    <p className="text-[11px] text-slate-600 mt-1 flex items-center gap-1">
+                                    <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
                                       <Clock size={6} />
                                       {result.metadata.date}
                                     </p>
                                   )}
                                 </div>
-                                <ChevronRight size={12} className="text-slate-600 shrink-0 mt-0.5" />
+                                <ChevronRight size={12} className="text-slate-400 shrink-0 mt-0.5" />
                               </button>
                             );
                           })}
@@ -316,14 +316,14 @@ export const GlobalSearch: React.FC = () => {
                     </div>
                   ) : query ? (
                     <div className="p-8 text-center">
-                      <Search size={24} className="text-slate-700 mx-auto mb-2" />
-                      <p className="text-[11px] text-slate-500 uppercase tracking-widest">No results found</p>
+                      <Search size={24} className="text-slate-400 mx-auto mb-2" />
+                      <p className="text-[11px] text-slate-300 uppercase tracking-widest">No results found</p>
                     </div>
                   ) : (
                     <div className="p-8 text-center">
-                      <History size={24} className="text-slate-700 mx-auto mb-2" />
-                      <p className="text-[11px] text-slate-500 uppercase tracking-widest">Start typing to search</p>
-                      <div className="flex items-center justify-center gap-4 mt-4 text-[11px] text-slate-600">
+                      <History size={24} className="text-slate-400 mx-auto mb-2" />
+                      <p className="text-[11px] text-slate-300 uppercase tracking-widest">Start typing to search</p>
+                      <div className="flex items-center justify-center gap-4 mt-4 text-[11px] text-slate-400">
                         <span className="flex items-center gap-1">
                           <MessageSquare size={10} /> Sessions
                         </span>
@@ -341,7 +341,7 @@ export const GlobalSearch: React.FC = () => {
                 {/* Footer */}
                 {results.length > 0 && (
                   <div className="flex items-center justify-between px-4 py-2 border-t border-white/5 bg-white/[0.02]">
-                    <div className="flex items-center gap-3 text-[11px] text-slate-500">
+                    <div className="flex items-center gap-3 text-[11px] text-slate-300">
                       <span className="flex items-center gap-1">
                         <span className="px-1 bg-white/5 rounded">↑↓</span> to navigate
                       </span>
@@ -349,7 +349,7 @@ export const GlobalSearch: React.FC = () => {
                         <span className="px-1 bg-white/5 rounded">Enter</span> to open
                       </span>
                     </div>
-                    <span className="text-[11px] text-slate-600">{results.length} results</span>
+                    <span className="text-[11px] text-slate-400">{results.length} results</span>
                   </div>
                 )}
               </div>
