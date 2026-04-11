@@ -107,6 +107,10 @@ export interface WaterfallContext {
   currentPhase: 'planning' | 'executing' | 'reviewing' | 'complete';
   errors: string[];
   startTime: number;
+  /** Feedback string forwarded from reviewer to executor on retry */
+  feedback?: string;
+  /** Plan data forwarded from planner to reviewer (LLM JSON, not strictly typed) */
+  plan?: PlannerOutput | Record<string, unknown>;
 }
 
 // ============================================================================
