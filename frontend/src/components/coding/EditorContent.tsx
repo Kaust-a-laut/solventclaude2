@@ -14,7 +14,7 @@ interface EditorContentProps {
   activeFile: string | null;
   activeTier: PerformanceTier;
   editorContainerRef: React.RefObject<HTMLDivElement>;
-  editorRef: React.RefObject<MonacoEditor.IStandaloneCodeEditor | null>;
+  editorRef: React.MutableRefObject<MonacoEditor.IStandaloneCodeEditor | null>;
   onEditorMount: OnMount;
   onInlineCommand: (command: string, selection: string) => void;
   onFilesChange: (files: { path: string; content: string }[]) => void;
@@ -106,7 +106,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
         </div>
         <InlineAIToolbar
           editorRef={editorRef}
-          containerRef={editorContainerRef as React.RefObject<HTMLDivElement>}
+          containerRef={editorContainerRef}
           onCommand={onInlineCommand}
         />
       </div>

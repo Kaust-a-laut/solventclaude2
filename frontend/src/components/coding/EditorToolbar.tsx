@@ -1,5 +1,5 @@
 import React from 'react';
-import { Save, Play, Loader2, Box } from 'lucide-react';
+import { Save, Play, Loader2, Box, Terminal } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface EditorToolbarProps {
@@ -21,8 +21,10 @@ interface EditorToolbarProps {
 export const EditorToolbar: React.FC<EditorToolbarProps> = ({
   fileTreeVisible,
   chatPanelVisible,
+  terminalVisible,
   setFileTreeVisible,
   setChatPanelVisible,
+  setTerminalVisible,
   bootStatus,
   isRunning,
   activeFile,
@@ -107,6 +109,15 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
         aria-label="Toggle agent chat"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+      </button>
+      <button
+        type="button"
+        onClick={() => setTerminalVisible(!terminalVisible)}
+        className={cn('p-1.5 rounded-lg transition-colors', terminalVisible ? 'text-jb-accent bg-jb-accent/10' : 'text-white/30 hover:text-white/60')}
+        title="Toggle terminal (⌘J)"
+        aria-label="Toggle terminal"
+      >
+        <Terminal size={14} aria-hidden="true" />
       </button>
     </div>
   );
