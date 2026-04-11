@@ -7,22 +7,20 @@ import { WATERFALL_PRESETS_BY_KEY } from '../lib/waterfallPresets';
 
 export type WaterfallModelChoice = 'A' | 'B' | { model: string; provider: string };
 export interface WaterfallModelSelection {
-  architect: WaterfallModelChoice;
-  reasoner: WaterfallModelChoice;
+  planner: WaterfallModelChoice;
   executor: WaterfallModelChoice;
   reviewer: WaterfallModelChoice;
 }
 
-// Default to groq-speed — fastest honest pipeline
+// Default to kimi-coder — most consistent across all prompts
 export const DEFAULT_MODEL_SELECTION: WaterfallModelSelection =
-  WATERFALL_PRESETS_BY_KEY['groq-speed']!.selection as WaterfallModelSelection;
+  WATERFALL_PRESETS_BY_KEY['kimi-coder']!.selection as WaterfallModelSelection;
 
 interface WaterfallStepBase { message?: string; score?: number; issues?: { severity: string; message: string }[]; estimate?: string; [key: string]: unknown }
-interface ArchitectData extends WaterfallStepBase { plan: string }
-interface ReasonerData extends WaterfallStepBase { reasoning: string }
+interface PlannerData extends WaterfallStepBase { plan: string }
 interface ExecutorData extends WaterfallStepBase { code: string }
 interface ReviewerData extends WaterfallStepBase { review: string }
-type WaterfallStepPayload = ArchitectData | ReasonerData | ExecutorData | ReviewerData | WaterfallStepBase;
+type WaterfallStepPayload = PlannerData | ExecutorData | ReviewerData | WaterfallStepBase;
 
 export interface WaterfallStepData {
   status: 'idle' | 'processing' | 'completed' | 'error' | 'paused';
@@ -33,10 +31,9 @@ export interface WaterfallStepData {
 export interface WaterfallSlice {
   waterfall: {
     prompt: string;
-    currentStep: 'architect' | 'reasoner' | 'executor' | 'reviewer' | null;
+    currentStep: 'planner' | 'executor' | 'reviewer' | null;
     steps: {
-      architect: WaterfallStepData;
-      reasoner: WaterfallStepData;
+      planner: WaterfallStepData;
       executor: WaterfallStepData;
       reviewer: WaterfallStepData;
     };
@@ -51,7 +48,7 @@ export interface WaterfallSlice {
   setWaterfallCustomStage: (stage: keyof WaterfallModelSelection, override: { model: string; provider: string }) => void;
   runFullWaterfall: (prompt: string, forceProceed?: boolean) => Promise<void>;
   proceedWithWaterfall: () => void;
-  runWaterfallStep: (step: 'architect' | 'reasoner' | 'executor' | 'reviewer', input: any) => Promise<void>;
+  runWaterfallStep: (step: 'planner' | 'executor' | 'reviewer', input: any) => Promise<void>;
   cancelWaterfall: () => void;
   resetWaterfall: () => void;
   editPlanDraft: string | null;
@@ -67,15 +64,14 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
     prompt: '',
     currentStep: null,
     steps: {
-      architect: { ...initialStepState },
-      reasoner: { ...initialStepState },
+      planner: { ...initialStepState },
       executor: { ...initialStepState },
       reviewer: { ...initialStepState }
     }
   },
   waterfallAbortController: null,
   waterfallModelSelection: { ...DEFAULT_MODEL_SELECTION },
-  waterfallPresetKey: 'groq-speed',
+  waterfallPresetKey: 'kimi-coder',
   editPlanDraft: null,
   retryCount: 0,
 
@@ -101,20 +97,19 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
   resetWaterfall: () => {
     const { waterfallAbortController } = get();
     if (waterfallAbortController) waterfallAbortController.abort();
-    
+
     set({
       waterfall: {
         prompt: '',
         currentStep: null,
         steps: {
-          architect: { ...initialStepState },
-          reasoner: { ...initialStepState },
+          planner: { ...initialStepState },
           executor: { ...initialStepState },
           reviewer: { ...initialStepState }
         }
       },
       waterfallAbortController: null,
-      waterfallPresetKey: 'groq-speed',
+      waterfallPresetKey: 'kimi-coder',
       editPlanDraft: null,
       retryCount: 0,
     });
@@ -130,10 +125,10 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
           ...state.waterfall,
           steps: {
             ...state.waterfall.steps,
-            [state.waterfall.currentStep || 'architect']: { 
-              status: 'error', 
-              data: null, 
-              error: 'Cancelled by user.' 
+            [state.waterfall.currentStep || 'planner']: {
+              status: 'error',
+              data: null,
+              error: 'Cancelled by user.'
             }
           }
         }
@@ -159,9 +154,9 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
           ...state.waterfall,
           steps: {
             ...state.waterfall.steps,
-            architect: {
-              ...state.waterfall.steps.architect,
-              data: { ...state.waterfall.steps.architect.data, ...parsed }
+            planner: {
+              ...state.waterfall.steps.planner,
+              data: { ...state.waterfall.steps.planner.data, ...parsed }
             }
           }
         }
@@ -172,12 +167,12 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
   },
 
   runFullWaterfall: async (prompt: string, forceProceed: boolean = false) => {
-    const { globalProvider, notepadContent, openFiles, waterfallAbortController, waterfallModelSelection } = get();
-    
+    const { globalProvider, notepadContent, openFiles, waterfallAbortController, waterfallModelSelection, apiKeys } = get();
+
     if (waterfallAbortController) waterfallAbortController.abort();
 
     const controller = new AbortController();
-    
+
     // Push pipeline start to activity feed
     get().addActivity({
       id: `wf_${Date.now()}`,
@@ -193,11 +188,10 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
         waterfall: {
           ...state.waterfall,
           prompt,
-          currentStep: 'architect',
+          currentStep: 'planner',
           steps: {
             ...initialStepState,
-            architect: { status: 'processing', data: { message: 'Analyzing requirements...' }, error: null },
-            reasoner: { ...initialStepState },
+            planner: { status: 'processing', data: { message: 'Analyzing requirements...' }, error: null },
             executor: { ...initialStepState },
             reviewer: { ...initialStepState }
           }
@@ -216,7 +210,7 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
           'Content-Type': 'application/json',
           'X-Solvent-Secret': secret
         },
-        body: JSON.stringify({ prompt, globalProvider, notepadContent, openFiles, forceProceed, modelSelection: waterfallModelSelection }),
+        body: JSON.stringify({ prompt, globalProvider, notepadContent, openFiles, forceProceed, modelSelection: waterfallModelSelection, apiKeys }),
         signal: controller.signal
       });
 
@@ -237,7 +231,7 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
 
           // Push stage-transition activity events
           const stageNames: Record<string, string> = {
-            architecting: 'Architect', reasoning: 'Reasoner', executing: 'Executor', reviewing: 'Reviewer',
+            planning: 'Planner', executing: 'Executor', reviewing: 'Reviewer',
           };
           if (stageNames[phase]) {
             get().addActivity({
@@ -264,12 +258,12 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
                return {
                  waterfall: {
                    ...state.waterfall,
-                   currentStep: 'architect',
+                   currentStep: 'planner',
                    steps: {
                      ...state.waterfall.steps,
-                     architect: {
+                     planner: {
                        status: 'paused',
-                       data: { ...state.waterfall.steps.architect.data, estimate },
+                       data: { ...state.waterfall.steps.planner.data, estimate },
                        error: message
                      }
                    }
@@ -278,31 +272,30 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
             }
 
             if (phase === 'final') {
-               // Gate early-return: backend returned { status: 'paused', architect } — don't overwrite stages
+               // Gate early-return: backend returned { status: 'paused', planner } — don't overwrite stages
                if (payload.status === 'paused') {
                  return {
                    waterfall: {
                      ...state.waterfall,
-                     currentStep: 'architect',
+                     currentStep: 'planner',
                      steps: {
                        ...state.waterfall.steps,
-                       architect: {
+                       planner: {
                          status: 'paused',
-                         data: payload.architect,
+                         data: payload.planner,
                          error: payload.estimate ? 'Resource gate: awaiting approval' : null
                        }
                      }
                    }
                  };
                }
-               // Real completion: all 4 stages have data
+               // Real completion: all 3 stages have data
                return {
                  waterfall: {
                    ...state.waterfall,
                    currentStep: 'reviewer',
                    steps: {
-                     architect: { status: 'completed', data: payload.architect, error: null },
-                     reasoner: { status: 'completed', data: payload.reasoner, error: null },
+                     planner: { status: 'completed', data: payload.planner, error: null },
                      executor: { status: 'completed', data: payload.executor, error: null },
                      reviewer: { status: 'completed', data: payload.reviewer, error: null }
                    }
@@ -310,7 +303,7 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
                };
             } else if (phase === 'error') {
                // Don't throw inside set() — write error state directly
-               const errorStep = state.waterfall.currentStep || 'architect';
+               const errorStep = state.waterfall.currentStep || 'planner';
                return {
                  waterfall: {
                    ...state.waterfall,
@@ -362,10 +355,10 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
             ...state.waterfall,
             steps: {
               ...state.waterfall.steps,
-              [state.waterfall.currentStep || 'architect']: { 
-                status: 'error', 
-                data: null, 
-                error: error.message 
+              [state.waterfall.currentStep || 'planner']: {
+                status: 'error',
+                data: null,
+                error: error.message
               }
             }
           }
@@ -377,7 +370,6 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
   },
 
   runWaterfallStep: async (step, input) => {
-    // ... (same as before)
     const currentState = get().waterfall;
     if (!waterfallStateMachine.canTransition(currentState.currentStep, step)) {
        if (import.meta.env.DEV) console.warn(`[Waterfall] Manual step blocked: ${currentState.currentStep} -> ${step}`);
@@ -396,7 +388,7 @@ export const createWaterfallSlice: StateCreator<AppState, [], [], WaterfallSlice
 
     try {
       const { globalProvider } = get();
-      const context = step === 'reviewer' ? { plan: get().waterfall.steps.reasoner.data } : undefined;
+      const context = step === 'reviewer' ? { plan: get().waterfall.steps.planner.data } : undefined;
 
       const data = await fetchWithRetry(`${API_BASE_URL}/waterfall/step`, {
         method: 'POST',
