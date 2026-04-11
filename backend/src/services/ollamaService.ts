@@ -4,6 +4,11 @@ import { normalizeMessagesForOllama } from '../utils/messageUtils';
 import { logger } from '../utils/logger';
 
 const OLLAMA_TIMEOUT_MS = parseInt(process.env.OLLAMA_TIMEOUT_MS || '120000', 10);
+// First embed call may cold-start the model (~90s); subsequent calls are ~4s
+const OLLAMA_EMBED_COLD_TIMEOUT_MS = parseInt(process.env.OLLAMA_EMBED_COLD_TIMEOUT_MS || '120000', 10);
+const OLLAMA_EMBED_WARM_TIMEOUT_MS = parseInt(process.env.OLLAMA_EMBED_WARM_TIMEOUT_MS || '30000', 10);
+// Per-text budget for batch calls (CPU embedding with long code blocks — ~10-15s per text)
+const OLLAMA_EMBED_PER_TEXT_MS = parseInt(process.env.OLLAMA_EMBED_PER_TEXT_MS || '15000', 10);
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -19,6 +24,7 @@ export class OllamaService implements AIProvider {
   readonly name = 'ollama';
 
   private readonly EMBEDDING_MODEL = 'nomic-embed-text';
+  private embedWarmedUp = false;
 
   async generateChatCompletion(messages: ChatMessage[], options: CompletionOptions): Promise<string> {
     const normalizedMessages = normalizeMessagesForOllama(messages);
@@ -70,22 +76,63 @@ export class OllamaService implements AIProvider {
   }
 
   async embed(text: string): Promise<number[]> {
-    try {
-      const truncated = this.truncateForEmbedding(text);
+    const timeout = this.embedWarmedUp ? OLLAMA_EMBED_WARM_TIMEOUT_MS : OLLAMA_EMBED_COLD_TIMEOUT_MS;
+
+    const truncated = this.truncateForEmbedding(text);
+    const response = await withTimeout(ollama.embed({
+      model: this.EMBEDDING_MODEL,
+      input: truncated
+    }), timeout, 'Ollama embed');
+
+    if (!response.embeddings || response.embeddings.length === 0) {
+      logger.warn('[OllamaService] Embedding returned empty array');
+      return new Array(768).fill(0);
+    }
+
+    if (!this.embedWarmedUp) {
+      this.embedWarmedUp = true;
+      logger.info('[OllamaService] Embed model loaded and warm');
+    }
+    return response.embeddings[0]!;
+  }
+
+  /**
+   * Batch embed multiple texts in a single Ollama API call.
+   * Much faster than individual calls on CPU since the model stays loaded.
+   */
+  /**
+   * Batch embed multiple texts via Ollama.
+   * Splits into sub-batches of 5 to keep individual API calls manageable on CPU.
+   */
+  async batchEmbed(texts: string[]): Promise<number[][]> {
+    if (texts.length === 0) return [];
+
+    const allResults: number[][] = [];
+    const subBatchSize = 5;
+
+    for (let i = 0; i < texts.length; i += subBatchSize) {
+      const chunk = texts.slice(i, i + subBatchSize);
+      const truncated = chunk.map(t => this.truncateForEmbedding(t));
+      const baseTimeout = this.embedWarmedUp ? OLLAMA_EMBED_WARM_TIMEOUT_MS : OLLAMA_EMBED_COLD_TIMEOUT_MS;
+      const timeout = baseTimeout + (chunk.length * OLLAMA_EMBED_PER_TEXT_MS);
+
       const response = await withTimeout(ollama.embed({
         model: this.EMBEDDING_MODEL,
         input: truncated
-      }), OLLAMA_TIMEOUT_MS, 'Ollama embed');
-      
-      if (!response.embeddings || response.embeddings.length === 0) {
-        logger.warn('[OllamaService] Embedding returned empty array');
-        return new Array(768).fill(0);
-      }
+      }), timeout, `Ollama batchEmbed(${chunk.length})`);
 
-      return response.embeddings[0]!;
-    } catch (error) {
-      logger.error('[OllamaService] Embedding generation failed:', error);
-      throw error; // Re-throw to allow fallback chain to continue
+      if (!response.embeddings || response.embeddings.length === 0) {
+        logger.warn('[OllamaService] Sub-batch embedding returned empty');
+        allResults.push(...chunk.map(() => new Array(768).fill(0)));
+      } else {
+        if (!this.embedWarmedUp) {
+          this.embedWarmedUp = true;
+          logger.info('[OllamaService] Embed model loaded and warm');
+        }
+        allResults.push(...response.embeddings);
+      }
     }
+
+    return allResults;
   }
 }

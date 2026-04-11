@@ -1,0 +1,23 @@
+[
+  {
+    "id": "test-1",
+    "mode": "chat",
+    "title": "Test",
+    "messages": [
+      {
+        "id": "1",
+        "role": "user",
+        "content": "new",
+        "timestamp": 1775010469593
+      }
+    ],
+    "createdAt": 1775010469593,
+    "updatedAt": 2000,
+    "metadata": {
+      "modelsUsed": [],
+      "messageCount": 0,
+      "tokenEstimate": 0,
+      "tags": []
+    }
+  }
+]

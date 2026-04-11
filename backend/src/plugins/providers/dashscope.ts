@@ -62,6 +62,7 @@ export class DashScopeProviderPlugin implements IProviderPlugin {
     if (!effectiveApiKey) throw new Error('DashScope API key missing. Provide it in settings or set DASHSCOPE_API_KEY in .env.');
 
     const effectiveModel = model || this.defaultModel;
+    const isThinkingModel = /qwen3|qwq/i.test(effectiveModel) && !/qwen3\.5/i.test(effectiveModel);
     try {
       const response = await axios.post(`${DASHSCOPE_BASE_URL}/chat/completions`, {
         model: effectiveModel,
@@ -69,6 +70,9 @@ export class DashScopeProviderPlugin implements IProviderPlugin {
         temperature,
         max_tokens: maxTokens,
         ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
+        // Qwen3/QwQ thinking models: disable thinking for structured JSON output
+        // to prevent thinking tokens from eating the output budget and truncating JSON
+        ...(isThinkingModel && jsonMode ? { enable_thinking: false } : {}),
       }, {
         headers: {
           'Authorization': `Bearer ${effectiveApiKey}`,

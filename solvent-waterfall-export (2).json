@@ -1,0 +1,111 @@
+{
+  "prompt": "Design a type-safe event bus in TypeScript that supports wildcard subscriptions, priority ordering, and async middleware — include the core module, a retry\n  decorator, and unit tests.",
+  "exportedAt": "2026-04-05T21:41:50.721Z",
+  "stages": {
+    "architect": {
+      "logic": "1. FILE: src/types.ts — interface HandlerOptions { priority: number; id: string }. type Middleware<T> = (event: string, payload: T, next: () => Promise<void>) => Promise<void>. interface RegisteredHandler { callback: Function; priority: number; pattern: RegExp; isWildcard: boolean }. Define generic EventMap as Record<string, any>. 2. FILE: src/WildcardMatcher.ts — class WildcardMatcher. Method toRegex(pattern: string): RegExp — converts 'user.*' to /^user\\.[^.]+$/ and 'user.**' to /^user\\..+$/ using string replacement and anchor wrapping. 3. FILE: src/EventBus.ts — class EventBus<T extends EventMap>(options?: { logger?: ILogger }). private handlers: Map<string, RegisteredHandler[]>. private middleware: Middleware<any>[]. Method subscribe<K extends keyof T | string>(pattern: K, handler: (data: any) => void, options: HandlerOptions): void — inserts into handlers map, then sorts the array for that key by priority (descending). Method use(mw: Middleware<any>): void — pushes to middleware stack. Method emit<K extends keyof T>(event: K, data: T[K]): Promise<void> — (a) identifies all matching handlers by testing event string against stored patterns, (b) aggregates and re-sorts all matches by priority, (c) executes middleware chain, (d) executes handlers sequentially or via Promise.all based on a 'parallel' flag in options. 4. FILE: src/decorators/Retry.ts — function Retry(options: { attempts: number; delayMs: number; backoff: boolean }). Returns a MethodDecorator. Logic: wraps the original method in a try/catch block within a while loop; if it fails, it waits for delayMs (optionally multiplied by attempt count for backoff) before re-invoking. 5. FILE: tests/EventBus.test.ts — Test suites for: (a) Priority: ensure handler with priority 10 runs before priority 1. (b) Wildcards: ensure 'a.*' catches 'a.b' but not 'a.b.c'. (c) Middleware: verify middleware can mutate payload before handlers receive it. (d) Async: verify emit awaits all async handlers. 6. EDGE CASES: (a) Handler failure: The emit loop must use try/catch around individual handler calls to prevent one failing subscriber from breaking the entire bus; failed events are logged to an internal 'bus.error' event. (b) Circularity: Detect nested emits of the same event type within a single chain to prevent stack overflow. (c) Empty matches: emit resolves immediately if no handlers match pattern.",
+      "assumptions": [
+        "TypeScript 5.0+ is used to support the latest TC39 decorator metadata and syntax.",
+        "The environment supports ES2020+ features like Map and async/await.",
+        "Event names are dot-separated strings (e.g., 'system.auth.login') for wildcard compatibility.",
+        "Reflect-metadata is available if advanced decorator introspection is required, though standard decorators are preferred."
+      ],
+      "keyDecisions": [
+        "Pre-compiled RegExp over Trie-based matching because regex is more maintainable for standard event volumes and supports complex glob-like patterns natively.",
+        "Sequential middleware execution over parallel because middleware often relies on ordered side-effects or payload mutations (e.g., enrichment).",
+        "Sorted Array per event key over Linked List because event subscription is a 'write-once' operation compared to frequent 'read/emit' operations, and array sorting is optimized in V8.",
+        "Generic EventMap interface over 'any' typing to provide compile-time IDE autocompletion and payload validation for developers.",
+        "Method Decorator over Higher-Order Function for retries because it allows cleaner integration with Class-based event listeners common in enterprise TS applications.",
+        "Internal 'bus.error' event emission over throwing errors in emit() because the bus should act as a resilient decoupled boundary that doesn't crash the producer."
+      ],
+      "complexity": "medium",
+      "techStack": [
+        "typescript@5.3.3",
+        "jest@29.7.0",
+        "ts-jest@29.1.1",
+        "reflect-metadata@0.2.1"
+      ]
+    },
+    "reasoner": {
+      "plan": "Building a type-safe, priority-aware Event Bus in TypeScript 5.3+ using a regex-based wildcard matching system and an async middleware pipeline. The architecture consists of 5 core files and a test suite, implementing a generic EventMap for compile-time safety. Key components include a WildcardMatcher for pattern resolution, an EventBus class managing priority-sorted handler arrays, and a TC39-compliant method decorator for retry logic. The system prioritizes resilience by trapping handler errors and emitting them via a dedicated 'bus.error' channel.",
+      "steps": [
+        {
+          "title": "Define Core Type System",
+          "description": "src/types.ts — Export the following: 1) interface HandlerOptions { priority: number; id: string }. 2) type Middleware<T = any> = (event: string, payload: T, next: () => Promise<void>) => Promise<void>. 3) interface RegisteredHandler { callback: (data: any) => void | Promise<void>; priority: number; pattern: RegExp; isWildcard: boolean }. 4) type EventMap = Record<string, any>. 5) interface ILogger { log(msg: string): void; error(msg: string, err?: any): void; }."
+        },
+        {
+          "title": "Implement Wildcard Matching Logic",
+          "description": "src/WildcardMatcher.ts — Export class WildcardMatcher with static method toRegex(pattern: string): RegExp. Logic: First, escape literal dots ('.' -> '\\.'). Replace '**' with '.+' (match all). Replace '*' with '[^.]+' (match single segment). Wrap with start/end anchors /^...$/. Return the pre-compiled RegExp object."
+        },
+        {
+          "title": "Implement the EventBus Core Class",
+          "description": "src/EventBus.ts — Export class EventBus<T extends EventMap>. Constructor(options?: { logger?: ILogger }). Fields: private handlers: Map<string, RegisteredHandler[]> = new Map(); private middleware: Middleware[] = []; private activeEmits: Set<keyof T> = new Set(). Method subscribe<K extends keyof T | string>(pattern: K, handler: (data: any) => void, options: HandlerOptions): void: create RegisteredHandler using WildcardMatcher, push to handlers.get(pattern), and immediately sort the array: handlers.sort((a, b) => b.priority - a.priority). Method use(mw: Middleware): void: push to middleware stack."
+        },
+        {
+          "title": "Implement Event Emission and Middleware Chain",
+          "description": "src/EventBus.ts — Method emit<K extends keyof T>(event: K, data: T[K]): Promise<void>. Logic: 1) Check activeEmits.has(event) to prevent circularity; throw error if detected. 2) activeEmits.add(event). 3) Identify matches: Iterate handlers Map, test event against RegisteredHandler.pattern. 4) Flatten matching handlers into a single array and sort by priority DESC. 5) Execute middleware chain sequentially: const chain = middleware.reduceRight((next, mw) => () => mw(event as string, data, next), async () => { /* handler loop */ }). 6) Inside the final next() call, iterate sorted handlers: wrap each callback in try/catch. On failure, if event !== 'bus.error', call this.emit('bus.error', { event, error, data }). 7) Finally block: activeEmits.delete(event)."
+        },
+        {
+          "title": "Create Retry Method Decorator",
+          "description": "src/decorators/Retry.ts — Export function Retry(options: { attempts: number; delayMs: number; backoff: boolean }). Returns (target: any, propertyKey: string, descriptor: PropertyDescriptor). Logic: Capture originalMethod = descriptor.value. Replace descriptor.value with async function that uses a while loop (i < attempts). Inside loop: try await originalMethod.apply(this, args). On catch: if i < attempts-1, calculate delay (options.backoff ? delayMs * (i + 1) : delayMs) and await new Promise(r => setTimeout(r, delay))."
+        },
+        {
+          "title": "Develop Unit Test Suite",
+          "description": "tests/EventBus.test.ts — Use Jest to verify: 1) Priority: Subscribing with priority 10 runs before priority 1. 2) Wildcards: 'system.*' matches 'system.login' but not 'system.auth.login'. 3) Middleware: A middleware that adds a timestamp to the payload. 4) Async: Ensure emit() resolves only after all async handlers and middleware finish. 5) Error handling: Verify 'bus.error' is emitted when a subscriber throws."
+        }
+      ],
+      "carriedDecisions": [
+        "Pre-compiled RegExp over Trie-based matching because regex is more maintainable for standard event volumes and supports complex glob-like patterns natively.",
+        "Sequential middleware execution over parallel because middleware often relies on ordered side-effects or payload mutations (e.g., enrichment).",
+        "Sorted Array per event key over Linked List because event subscription is a 'write-once' operation compared to frequent 'read/emit' operations, and array sorting is optimized in V8.",
+        "Generic EventMap interface over 'any' typing to provide compile-time IDE autocompletion and payload validation for developers.",
+        "Method Decorator over Higher-Order Function for retries because it allows cleaner integration with Class-based event listeners common in enterprise TS applications.",
+        "Internal 'bus.error' event emission over throwing errors in emit() because the bus should act as a resilient decoupled boundary that doesn't crash the producer."
+      ],
+      "openQuestions": [
+        "Should 'bus.error' handlers be allowed to throw, or should the bus silently swallow errors occurring within the error-handling logic itself?",
+        "For the circularity check, should we allow a specific recursion depth (e.g., 5 levels) instead of a strict boolean check to support legitimate nested patterns?"
+      ]
+    },
+    "executor": {
+      "code": "// ═══ src/types.ts ═══\nexport interface HandlerOptions {\n  priority: number;\n  id: string;\n}\n\nexport type Middleware<T = any> = (\n  event: string,\n  payload: T,\n  next: () => Promise<void>\n) => Promise<void>;\n\nexport interface RegisteredHandler {\n  callback: (data: any) => void | Promise<void>;\n  priority: number;\n  pattern: RegExp;\n  isWildcard: boolean;\n  id: string;\n}\n\nexport type EventMap = Record<string, any>;\n\nexport interface ILogger {\n  log(msg: string): void;\n  error(msg: string, err?: any): void;\n}\n\n// ═══ src/WildcardMatcher.ts ═══\nexport class WildcardMatcher {\n  /**\n   * Converts a dot-separated pattern into a RegExp.\n   * '*' matches a single segment.\n   * '**' matches one or more segments.\n   */\n  static toRegex(pattern: string): RegExp {\n    const escaped = pattern\n      .split('.')\n      .map((segment) => {\n        if (segment === '**') return '.+';\n        if (segment === '*') return '[^.]+';\n        // Escape special regex characters in literal segments\n        return segment.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\n      })\n      .join('\\\\.');\n    return new RegExp(`^${escaped}$`);\n  }\n}\n\n// ═══ src/EventBus.ts ═══\nimport { \n  EventMap, \n  HandlerOptions, \n  ILogger, \n  Middleware, \n  RegisteredHandler \n} from './types';\nimport { WildcardMatcher } from './WildcardMatcher';\n\nexport class EventBus<T extends EventMap> {\n  private handlers: Map<string, RegisteredHandler[]> = new Map();\n  private middleware: Middleware[] = [];\n  private activeEmits: Set<keyof T | string> = new Set();\n  private logger?: ILogger;\n\n  constructor(options?: { logger?: ILogger }) {\n    this.logger = options?.logger;\n  }\n\n  public subscribe<K extends keyof T | string>(\n    pattern: K,\n    handler: (data: any) => void | Promise<void>,\n    options: HandlerOptions\n  ): void {\n    const patternStr = pattern as string;\n    const isWildcard = patternStr.includes('*');\n    const registered: RegisteredHandler = {\n      callback: handler,\n      priority: options.priority,\n      pattern: WildcardMatcher.toRegex(patternStr),\n      isWildcard,\n      id: options.id\n    };\n\n    if (!this.handlers.has(patternStr)) {\n      this.handlers.set(patternStr, []);\n    }\n\n    const list = this.handlers.get(patternStr)!;\n    list.push(registered);\n    // Sort DESC by priority\n    list.sort((a, b) => b.priority - a.priority);\n  }\n\n  public use(mw: Middleware): void {\n    this.middleware.push(mw);\n  }\n\n  public async emit<K extends keyof T>(event: K, data: T[K]): Promise<void> {\n    const eventName = event as string;\n\n    // 1. Circularity check\n    if (this.activeEmits.has(eventName)) {\n      throw new Error(`Circular emission detected for event: ${eventName}`);\n    }\n\n    this.activeEmits.add(eventName);\n\n    try {\n      // 2. Identify matches across all registered patterns\n      const matchedHandlers: RegisteredHandler[] = [];\n      for (const [pattern, handlers] of this.handlers.entries()) {\n        // Since we store the pre-compiled regex in each RegisteredHandler, \n        // we can just check the first one in the list for that pattern key.\n        if (handlers.length > 0 && handlers[0].pattern.test(eventName)) {\n          matchedHandlers.push(...handlers);\n        }\n      }\n\n      // 3. Flatten and sort by priority\n      matchedHandlers.sort((a, b) => b.priority - a.priority);\n\n      // 4. Build and execute middleware chain\n      const executeHandlers = async () => {\n        for (const handler of matchedHandlers) {\n          try {\n            await Promise.resolve(handler.callback(data));\n          } catch (error) {\n            if (eventName !== 'bus.error') {\n              // Prevent infinite recursion by checking event name\n              await this.emit('bus.error' as any, { event: eventName, error, data });\n            } else {\n              this.logger?.error('Error in bus.error handler', error);\n            }\n          }\n        }\n      };\n\n      const chain = this.middleware.reduceRight(\n        (next, mw) => async () => await mw(eventName, data, next),\n        executeHandlers\n      );\n\n      await chain();\n    } finally {\n      this.activeEmits.delete(eventName);\n    }\n  }\n}\n\n// ═══ src/decorators/Retry.ts ═══\nexport function Retry(options: { attempts: number; delayMs: number; backoff: boolean }) {\n  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {\n    const originalMethod = descriptor.value;\n\n    descriptor.value = async function (...args: any[]) {\n      let lastError: any;\n      \n      for (let i = 0; i < options.attempts; i++) {\n        try {\n          return await originalMethod.apply(this, args);\n        } catch (err) {\n          lastError = err;\n          if (i < options.attempts - 1) {\n            const delay = options.backoff \n              ? options.delayMs * (i + 1) \n              : options.delayMs;\n            \n            await new Promise((resolve) => setTimeout(resolve, delay));\n          }\n        }\n      }\n      \n      throw lastError;\n    };\n\n    return descriptor;\n  };\n}\n\n// ═══ tests/EventBus.test.ts ═══\nimport { EventBus } from '../src/EventBus';\nimport { Retry } from '../src/decorators/Retry';\n\nasync function runTests() {\n  console.log('Starting EventBus Tests...');\n\n  // 1. Priority Test\n  const bus = new EventBus<any>();\n  const executionOrder: number[] = [];\n  \n  bus.subscribe('test.priority', () => executionOrder.push(1), { priority: 1, id: 'low' });\n  bus.subscribe('test.priority', () => executionOrder.push(10), { priority: 10, id: 'high' });\n  \n  await bus.emit('test.priority', {});\n  console.assert(JSON.stringify(executionOrder) === '[10,1]', 'Priority order failed');\n\n  // 2. Wildcard Test\n  const wildcardMatches: string[] = [];\n  bus.subscribe('system.*', (d) => wildcardMatches.push('single'), { priority: 5, id: 's' });\n  bus.subscribe('system.**', (d) => wildcardMatches.push('multi'), { priority: 5, id: 'm' });\n\n  await bus.emit('system.login', {});\n  console.assert(wildcardMatches.includes('single') && wildcardMatches.includes('multi'), 'Wildcard matching failed');\n  \n  wildcardMatches.length = 0;\n  await bus.emit('system.auth.login', {});\n  console.assert(!wildcardMatches.includes('single') && wildcardMatches.includes('multi'), 'Deep wildcard matching failed');\n\n  // 3. Middleware Test\n  const busWithMw = new EventBus<{ log: { msg: string, ts?: number } }>();\n  busWithMw.use(async (event, payload, next) => {\n    if (event === 'log') payload.ts = Date.now();\n    await next();\n  });\n\n  let capturedTs = 0;\n  busWithMw.subscribe('log', (p) => { capturedTs = p.ts; }, { priority: 1, id: 'l' });\n  await busWithMw.emit('log', { msg: 'hello' });\n  console.assert(capturedTs > 0, 'Middleware enrichment failed');\n\n  // 4. Error Handling & bus.error\n  const errorBus = new EventBus<any>();\n  let errorHandled = false;\n  errorBus.subscribe('fail', () => { throw new Error('Boom'); }, { priority: 1, id: 'f' });\n  errorBus.subscribe('bus.error', (err) => {\n    if (err.event === 'fail') errorHandled = true;\n  }, { priority: 1, id: 'err-h' });\n\n  await errorBus.emit('fail', {});\n  console.assert(errorHandled === true, 'Internal bus.error emission failed');\n\n  // 5. Retry Decorator Test\n  class TestService {\n    public calls = 0;\n    @Retry({ attempts: 3, delayMs: 10, backoff: false })\n    async failingMethod() {\n      this.calls++;\n      if (this.calls < 3) throw new Error('Retry me');\n      return 'success';\n    }\n  }\n\n  const service = new TestService();\n  const result = await service.failingMethod();\n  console.assert(result === 'success' && service.calls === 3, 'Retry decorator failed');\n\n  console.log('All tests passed!');\n}\n\nrunTests().catch(console.error);",
+      "explanation": "Implemented a priority-based EventBus using pre-compiled RegEx for pattern matching as requested. The middleware system uses a reduceRight pattern to create a sequential execution chain. Circularity is prevented using a Set that tracks active emissions. Errors within handlers are caught and re-emitted as 'bus.error' events to ensure producer resilience. The Retry decorator uses the requested PropertyDescriptor signature (legacy TS style) to provide configurable retry logic with optional backoff. Types are strictly defined via a generic EventMap to ensure compile-time safety for event payloads.",
+      "files": [
+        "src/types.ts",
+        "src/WildcardMatcher.ts",
+        "src/EventBus.ts",
+        "src/decorators/Retry.ts",
+        "tests/EventBus.test.ts"
+      ],
+      "decisionsOverridden": []
+    },
+    "reviewer": {
+      "score": 86,
+      "breakdown": {
+        "compliance": 35,
+        "security": 20,
+        "efficiency": 13,
+        "syntax": 18
+      },
+      "issues": [
+        "Actionable: In 'EventBus.emit' (line 84), the circularity check throws a hard Error. This violates Carried Decision 6 which requires using 'bus.error' to maintain a resilient decoupled boundary that doesn't crash the producer.",
+        "Actionable: In 'EventBus.subscribe' (line 44), the 'handler' parameter uses 'any' for the data argument. Fix: Use 'handler: (data: K extends keyof T ? T[K] : any) => void | Promise<void>' to ensure type-safe callbacks for known event keys.",
+        "Actionable: Performance in 'EventBus.emit' (line 88) is O(N) where N is the number of unique subscription patterns. Fix: Store literal subscriptions in a separate Map for O(1) lookup and only iterate over a subset of patterns identified as wildcards.",
+        "Actionable: In 'EventBus.emit' (line 98), 'matchedHandlers.sort' is performed on every emission. Since individual handler lists are already sorted in 'subscribe', use a merge-sort approach to combine pre-sorted arrays for better efficiency in the hot path.",
+        "Actionable: The 'isWildcard' property in 'RegisteredHandler' (line 15) is assigned but never utilized in the emission logic (line 88)."
+      ],
+      "decisionsHonored": [
+        "Pre-compiled RegExp: Implemented in WildcardMatcher and stored in RegisteredHandler.",
+        "Sequential middleware: Implemented via reduceRight in EventBus.emit.",
+        "Sorted Array per event key: Implemented in EventBus.subscribe.",
+        "Generic EventMap: Implemented in EventBus class definition.",
+        "Method Decorator: Implemented in Retry.ts for class methods.",
+        "Internal 'bus.error': Partially implemented (used for handler errors, but missed for circularity errors)."
+      ],
+      "summary": "The implementation is architecturally sound and correctly implements complex features like glob-matching regex conversion and async middleware chaining. However, it fails to fully adhere to the 'resilient boundary' decision by throwing errors on circularity, and the emission logic is inefficient for high-volume systems due to an O(N) scan of all registered patterns. Type safety in the subscriber callback is also weaker than required by the generic EventMap interface.",
+      "compilationStatus": "Check Failed: Command rejected by security policy: 'cd /tmp/solvent_review_19132da4-43f3-4a48-8799-f9e...'. Only allowed commands: git , npm , npx , node , python , python3 , ls , cat , echo , pwd, whoami, date, head , tail , grep , find , mkdir , touch , cp , mv , code , tsc , eslint , prettier , json , vitest , pnpm , yarn , bun , docker , curl , wget . Set SOLVENT_ALLOW_SHELL=true to enable arbitrary command execution (not recommended).",
+      "crystallizable_insight": "When building high-performance event buses, separating literal string matches from wildcard patterns into distinct data structures allows for O(1) resolution of the majority of events while keeping the flexibility of regex matching for the minority of wildcard subscribers.",
+      "_compilationPassed": false
+    }
+  }
+}

@@ -34,6 +34,13 @@ export class HNSWIndex {
     this.labelToId.set(label, id);
 
     try {
+      // Auto-resize if we've hit capacity
+      if (label >= this.maxElements) {
+        const newMax = Math.ceil(this.maxElements * 1.5);
+        this.index.resizeIndex(newMax);
+        logger.info(`[HNSWIndex] Auto-resized index from ${this.maxElements} to ${newMax} elements`);
+        this.maxElements = newMax;
+      }
       this.index.addPoint(vector, label);
     } catch (e: any) {
       logger.error(`[HNSWIndex] Failed to add point ${id}. Vector length: ${vector.length}. Max elements: ${this.maxElements}. Error: ${e.message}`, e);
@@ -113,7 +120,13 @@ export class HNSWIndex {
       this.deletedLabels = new Set(metadata.deletedLabels);
       this.nextLabel = metadata.nextLabel;
 
-      logger.info(`[HNSWIndex] Loaded index from ${filePath} with ${this.idToLabel.size} entries`);
+      // Sync maxElements with the loaded index's actual capacity
+      const currentMax = this.index.getMaxElements();
+      if (currentMax > this.maxElements) {
+        this.maxElements = currentMax;
+      }
+
+      logger.info(`[HNSWIndex] Loaded index from ${filePath} with ${this.idToLabel.size} entries (capacity: ${this.maxElements})`);
     } catch (e) {
       logger.error(`[HNSWIndex] Failed to load index from ${filePath}`, e);
       throw e;

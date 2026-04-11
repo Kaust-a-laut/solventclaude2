@@ -45,6 +45,7 @@ export const MODELS = {
   OLLAMA_CLOUD: [
     'glm-4.7:cloud',
     'glm-5:cloud',
+    'glm-5.1:cloud',
     'kimi-k2.5:cloud',
     'kimi-k2-thinking:cloud',
     'deepseek-v3.1:671b-cloud',
@@ -74,6 +75,7 @@ export const MODELS = {
     'qwen3-coder-plus',
     'qwen3-coder-flash',
     'qwen3-max',
+    'qwen3.6-plus',
     'qwen3.5-plus',
     'qwen-plus',
     'qwen-turbo',
@@ -85,6 +87,8 @@ export const MODELS = {
     // OpenRouter frontier
     'openrouter/hunter-alpha',
     'openrouter/healer-alpha',
+    // Z.ai GLM
+    'z-ai/glm-5.1',
     // Meta Llama 4
     'meta-llama/llama-4-maverick:free',
     'meta-llama/llama-4-scout:free',
@@ -130,7 +134,7 @@ export interface CustomModelOverride {
 
 export type WaterfallPhaseSelection = 'A' | 'B' | CustomModelOverride;
 
-export type WaterfallModelSelection = Record<'architect' | 'reasoner' | 'executor' | 'reviewer', WaterfallPhaseSelection>;
+export type WaterfallModelSelection = Record<'planner' | 'executor' | 'reviewer', WaterfallPhaseSelection>;
 
 export interface WaterfallPreset {
   name: string;
@@ -139,121 +143,146 @@ export interface WaterfallPreset {
 }
 
 export const WATERFALL_PRESETS: Record<string, WaterfallPreset> = {
-  // --- Honest reviewer (Healer Alpha) presets — scores are real ---
+  // --- Honest reviewer presets — based on PIPELINE_TEST_RESULTS.md ---
+  'silk-road': {
+    name: 'Silk Road',
+    description: 'GLM-4.7 plans, Qwen 3.6 executes, GLM-5.1 reviews. All open-weight SOTA. Score: 82.',
+    selection: {
+      planner:  { model: 'glm-4.7:cloud', provider: 'ollama' },
+      executor: { model: 'qwen3.6-plus', provider: 'dashscope' },
+      reviewer: { model: 'glm-5.1:cloud', provider: 'ollama' },
+    },
+  },
   'best-quality': {
     name: 'Best Quality',
-    description: 'Highest confirmed Healer score (95). Phi-4 R+ may be offline — falls back to Qwen3 32B.',
+    description: 'GPT-OSS plans, Qwen3 Coder+ executes, Llama reviews. Score: 92.',
     selection: {
-      architect: { model: 'openai/gpt-oss-120b', provider: 'groq' },
-      reasoner:  { model: 'microsoft/phi-4-reasoning-plus:free', provider: 'openrouter' },
-      executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reviewer:  { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
+      planner:  { model: 'openai/gpt-oss-120b', provider: 'groq' },
+      executor: { model: 'qwen3-coder-plus', provider: 'dashscope' },
+      reviewer: { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
     },
   },
   'kimi-duo': {
     name: 'Kimi Duo',
-    description: 'Kimi K2.5 reasons, Kimi K2 executes. Healer score: 92. Slower reasoner (Ollama cloud).',
+    description: 'Kimi K2.5 plans, Kimi K2 executes, Qwen 3.6 reviews. Score: 89.',
     selection: {
-      architect: { model: 'openai/gpt-oss-120b', provider: 'groq' },
-      reasoner:  { model: 'kimi-k2.5:cloud', provider: 'ollama' },
-      executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reviewer:  { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
+      planner:  { model: 'kimi-k2.5:cloud', provider: 'ollama' },
+      executor: { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
+      reviewer: { model: 'qwen3.6-plus', provider: 'dashscope' },
     },
   },
   'groq-speed': {
     name: 'Groq Speed',
-    description: 'All-Groq pipeline + MiMo reviewer. Score: 91. Fastest honest pipeline (~30s).',
+    description: 'GPT-OSS plans, Kimi K2 executes, Llama reviews. All Groq. Score: 91.',
     selection: {
-      architect: { model: 'openai/gpt-oss-120b', provider: 'groq' },
-      reasoner:  { model: 'qwen/qwen3-32b', provider: 'groq' },
-      executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reviewer:  { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
+      planner:  { model: 'openai/gpt-oss-120b', provider: 'groq' },
+      executor: { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
+      reviewer: { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
     },
   },
   'deepseek-kimi': {
     name: 'DeepSeek-Kimi',
-    description: 'DeepSeek V3.2 (685B) reasons, Kimi K2 executes. Healer score: 85. Strong reasoner, slower (Ollama cloud).',
+    description: 'DeepSeek V3.2 plans (9 decisions), Kimi K2 executes, GLM 5.1 reviews. Score: 85.',
     selection: {
-      architect: { model: 'openai/gpt-oss-120b', provider: 'groq' },
-      reasoner:  { model: 'deepseek-v3.2:cloud', provider: 'ollama' },
-      executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reviewer:  { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
+      planner:  { model: 'deepseek-v3.2:cloud', provider: 'ollama' },
+      executor: { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
+      reviewer: { model: 'glm-5.1:cloud', provider: 'ollama' },
+    },
+  },
+  'deepseek-coder': {
+    name: 'DeepSeek Coder',
+    description: 'Canonical patterns specialist — 87-90 on rate limiters, webhooks, OAuth, CRUD. DeepSeek V3.2 plans thoroughly (10 decisions), Qwen3 Coder+ executes, GLM 5.1 reviews strictly. Weak on exotic composition.',
+    selection: {
+      planner:  { model: 'deepseek-v3.2:cloud', provider: 'ollama' },
+      executor: { model: 'qwen3-coder-plus', provider: 'dashscope' },
+      reviewer: { model: 'glm-5.1:cloud', provider: 'ollama' },
+    },
+  },
+  'qwen-trinity': {
+    name: 'Qwen Trinity',
+    description: 'Fast & flexible — ~3-4 min, highest score on concurrency (85). Qwen 3.6 Plus plans, Qwen3 Coder+ executes, Nemotron reviews. Domain variance: weaker on streaming.',
+    selection: {
+      planner:  { model: 'qwen3.6-plus', provider: 'dashscope' },
+      executor: { model: 'qwen3-coder-plus', provider: 'dashscope' },
+      reviewer: { model: 'nemotron-3-super:cloud', provider: 'ollama' },
+    },
+  },
+  'kimi-coder': {
+    name: 'Kimi Coder',
+    description: 'Universal default — most consistent (82 on both novel prompts, 90 on rate limiter, zero variance). Kimi K2.5 plans adaptively, Qwen3 Coder+ executes, Nemotron reviews. Safest pick.',
+    selection: {
+      planner:  { model: 'kimi-k2.5:cloud', provider: 'ollama' },
+      executor: { model: 'qwen3-coder-plus', provider: 'dashscope' },
+      reviewer: { model: 'nemotron-3-super:cloud', provider: 'ollama' },
     },
   },
   'reliable': {
     name: 'Reliable',
-    description: 'Zero failures, generous reviewer — good for demos. GLM score: 97+.',
-    selection: { architect: 'B', reasoner: 'B', executor: 'B', reviewer: 'B' },
+    description: 'Zero failures, generous reviewer — good for demos. Score: 97+.',
+    selection: { planner: 'B', executor: 'B', reviewer: 'B' },
   },
   // --- High raw scores (generous reviewers) ---
   'gemini-review': {
     name: 'Gemini Review',
-    description: 'Highest raw score when Gemini works (98) — 50% reviewer failure rate.',
+    description: 'GPT-OSS plans, Qwen3 Coder executes, Gemini reviews. Score: 98 (generous).',
     selection: {
-      architect: { model: 'openai/gpt-oss-120b', provider: 'groq' },
-      reasoner:  { model: 'qwen/qwen3-32b', provider: 'groq' },
-      executor:  { model: 'qwen3-coder-plus', provider: 'dashscope' },
-      reviewer:  { model: 'gemini-3-pro-preview', provider: 'gemini' },
+      planner:  { model: 'openai/gpt-oss-120b', provider: 'groq' },
+      executor: { model: 'qwen3-coder-plus', provider: 'dashscope' },
+      reviewer: { model: 'gemini-3-pro-preview', provider: 'gemini' },
     },
   },
   'maverick': {
     name: 'Maverick',
-    description: 'Llama 4 Maverick architect + Gemma reviewer — scored 100 (generous).',
+    description: 'Llama 4 Maverick plans, Gemma reviews. Score: 100 (generous).',
     selection: {
-      architect: { model: 'meta-llama/llama-4-maverick-17b-128e-instruct:free', provider: 'openrouter' },
-      reasoner:  { model: 'qwen/qwen3-32b', provider: 'groq' },
-      executor:  { model: 'qwen3-coder-plus', provider: 'dashscope' },
-      reviewer:  { model: 'google/gemma-3-27b-it:free', provider: 'openrouter' },
+      planner:  { model: 'meta-llama/llama-4-maverick-17b-128e-instruct:free', provider: 'openrouter' },
+      executor: { model: 'qwen3-coder-plus', provider: 'dashscope' },
+      reviewer: { model: 'google/gemma-3-27b-it:free', provider: 'openrouter' },
     },
   },
   'glm-speed': {
     name: 'GLM Speed',
-    description: 'GLM-4.7 architects, Qwen3 32B reasons (Groq), Kimi K2 executes. Highest hard-prompt score (94). Best overall.',
+    description: 'GLM-4.7 plans, Kimi K2 executes at Groq speed, GLM-5.1 reviews honestly. Score: 87.',
     selection: {
-      architect: { model: 'glm-4.7:cloud', provider: 'ollama' },
-      reasoner:  { model: 'qwen/qwen3-32b', provider: 'groq' },
-      executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reviewer:  { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
+      planner:  { model: 'glm-4.7:cloud', provider: 'ollama' },
+      executor: { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
+      reviewer: { model: 'glm-5.1:cloud', provider: 'ollama' },
     },
   },
   'glm-kimi': {
     name: 'GLM-Kimi',
-    description: 'GLM-4.7 architects, Kimi K2.5 reasons, Kimi K2 executes. Hard-prompt score: 93. Strong + consistent.',
+    description: 'GLM-4.7 plans, Kimi K2 executes, Qwen 3.6 reviews. Score: 93.',
     selection: {
-      architect: { model: 'glm-4.7:cloud', provider: 'ollama' },
-      reasoner:  { model: 'kimi-k2.5:cloud', provider: 'ollama' },
-      executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reviewer:  { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
+      planner:  { model: 'glm-4.7:cloud', provider: 'ollama' },
+      executor: { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
+      reviewer: { model: 'qwen3.6-plus', provider: 'dashscope' },
     },
   },
   'glm-nemotron': {
     name: 'GLM-Nemotron',
-    description: 'GLM-4.7 architects, Nemotron 3 Super reasons, Kimi K2 executes. Score: 85. Fast reasoner.',
+    description: 'Reliable mid-tier — consistent 75-89 across all prompt types, balanced speed/quality, ~2-6 min. GLM-4.7 plans, Kimi K2 executes, Nemotron 3 Super reviews.',
     selection: {
-      architect: { model: 'glm-4.7:cloud', provider: 'ollama' },
-      reasoner:  { model: 'nemotron-3-super:cloud', provider: 'ollama' },
-      executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reviewer:  { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
+      planner:  { model: 'glm-4.7:cloud', provider: 'ollama' },
+      executor: { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
+      reviewer: { model: 'nemotron-3-super:cloud', provider: 'ollama' },
     },
   },
   'ollama-ultima': {
     name: 'Ollama Ultima',
-    description: 'Qwen 3.5 Architect + Kimi Thinking Reasoner + Qwen3 Coder 480B Executor. Maximum intelligence.',
+    description: 'Qwen 3.5 plans, Qwen3 Coder 480B executes. Maximum intelligence.',
     selection: {
-      architect: { model: 'qwen3.5:cloud', provider: 'ollama' },
-      reasoner:  { model: 'kimi-k2-thinking:cloud', provider: 'ollama' },
-      executor:  { model: 'qwen3-coder:480b-cloud', provider: 'ollama' },
-      reviewer:  { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
+      planner:  { model: 'qwen3.5:cloud', provider: 'ollama' },
+      executor: { model: 'qwen3-coder:480b-cloud', provider: 'ollama' },
+      reviewer: { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
     },
   },
   'deepseek-ultra': {
     name: 'DeepSeek Ultra',
-    description: 'DeepSeek V3.1 (671B) Reasoning + Qwen3 Coder 480B. State-of-the-art open source pipeline.',
+    description: 'DeepSeek V3.1 (671B) plans, Qwen3 Coder 480B executes.',
     selection: {
-      architect: { model: 'deepseek-v3.1:671b-cloud', provider: 'ollama' },
-      reasoner:  { model: 'deepseek-v3.1:671b-cloud', provider: 'ollama' },
-      executor:  { model: 'qwen3-coder:480b-cloud', provider: 'ollama' },
-      reviewer:  { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
+      planner:  { model: 'deepseek-v3.1:671b-cloud', provider: 'ollama' },
+      executor: { model: 'qwen3-coder:480b-cloud', provider: 'ollama' },
+      reviewer: { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
     },
   },
   // --- Solo presets — single model all stages, avoids cross-provider rate limits ---
@@ -261,102 +290,88 @@ export const WATERFALL_PRESETS: Record<string, WaterfallPreset> = {
     name: 'Solo: Gemini 3 Pro',
     description: 'All stages on Gemini 3 Pro.',
     selection: {
-      architect: { model: 'gemini-3-pro-preview', provider: 'gemini' },
-      reasoner:  { model: 'gemini-3-pro-preview', provider: 'gemini' },
-      executor:  { model: 'gemini-3-pro-preview', provider: 'gemini' },
-      reviewer:  { model: 'gemini-3-pro-preview', provider: 'gemini' },
+      planner:  { model: 'gemini-3-pro-preview', provider: 'gemini' },
+      executor: { model: 'gemini-3-pro-preview', provider: 'gemini' },
+      reviewer: { model: 'gemini-3-pro-preview', provider: 'gemini' },
     },
   },
   'solo-gemini-flash': {
     name: 'Solo: Gemini 3 Flash',
     description: 'All stages on Gemini 3 Flash.',
     selection: {
-      architect: { model: 'gemini-3-flash-preview', provider: 'gemini' },
-      reasoner:  { model: 'gemini-3-flash-preview', provider: 'gemini' },
-      executor:  { model: 'gemini-3-flash-preview', provider: 'gemini' },
-      reviewer:  { model: 'gemini-3-flash-preview', provider: 'gemini' },
+      planner:  { model: 'gemini-3-flash-preview', provider: 'gemini' },
+      executor: { model: 'gemini-3-flash-preview', provider: 'gemini' },
+      reviewer: { model: 'gemini-3-flash-preview', provider: 'gemini' },
     },
   },
   'solo-gpt-oss': {
     name: 'Solo: GPT-OSS 120B',
     description: 'All stages on GPT-OSS 120B via Groq.',
     selection: {
-      architect: { model: 'openai/gpt-oss-120b', provider: 'groq' },
-      reasoner:  { model: 'openai/gpt-oss-120b', provider: 'groq' },
-      executor:  { model: 'openai/gpt-oss-120b', provider: 'groq' },
-      reviewer:  { model: 'openai/gpt-oss-120b', provider: 'groq' },
+      planner:  { model: 'openai/gpt-oss-120b', provider: 'groq' },
+      executor: { model: 'openai/gpt-oss-120b', provider: 'groq' },
+      reviewer: { model: 'openai/gpt-oss-120b', provider: 'groq' },
     },
   },
   'solo-qwen36': {
     name: 'Solo: Qwen 3.6 Plus',
     description: 'All stages on Qwen 3.6 Plus via DashScope.',
     selection: {
-      architect: { model: 'qwen3.6-plus', provider: 'dashscope' },
-      reasoner:  { model: 'qwen3.6-plus', provider: 'dashscope' },
-      executor:  { model: 'qwen3.6-plus', provider: 'dashscope' },
-      reviewer:  { model: 'qwen3.6-plus', provider: 'dashscope' },
+      planner:  { model: 'qwen3.6-plus', provider: 'dashscope' },
+      executor: { model: 'qwen3.6-plus', provider: 'dashscope' },
+      reviewer: { model: 'qwen3.6-plus', provider: 'dashscope' },
     },
   },
   'solo-glm': {
     name: 'Solo: GLM-4.7',
     description: 'All stages on GLM-4.7 via Ollama Cloud.',
     selection: {
-      architect: { model: 'glm-4.7:cloud', provider: 'ollama' },
-      reasoner:  { model: 'glm-4.7:cloud', provider: 'ollama' },
-      executor:  { model: 'glm-4.7:cloud', provider: 'ollama' },
-      reviewer:  { model: 'glm-4.7:cloud', provider: 'ollama' },
+      planner:  { model: 'glm-4.7:cloud', provider: 'ollama' },
+      executor: { model: 'glm-4.7:cloud', provider: 'ollama' },
+      reviewer: { model: 'glm-4.7:cloud', provider: 'ollama' },
     },
   },
   'solo-kimi-k2.5': {
     name: 'Solo: Kimi K2.5',
     description: 'All stages on Kimi K2.5 via Ollama Cloud.',
     selection: {
-      architect: { model: 'kimi-k2.5:cloud', provider: 'ollama' },
-      reasoner:  { model: 'kimi-k2.5:cloud', provider: 'ollama' },
-      executor:  { model: 'kimi-k2.5:cloud', provider: 'ollama' },
-      reviewer:  { model: 'kimi-k2.5:cloud', provider: 'ollama' },
+      planner:  { model: 'kimi-k2.5:cloud', provider: 'ollama' },
+      executor: { model: 'kimi-k2.5:cloud', provider: 'ollama' },
+      reviewer: { model: 'kimi-k2.5:cloud', provider: 'ollama' },
     },
   },
   'solo-kimi-k2': {
     name: 'Solo: Kimi K2',
     description: 'All stages on Kimi K2 via Groq.',
     selection: {
-      architect: { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reasoner:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      executor:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
-      reviewer:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
+      planner:  { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
+      executor: { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
+      reviewer: { model: 'moonshotai/kimi-k2-instruct-0905', provider: 'groq' },
     },
   },
 };
 
 export const WATERFALL_DEFAULT_SELECTION: WaterfallModelSelection = {
-  architect: 'B', reasoner: 'B', executor: 'B', reviewer: 'B'
+  planner: 'B', executor: 'B', reviewer: 'B'
 };
 
 export const WATERFALL_CONFIG: Record<string, WaterfallPhaseConfig> = {
-  // Architect: requirements analysis + architectural planning (needs strongest reasoning)
-  PHASE_1_ARCHITECT: {
+  // Planner: requirements analysis + execution plan (needs strongest reasoning)
+  PHASE_1_PLANNER: {
     OPTION_A: { model: 'qwen3.5:cloud',            provider: 'ollama',    label: 'Qwen 3.5 Cloud',   score: 'NEW'           },
-    OPTION_B: { model: 'openai/gpt-oss-120b',     provider: 'groq',      label: 'GPT-OSS 120B',     score: 'MMLU-Pro 90%'  },
-    LOCAL: 'deepseek-r1:latest'
-  },
-  // Reasoner: blueprint → execution plan (needs speed + structured output)
-  PHASE_2_REASONER: {
-    OPTION_A: { model: 'kimi-k2-thinking:cloud',  provider: 'ollama',    label: 'Kimi Thinking',    score: 'NEW'           },
-    OPTION_B: { model: 'qwen/qwen3-32b',           provider: 'groq',      label: 'Qwen3 32B',        score: '535 t/s'       },
+    OPTION_B: { model: 'qwen3.5-plus',              provider: 'dashscope', label: 'Qwen 3.5 Plus',    score: 'reliable JSON'  },
     LOCAL: 'deepseek-r1:latest'
   },
   // Executor: plan → production-ready code (needs best code generation)
-  PHASE_3_EXECUTOR: {
+  PHASE_2_EXECUTOR: {
     OPTION_A: { model: 'qwen3-coder:480b-cloud', provider: 'ollama',    label: 'Qwen3 Coder 480B', score: 'NEW'           },
     OPTION_B: { model: 'qwen3-coder-plus',        provider: 'dashscope', label: 'Qwen3 Coder+',    score: 'SWE-bench 71%' },
     LOCAL: 'deepseek-r1:latest'
   },
   // Reviewer: code audit + quality scoring (needs deep analysis + structured output)
-  // Free-tier models rotate on OpenRouter — keep these updated when models go offline.
-  PHASE_4_REVIEWER: {
+  PHASE_3_REVIEWER: {
     OPTION_A: { model: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter', label: 'Llama 3.3 70B', score: 'MMLU 86%' },
-    OPTION_B: { model: 'nousresearch/hermes-3-llama-3.1-405b:free', provider: 'openrouter', label: 'Hermes 405B', score: '405B' },
+    OPTION_B: { model: 'qwen3.5-plus',              provider: 'dashscope', label: 'Qwen 3.5 Plus',    score: 'reliable JSON'  },
     LOCAL: 'deepseek-r1:latest'
   }
 };
@@ -385,6 +400,8 @@ export const CONTEXT_LIMITS: Record<string, number> = {
   'deepseek-v3.1:671b-cloud': 163840,
   'deepseek-v3.2:cloud': 163840,
   'glm-5:cloud': 131072,
+  'glm-5.1:cloud': 198000,
+  'z-ai/glm-5.1': 202752,
   'glm-4.7:cloud': 131072,
   'nemotron-3-super:cloud': 131072,
   'minimax-m2.1:cloud': 131072,
@@ -394,11 +411,27 @@ export const CONTEXT_LIMITS: Record<string, number> = {
   'qwen3-coder-plus': 131072,
   'qwen3-coder-flash': 131072,
   'qwen3-max': 131072,
+  'qwen3.6-plus': 131072,
   'qwen3.5-plus': 131072,
   'qwen-plus': 131072,
   'qwen-turbo': 131072,
   'qwen3-235b-a22b': 131072,
   'qwen3-next-80b-a3b-instruct': 131072,
+
+  // Fireworks AI
+  'accounts/fireworks/models/kimi-k2p5': 262144,
+  'accounts/fireworks/models/glm-5': 202800,
+  'accounts/fireworks/models/glm-4p7': 202800,
+  'accounts/fireworks/models/deepseek-v3': 131072,
+  'accounts/fireworks/models/gpt-oss-120b': 131072,
+  'accounts/fireworks/models/gpt-oss-20b': 131072,
+  'accounts/fireworks/models/minimax-m2': 196608,
+  'accounts/fireworks/models/qwen3p6-plus': 131072,
+  'accounts/fireworks/models/llama4-maverick-instruct-basic': 131072,
+  'accounts/fireworks/models/llama4-scout-instruct-basic': 131072,
+  'accounts/fireworks/models/llama-v3p3-70b-instruct': 131072,
+  'accounts/fireworks/models/qwen2p5-72b-instruct': 131072,
+  'accounts/fireworks/models/mixtral-8x22b-instruct': 65536,
 
   // OpenRouter frontier
   'openrouter/hunter-alpha': 1048576,

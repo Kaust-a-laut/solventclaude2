@@ -1,6 +1,7 @@
 import { IProviderPlugin } from '../../types/plugins';
 import { ChatMessage, CompletionOptions } from '../../types/ai';
 import { config } from '../../config';
+import { logger } from '../../utils/logger';
 import { Ollama } from 'ollama';
 
 export class OllamaProviderPlugin implements IProviderPlugin {
@@ -50,11 +51,17 @@ export class OllamaProviderPlugin implements IProviderPlugin {
 
   private client: Ollama | null = null;
   private isInitialized = false;
+  private apiKey: string | null = null;
 
   async initialize(options: Record<string, any>): Promise<void> {
     const host = options.host || config.OLLAMA_HOST || 'http://127.0.0.1:11434';
-    this.client = new Ollama({ host });
+    this.apiKey = options.apiKey || config.OLLAMA_API_KEY || null;
+    this.client = new Ollama({
+      host,
+      ...(this.apiKey ? { headers: { 'Authorization': `Bearer ${this.apiKey}` } } : {}),
+    });
     this.isInitialized = true;
+    logger.info(`[Ollama] Provider initialized (API key present: ${!!this.apiKey})`);
   }
 
   isReady(): boolean {

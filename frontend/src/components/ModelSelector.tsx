@@ -5,7 +5,7 @@ import { ChevronDown, Sparkles, Zap, Brain, Globe, Cpu, Bot, Flame } from 'lucid
 import { cn } from '../lib/utils';
 
 export interface ModelOption {
-  provider: 'gemini' | 'groq' | 'deepseek' | 'openrouter' | 'ollama' | 'dashscope' | 'cerebras';
+  provider: 'gemini' | 'groq' | 'deepseek' | 'openrouter' | 'ollama' | 'dashscope' | 'cerebras' | 'fireworks';
   model: string;
   displayName: string;
   sublabel: string;
@@ -28,40 +28,35 @@ export const MODEL_OPTIONS: ModelOption[] = [
 
 /**
  * Curated model list for the Agent Chat panel.
- * Only includes providers that support the tool-calling loop (BaseOpenAIService)
- * and models with strong function-calling / agentic capabilities.
+ * Organized: strongest agentic coding models first, efficient boilerplate second.
+ * Uses providers that support BaseOpenAIService tool-calling loop where possible.
+ * Fireworks provider used for models like Kimi K2.5 and GLM-4.7 (supports agentic tool-calling).
  */
 export const AGENT_MODEL_OPTIONS: ModelOption[] = [
-  // ── Groq (LPU · Ultra-fast inference) ─────────────────────────────────────
-  { provider: 'groq',       model: 'compound-beta',                                displayName: 'Groq Compound',      sublabel: 'Agentic · Auto-routed',  color: 'text-amber-400',   bgColor: 'bg-amber-500/10',   icon: Bot   },
-  { provider: 'groq',       model: 'compound-beta-mini',                           displayName: 'Compound Mini',      sublabel: 'Agentic · Fast',         color: 'text-amber-400',   bgColor: 'bg-amber-500/10',   icon: Bot   },
-  { provider: 'groq',       model: 'moonshotai/kimi-k2-instruct-0905',             displayName: 'Kimi K2',            sublabel: 'Moonshot · Top Agent',   color: 'text-rose-400',    bgColor: 'bg-rose-500/10',    icon: Flame },
-  { provider: 'groq',       model: 'meta-llama/llama-4-maverick-17b-128e-instruct', displayName: 'Llama 4 Maverick',  sublabel: 'Meta · 128 Experts',     color: 'text-orange-400',  bgColor: 'bg-orange-500/10',  icon: Zap   },
-  { provider: 'groq',       model: 'qwen/qwen3-32b',                               displayName: 'Qwen 3 32B',        sublabel: 'Alibaba · Strong Coder', color: 'text-sky-400',     bgColor: 'bg-sky-500/10',     icon: Brain },
-  { provider: 'groq',       model: 'openai/gpt-oss-120b',                          displayName: 'GPT-OSS 120B',       sublabel: 'OpenAI Open · Large',    color: 'text-green-400',   bgColor: 'bg-green-500/10',   icon: Brain },
-  { provider: 'groq',       model: 'llama-3.3-70b-versatile',                      displayName: 'Llama 3.3 70B',      sublabel: 'Meta · Reliable',        color: 'text-orange-400',  bgColor: 'bg-orange-500/10',  icon: Zap   },
+  // ── Top Agentic — waterfall pipeline proven, strongest tool-calling + code generation ──
+  { provider: 'fireworks',  model: 'accounts/fireworks/models/kimi-k2p5',                    displayName: 'Kimi K2.5',          sublabel: 'Moonshot · Fireworks',   color: 'text-rose-400',    bgColor: 'bg-rose-500/10',    icon: Flame },
+  { provider: 'dashscope',  model: 'qwen3-coder-plus',                                      displayName: 'Qwen3 Coder+',       sublabel: 'DashScope · Top Coder',  color: 'text-sky-400',     bgColor: 'bg-sky-500/10',     icon: Brain },
+  { provider: 'fireworks',  model: 'accounts/fireworks/models/glm-4p7',                     displayName: 'GLM-4.7',            sublabel: 'Zhipu · Fireworks',      color: 'text-indigo-400',  bgColor: 'bg-indigo-500/10',  icon: Flame },
+  { provider: 'openrouter', model: 'anthropic/claude-sonnet-4',                            displayName: 'Claude Sonnet 4',    sublabel: 'Anthropic · Best Tools', color: 'text-yellow-400',  bgColor: 'bg-yellow-500/10',  icon: Sparkles },
+  { provider: 'openrouter', model: 'openai/gpt-4o',                                         displayName: 'GPT-4o',             sublabel: 'OpenAI · Flagship',       color: 'text-green-400',   bgColor: 'bg-green-500/10',   icon: Brain },
+  { provider: 'fireworks',  model: 'accounts/fireworks/models/glm-5',                       displayName: 'GLM-5',              sublabel: 'Zhipu · Fireworks',      color: 'text-indigo-400',  bgColor: 'bg-indigo-500/10',  icon: Flame },
+  { provider: 'dashscope',  model: 'qwen3.6-plus',                                         displayName: 'Qwen 3.6 Plus',      sublabel: 'DashScope · Fast Coder', color: 'text-sky-400',     bgColor: 'bg-sky-500/10',     icon: Brain },
+  { provider: 'groq',       model: 'compound-beta',                                        displayName: 'Groq Compound',      sublabel: 'Agentic · Auto-routed',  color: 'text-amber-400',   bgColor: 'bg-amber-500/10',   icon: Bot   },
+  { provider: 'groq',       model: 'moonshotai/kimi-k2-instruct-0905',                     displayName: 'Kimi K2',            sublabel: 'Groq · Ultra-fast',      color: 'text-rose-400',    bgColor: 'bg-rose-500/10',    icon: Flame },
+  { provider: 'deepseek',   model: 'deepseek-chat',                                        displayName: 'DeepSeek V3',        sublabel: 'Direct · Strong Coder',  color: 'text-emerald-400', bgColor: 'bg-emerald-500/10', icon: Brain },
 
-  // ── OpenRouter (Premium + Free models) ────────────────────────────────────
-  { provider: 'openrouter', model: 'anthropic/claude-sonnet-4',                     displayName: 'Claude Sonnet 4',    sublabel: 'Anthropic · Best Tools', color: 'text-yellow-400',  bgColor: 'bg-yellow-500/10',  icon: Sparkles },
-  { provider: 'openrouter', model: 'openai/gpt-4o',                                displayName: 'GPT-4o',             sublabel: 'OpenAI · Flagship',      color: 'text-green-400',   bgColor: 'bg-green-500/10',   icon: Brain },
-  { provider: 'openrouter', model: 'minimax/minimax-01',                            displayName: 'MiniMax-01',         sublabel: 'MiniMax · 456B MoE',     color: 'text-teal-400',    bgColor: 'bg-teal-500/10',    icon: Brain },
-  { provider: 'openrouter', model: 'qwen/qwen3-235b-a22b:free',                    displayName: 'Qwen 3 235B',        sublabel: 'Free · Massive',         color: 'text-sky-400',     bgColor: 'bg-sky-500/10',     icon: Globe },
-  { provider: 'openrouter', model: 'meta-llama/llama-4-maverick:free',              displayName: 'Llama 4 Maverick',   sublabel: 'Free · MoE',             color: 'text-purple-400',  bgColor: 'bg-purple-500/10',  icon: Globe },
-  { provider: 'openrouter', model: 'deepseek/deepseek-chat-v3-0324:free',          displayName: 'DeepSeek V3',         sublabel: 'Free · Strong Coder',    color: 'text-emerald-400', bgColor: 'bg-emerald-500/10', icon: Globe },
-
-  // ── DeepSeek (Direct API) ─────────────────────────────────────────────────
-  { provider: 'deepseek',   model: 'deepseek-chat',                                displayName: 'DeepSeek V3',         sublabel: 'Direct · Tool Use',      color: 'text-emerald-400', bgColor: 'bg-emerald-500/10', icon: Brain },
-
-  // ── DashScope (Alibaba · Qwen native API) ────────────────────────────────
-  { provider: 'dashscope',  model: 'qwen3-coder-plus',                             displayName: 'Qwen3 Coder+',        sublabel: 'DashScope · Top Coder',  color: 'text-sky-400',     bgColor: 'bg-sky-500/10',     icon: Brain },
-  { provider: 'dashscope',  model: 'qwen3-coder-flash',                            displayName: 'Qwen3 Coder Flash',   sublabel: 'DashScope · Fast Code',  color: 'text-sky-400',     bgColor: 'bg-sky-500/10',     icon: Zap   },
-  { provider: 'dashscope',  model: 'qwen3-max',                                    displayName: 'Qwen3 Max',           sublabel: 'DashScope · Flagship',   color: 'text-sky-400',     bgColor: 'bg-sky-500/10',     icon: Flame },
-  { provider: 'dashscope',  model: 'qwen3.5-plus',                                 displayName: 'Qwen 3.5 Plus',       sublabel: 'DashScope · Latest',     color: 'text-sky-400',     bgColor: 'bg-sky-500/10',     icon: Brain },
-  { provider: 'dashscope',  model: 'qwen3-next-80b-a3b-instruct',                  displayName: 'Qwen3 Coder Next',    sublabel: 'DashScope · Efficient',  color: 'text-sky-400',     bgColor: 'bg-sky-500/10',     icon: Zap   },
-
-  // ── Cerebras (Wafer-scale · Ultra-fast inference) ─────────────────────────
-  { provider: 'cerebras',  model: 'llama3.1-8b',                                  displayName: 'Llama 3.1 8B',        sublabel: 'Cerebras · Fast',        color: 'text-violet-400',  bgColor: 'bg-violet-500/10',  icon: Zap   },
-  { provider: 'cerebras',  model: 'qwen-3-235b-a22b-instruct-2507',               displayName: 'Qwen3 235B',          sublabel: 'Cerebras · Preview',     color: 'text-violet-400',  bgColor: 'bg-violet-500/10',  icon: Brain },
+  // ── Efficient Boilerplate — fast, reliable, standard code ─────────────────────────────
+  { provider: 'fireworks',  model: 'accounts/fireworks/models/deepseek-v3',                 displayName: 'DeepSeek V3',        sublabel: 'Fireworks · Ultra-fast', color: 'text-emerald-400', bgColor: 'bg-emerald-500/10', icon: Brain },
+  { provider: 'groq',       model: 'openai/gpt-oss-120b',                                  displayName: 'GPT-OSS 120B',       sublabel: 'Groq · Ultra-fast',      color: 'text-green-400',   bgColor: 'bg-green-500/10',   icon: Brain },
+  { provider: 'fireworks',  model: 'accounts/fireworks/models/qwen3p6-plus',               displayName: 'Qwen3 6 Plus',       sublabel: 'Fireworks · Efficient',   color: 'text-sky-400',     bgColor: 'bg-sky-500/10',     icon: Brain },
+  { provider: 'fireworks',  model: 'accounts/fireworks/models/llama4-maverick-instruct-basic', displayName: 'Llama 4 Maverick',  sublabel: 'Meta · Fireworks',      color: 'text-orange-400',  bgColor: 'bg-orange-500/10',  icon: Zap   },
+  { provider: 'fireworks',  model: 'accounts/fireworks/models/minimax-m2',                  displayName: 'MiniMax M2',         sublabel: 'Fireworks · Fast',      color: 'text-purple-400',  bgColor: 'bg-purple-500/10',  icon: Zap   },
+  { provider: 'groq',       model: 'qwen/qwen3-32b',                                       displayName: 'Qwen3 32B',          sublabel: 'Groq · Strong Coder',    color: 'text-sky-400',     bgColor: 'bg-sky-500/10',     icon: Brain },
+  { provider: 'groq',       model: 'compound-beta-mini',                                   displayName: 'Compound Mini',      sublabel: 'Agentic · Fast',         color: 'text-amber-400',   bgColor: 'bg-amber-500/10',   icon: Bot   },
+  { provider: 'cerebras',   model: 'qwen-3-235b-a22b-instruct-2507',                       displayName: 'Qwen3 235B',         sublabel: 'Cerebras · Massive',     color: 'text-violet-400',  bgColor: 'bg-violet-500/10',  icon: Brain },
+  { provider: 'dashscope',  model: 'qwen3-next-80b-a3b-instruct',                         displayName: 'Qwen3 Coder Next',   sublabel: 'DashScope · Efficient',  color: 'text-sky-400',     bgColor: 'bg-sky-500/10',     icon: Zap   },
+  { provider: 'groq',       model: 'llama-3.3-70b-versatile',                              displayName: 'Llama 3.3 70B',      sublabel: 'Meta · Reliable',        color: 'text-orange-400',  bgColor: 'bg-orange-500/10',  icon: Zap   },
+  { provider: 'cerebras',   model: 'llama3.1-8b',                                          displayName: 'Llama 3.1 8B',       sublabel: 'Cerebras · Ultra-fast',  color: 'text-violet-400',  bgColor: 'bg-violet-500/10',  icon: Zap   },
 ];
 
 interface ModelSelectorProps {

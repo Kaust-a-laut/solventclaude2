@@ -166,6 +166,11 @@ export class SettingsService {
         return true;
       }
 
+      // Ollama cloud: key is stored and used when :cloud models are called — skip completion test
+      if (providerId === 'ollama') {
+        return true;
+      }
+
       // Make a real API call to verify the key works (1 token max)
       const testMessages = [{ role: 'user' as const, content: 'hi' }];
       await provider.complete(testMessages, {

@@ -51,7 +51,7 @@ export interface UserPreference extends BaseMemory {
 export type CrystallizedMemory = CrystallizedRule | SuccessPattern | SupervisoryInsight | UserPreference;
 
 export interface StageHandoff {
-  stage: 'architect' | 'reasoner' | 'executor' | 'reviewer';
+  stage: 'planner' | 'executor' | 'reviewer';
   confidence: number;
   keyDecisions: string[];
   constraints: string[];

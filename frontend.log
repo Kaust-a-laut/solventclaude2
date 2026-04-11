@@ -1,110 +1,11 @@
 
-> solvent-ai-v1-production@1.0.0 dev:frontend
-> cd frontend && npm run dev
-
-
 > solvent-ai-frontend@1.0.0 dev
 > vite --host
 
+Port 5173 is in use, trying another one...
+Port 5174 is in use, trying another one...
 
-  VITE v7.3.1  ready in 3273 ms
+  VITE v7.3.1  ready in 3697 ms
 
-  ➜  Local:   http://localhost:5173/
-  ➜  Network: http://192.168.1.179:5173/
-8:04:36 PM [vite] (client) Pre-transform error: /home/kaust/solvent-ai-v1-production/frontend/src/components/FloatingNotepad.tsx: Identifier 'handleSave' has already been declared. (262:10)
-
-  260 |
-  261 |
-> 262 |     const handleSave = () => {
-      |           ^
-  263 |
-  264 |
-  265 |
-  Plugin: vite:react-babel
-  File: /home/kaust/solvent-ai-v1-production/frontend/src/components/FloatingNotepad.tsx:262:10
-  260 |  
-  261 |  
-  262 |      const handleSave = () => {
-      |            ^
-  263 |  
-  264 |  
-8:04:38 PM [vite] Internal server error: /home/kaust/solvent-ai-v1-production/frontend/src/components/FloatingNotepad.tsx: Identifier 'handleSave' has already been declared. (262:10)
-
-  260 |
-  261 |
-> 262 |     const handleSave = () => {
-      |           ^
-  263 |
-  264 |
-  265 |
-  Plugin: vite:react-babel
-  File: /home/kaust/solvent-ai-v1-production/frontend/src/components/FloatingNotepad.tsx:262:10
-  260 |  
-  261 |  
-  262 |      const handleSave = () => {
-      |            ^
-  263 |  
-  264 |  
-      at constructor (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:367:19)
-      at TypeScriptParserMixin.raise (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:6624:19)
-      at TypeScriptScopeHandler.checkRedeclarationInScope (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:1646:19)
-      at TypeScriptScopeHandler.declareName (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:1612:12)
-      at TypeScriptScopeHandler.declareName (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:4909:11)
-      at TypeScriptParserMixin.declareNameFromIdentifier (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:7594:16)
-      at TypeScriptParserMixin.checkIdentifier (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:7590:12)
-      at TypeScriptParserMixin.checkLVal (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:7527:12)
-      at TypeScriptParserMixin.parseVarId (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:13488:10)
-      at TypeScriptParserMixin.parseVarId (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:9805:11)
-      at TypeScriptParserMixin.parseVar (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:13459:12)
-      at TypeScriptParserMixin.parseVarStatement (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:13306:10)
-      at TypeScriptParserMixin.parseVarStatement (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:9469:31)
-      at TypeScriptParserMixin.parseStatementContent (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:12927:23)
-      at TypeScriptParserMixin.parseStatementContent (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:9569:18)
-      at TypeScriptParserMixin.parseStatementLike (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:12843:17)
-      at TypeScriptParserMixin.parseStatementListItem (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:12823:17)
-      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:13392:61)
-      at TypeScriptParserMixin.parseBlockBody (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:13385:10)
-      at TypeScriptParserMixin.parseBlock (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:13373:10)
-      at TypeScriptParserMixin.parseFunctionBody (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:12174:24)
-      at TypeScriptParserMixin.parseArrowExpression (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:12149:10)
-      at TypeScriptParserMixin.parseParenAndDistinguishExpression (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:11759:12)
-      at TypeScriptParserMixin.parseExprAtom (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:11395:23)
-      at TypeScriptParserMixin.parseExprAtom (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:4793:20)
-      at TypeScriptParserMixin.parseExprSubscripts (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:11145:23)
-      at TypeScriptParserMixin.parseUpdate (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:11130:21)
-      at TypeScriptParserMixin.parseMaybeUnary (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:11110:23)
-      at TypeScriptParserMixin.parseMaybeUnary (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:9890:18)
-      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:10963:61)
-      at TypeScriptParserMixin.parseExprOps (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:10968:23)
-      at TypeScriptParserMixin.parseMaybeConditional (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:10945:23)
-      at TypeScriptParserMixin.parseMaybeAssign (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:10895:21)
-      at TypeScriptParserMixin.parseMaybeAssign (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:9839:20)
-      at /home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:10864:39
-      at TypeScriptParserMixin.allowInAnd (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:12495:16)
-      at TypeScriptParserMixin.parseMaybeAssignAllowIn (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:10864:17)
-      at TypeScriptParserMixin.parseVar (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:13460:91)
-      at TypeScriptParserMixin.parseVarStatement (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:13306:10)
-      at TypeScriptParserMixin.parseVarStatement (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:9469:31)
-      at TypeScriptParserMixin.parseStatementContent (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:12927:23)
-      at TypeScriptParserMixin.parseStatementContent (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:9569:18)
-      at TypeScriptParserMixin.parseStatementLike (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:12843:17)
-      at TypeScriptParserMixin.parseStatementListItem (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:12823:17)
-      at TypeScriptParserMixin.parseExportDeclaration (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:14010:17)
-      at TypeScriptParserMixin.parseExportDeclaration (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:9690:85)
-      at TypeScriptParserMixin.maybeParseExportDeclaration (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:13969:31)
-      at TypeScriptParserMixin.parseExport (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:13888:29)
-      at TypeScriptParserMixin.parseExport (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:9446:20)
-      at TypeScriptParserMixin.parseStatementContent (/home/kaust/solvent-ai-v1-production/frontend/node_modules/@babel/parser/lib/index.js:12954:27)
-12:23:27 AM [vite] (client) hmr update /src/index.css, /src/main.tsx, /src/components/NotepadPiP.tsx, /src/components/ChatArea.tsx, /src/components/WaterfallVisualizer.tsx, /src/components/AuraBackground.tsx, /src/components/Navigation.tsx, /src/components/HomeArea.tsx, /src/components/TitleBar.tsx, /src/components/SettingsModal.tsx, /src/components/ChatHeader.tsx, /src/components/ChatInput.tsx, /src/components/MessageList.tsx, /src/components/SessionHistory.tsx, /src/components/SystemStatus.tsx, /src/components/CodeBlock.tsx
-12:23:37 AM [vite] (client) hmr update /src/main.tsx, /src/components/NotepadPiP.tsx, /src/components/ChatArea.tsx, /src/components/WaterfallVisualizer.tsx, /src/components/AuraBackground.tsx, /src/components/Navigation.tsx, /src/components/HomeArea.tsx, /src/components/TitleBar.tsx, /src/components/SettingsModal.tsx, /src/components/ChatHeader.tsx, /src/components/ChatInput.tsx, /src/components/MessageList.tsx, /src/components/SessionHistory.tsx, /src/components/SystemStatus.tsx, /src/components/CodeBlock.tsx, /src/index.css
-12:23:47 AM [vite] (client) hmr update /src/main.tsx, /src/components/NotepadPiP.tsx, /src/components/ChatArea.tsx, /src/components/WaterfallVisualizer.tsx, /src/components/AuraBackground.tsx, /src/components/Navigation.tsx, /src/components/HomeArea.tsx, /src/components/TitleBar.tsx, /src/components/SettingsModal.tsx, /src/components/ChatHeader.tsx, /src/components/ChatInput.tsx, /src/components/MessageList.tsx, /src/components/SessionHistory.tsx, /src/components/SystemStatus.tsx, /src/components/CodeBlock.tsx, /src/index.css
-12:24:01 AM [vite] (client) hmr update /src/index.css, /src/components/MessageItem.tsx
-12:45:03 AM [vite] (client) hmr update /src/main.tsx, /src/components/NotepadPiP.tsx, /src/components/ChatArea.tsx, /src/components/WaterfallVisualizer.tsx, /src/components/AuraBackground.tsx, /src/components/Navigation.tsx, /src/components/HomeArea.tsx, /src/components/TitleBar.tsx, /src/components/SettingsModal.tsx, /src/components/ChatHeader.tsx, /src/components/ChatInput.tsx, /src/components/MessageList.tsx, /src/components/SessionHistory.tsx, /src/components/SystemStatus.tsx, /src/components/CodeBlock.tsx, /src/index.css
-12:45:20 AM [vite] (client) hmr update /src/index.css, /src/components/MessageItem.tsx
-12:47:37 AM [vite] (client) hmr update /src/index.css, /src/main.tsx, /src/components/NotepadPiP.tsx, /src/components/ChatArea.tsx, /src/components/WaterfallVisualizer.tsx, /src/components/AuraBackground.tsx, /src/components/Navigation.tsx, /src/components/HomeArea.tsx, /src/components/TitleBar.tsx, /src/components/SettingsModal.tsx, /src/components/ChatHeader.tsx, /src/components/ChatInput.tsx, /src/components/MessageList.tsx, /src/components/SessionHistory.tsx, /src/components/SystemStatus.tsx, /src/components/CodeBlock.tsx
-12:47:37 AM [vite] (client) hmr update /src/index.css, /src/main.tsx, /src/components/NotepadPiP.tsx, /src/components/ChatArea.tsx, /src/components/WaterfallVisualizer.tsx, /src/components/AuraBackground.tsx, /src/components/Navigation.tsx, /src/components/HomeArea.tsx, /src/components/TitleBar.tsx, /src/components/SettingsModal.tsx, /src/components/ChatHeader.tsx, /src/components/ChatInput.tsx, /src/components/MessageList.tsx, /src/components/SessionHistory.tsx, /src/components/SystemStatus.tsx, /src/components/CodeBlock.tsx
-12:47:51 AM [vite] (client) hmr update /src/index.css, /src/components/MessageItem.tsx
-12:48:45 AM [vite] (client) hmr update /src/index.css, /src/components/MessageItem.tsx
-12:48:45 AM [vite] (client) hmr update /src/index.css, /src/components/MessageItem.tsx
-12:48:52 AM [vite] (client) hmr update /src/index.css, /src/components/MessageItem.tsx
-12:50:13 AM [vite] (client) hmr update /src/index.css
+  ➜  Local:   http://localhost:5175/
+  ➜  Network: http://192.168.1.179:5175/

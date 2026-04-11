@@ -31,31 +31,23 @@ describe('WaterfallService Integration (Mocked AI)', () => {
     // Create a mock provider that handles JSON responses
     mockProvider = {
       complete: vi.fn().mockImplementation(async (messages, options) => {
-        // Route based on the new context-aware prompt content
+        // Route based on the 3-stage pipeline prompt content
         const content = messages[0].content || "";
 
-        if (content.includes("AI Systems Lead") || content.includes("Step 1 of a 4-step")) {
-            // Architect Step (runArchitectWithContext)
+        if (content.includes("Step 1 (Planner)") || content.includes("AI Systems Lead")) {
+            // Planner Step (runPlannerWithContext)
             return JSON.stringify({
-                logic: "Step 1: Write code.",
-                assumptions: ["User wants JS"],
-                keyDecisions: ["Use simple approach"],
-                complexity: "low",
-                techStack: ["JavaScript"]
-            });
-        }
-
-        if (content.includes("Technical Architect") || content.includes("ARCHITECT'S DECISIONS")) {
-            // Reasoner Step (runReasonerWithContext)
-            return JSON.stringify({
-                plan: "Detailed plan to write code.",
+                plan: "Build a hello world app.",
                 steps: [{ title: "Coding", description: "Write the file." }],
-                carriedDecisions: ["Use simple approach"],
+                keyDecisions: ["Use simple approach"],
+                assumptions: ["User wants JS"],
+                complexity: "low",
+                techStack: ["JavaScript"],
                 openQuestions: []
             });
         }
 
-        if (content.includes("Senior Developer") || content.includes("FULL EXECUTION PLAN")) {
+        if (content.includes("Step 2 (Executor)") || content.includes("Planner → [YOU] → Reviewer")) {
             // Executor Step (runExecutorWithContext)
             return JSON.stringify({
                 code: "console.log('Hello Integration');",
@@ -65,7 +57,7 @@ describe('WaterfallService Integration (Mocked AI)', () => {
             });
         }
 
-        if (content.includes("Principal Engineer") || content.includes("RUBRIC (100 pts")) {
+        if (content.includes("Step 3 (Reviewer)") || content.includes("RUBRIC (100 pts")) {
             // Reviewer Step (runReviewWithContext)
             return JSON.stringify({
                 score: 95,
@@ -90,17 +82,17 @@ describe('WaterfallService Integration (Mocked AI)', () => {
 
     // Verify Structure
     expect(result).toBeDefined();
-    expect(result.architect).toBeDefined();
+    expect(result.planner).toBeDefined();
     expect(result.executor).toBeDefined();
     expect(result.reviewer).toBeDefined();
 
     // Verify Content
-    expect(result.architect.complexity).toBe('low');
+    expect(result.planner.complexity).toBe('low');
     expect(result.executor.code).toContain('Hello Integration');
     expect(result.reviewer.score).toBe(95);
 
     // Verify interactions
-    expect(mockProvider.complete).toHaveBeenCalledTimes(4); // Arch, Reason, Exec, Review
+    expect(mockProvider.complete).toHaveBeenCalledTimes(3); // Planner, Executor, Reviewer
   });
 
   it('should retry when review score is low', async () => {
@@ -108,7 +100,7 @@ describe('WaterfallService Integration (Mocked AI)', () => {
     let reviewCount = 0;
     mockProvider.complete = vi.fn().mockImplementation(async (messages) => {
         const content = messages[0].content || "";
-        if (content.includes("Principal Engineer") || content.includes("RUBRIC (100 pts")) {
+        if (content.includes("Step 3 (Reviewer)") || content.includes("RUBRIC (100 pts")) {
             reviewCount++;
             if (reviewCount === 1) {
                 return JSON.stringify({ score: 50, issues: ["Too simple"], breakdown: {} });
@@ -117,11 +109,9 @@ describe('WaterfallService Integration (Mocked AI)', () => {
             }
         }
         // Return valid defaults for others
-        if (content.includes("AI Systems Lead") || content.includes("Step 1 of a 4-step"))
-            return JSON.stringify({ logic: "logic", complexity: "low", assumptions: [], keyDecisions: [], techStack: [] });
-        if (content.includes("Technical Architect") || content.includes("ARCHITECT'S DECISIONS"))
-            return JSON.stringify({ plan: "plan", steps: [], carriedDecisions: [], openQuestions: [] });
-        if (content.includes("Senior Developer") || content.includes("FULL EXECUTION PLAN"))
+        if (content.includes("Step 1 (Planner)") || content.includes("AI Systems Lead"))
+            return JSON.stringify({ plan: "plan", steps: [], keyDecisions: [], assumptions: [], complexity: "low", techStack: [], openQuestions: [] });
+        if (content.includes("Step 2 (Executor)") || content.includes("Planner → [YOU] → Reviewer"))
             return JSON.stringify({ code: "console.log('Retry');", files: [], decisionsOverridden: [] });
         return "{}";
     });

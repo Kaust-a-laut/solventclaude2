@@ -18,8 +18,8 @@ export abstract class BaseOpenAIService implements AIProvider {
   public defaultModel: string = '';
 
   isReady(): boolean {
-    const key = this.apiKey;
-    return !!key && key.length > 0;
+    // Always report ready — runtime API keys from the frontend can satisfy the requirement
+    return true;
   }
 
   complete = this.generateChatCompletion;

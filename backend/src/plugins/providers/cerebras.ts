@@ -51,27 +51,21 @@ export class CerebrasProviderPlugin implements IProviderPlugin {
   private apiKey: string | null = null;
 
   async initialize(options: Record<string, any>): Promise<void> {
-    this.apiKey = options.apiKey || config.CEREBRAS_API_KEY;
-    logger.info(`[Cerebras] Initialize called. API key set: ${!!this.apiKey}`);
-    if (!this.apiKey) {
-      logger.warn('[Cerebras] No API key — provider will be unavailable');
-      return;
-    }
+    this.apiKey = options.apiKey || config.CEREBRAS_API_KEY || null;
     this.isInitialized = true;
-    logger.info('[Cerebras] Provider initialized successfully');
+    logger.info(`[Cerebras] Provider initialized (API key present: ${!!this.apiKey})`);
   }
 
   isReady(): boolean {
-    return this.isInitialized && !!this.apiKey;
+    return this.isInitialized;
   }
 
   async complete(messages: ChatMessage[], options: CompletionOptions): Promise<string> {
-    if (!this.apiKey) {
-      throw new Error('Cerebras provider not initialized or API key missing');
-    }
-
     const { model, temperature = 0.7, maxTokens = 2048, apiKey, jsonMode } = options;
     const effectiveApiKey = apiKey || this.apiKey;
+    if (!effectiveApiKey) {
+      throw new Error('Cerebras API key missing. Provide it in settings or set CEREBRAS_API_KEY in .env.');
+    }
 
     if (!messages || messages.length === 0) {
       throw new Error('Messages array is empty or undefined');

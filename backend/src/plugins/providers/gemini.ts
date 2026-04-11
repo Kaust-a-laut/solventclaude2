@@ -54,28 +54,24 @@ export class GeminiProviderPlugin implements IProviderPlugin {
 
   async initialize(options: Record<string, any>): Promise<void> {
     const apiKey = options.apiKey || config.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error('Gemini API Key missing. Please provide it in settings or .env file.');
+    if (apiKey) {
+      this.genAI = new GoogleGenerativeAI(apiKey);
     }
-    
-    this.genAI = new GoogleGenerativeAI(apiKey);
     this.isInitialized = true;
   }
 
   isReady(): boolean {
-    return this.isInitialized && !!this.genAI;
+    return this.isInitialized;
   }
 
   async complete(messages: ChatMessage[], options: CompletionOptions): Promise<string> {
-    if (!this.genAI) {
-      throw new Error('Gemini provider not initialized');
-    }
 
     const { model, temperature = 0.7, maxTokens = 2048, apiKey, jsonMode } = options;
     const effectiveApiKey = apiKey || config.GEMINI_API_KEY;
 
     // Use a local client to avoid mutating this.genAI under concurrency
-    const genAI = effectiveApiKey ? new GoogleGenerativeAI(effectiveApiKey) : this.genAI!;
+    const genAI = effectiveApiKey ? new GoogleGenerativeAI(effectiveApiKey) : this.genAI;
+    if (!genAI) throw new Error('Gemini API key missing. Provide it in settings or set GEMINI_API_KEY in .env.');
 
     const modelInstance = genAI.getGenerativeModel({
       model: model || this.defaultModel,
@@ -106,13 +102,12 @@ export class GeminiProviderPlugin implements IProviderPlugin {
   }
 
   async *stream(messages: ChatMessage[], options: CompletionOptions): AsyncGenerator<string> {
-    if (!this.genAI) {
-      throw new Error('Gemini provider not initialized');
-    }
+    const { model, temperature = 0.7, maxTokens = 2048, apiKey } = options;
+    const effectiveApiKey = apiKey || config.GEMINI_API_KEY;
+    const genAI = effectiveApiKey ? new GoogleGenerativeAI(effectiveApiKey) : this.genAI;
+    if (!genAI) throw new Error('Gemini API key missing. Provide it in settings or set GEMINI_API_KEY in .env.');
 
-    const { model, temperature = 0.7, maxTokens = 2048 } = options;
-
-    const modelInstance = this.genAI.getGenerativeModel({
+    const modelInstance = genAI.getGenerativeModel({
       model: model || this.defaultModel,
       generationConfig: {
         temperature,
@@ -142,15 +137,12 @@ export class GeminiProviderPlugin implements IProviderPlugin {
     images: { data: string; mimeType: string }[],
     options?: CompletionOptions
   ): Promise<string> {
-    if (!this.genAI) {
-      throw new Error('Gemini provider not initialized');
-    }
-
     const { model, temperature = 0.7, maxTokens = 2048, apiKey } = options || {};
     const effectiveApiKey = apiKey || config.GEMINI_API_KEY;
 
     // Use a local client to avoid mutating this.genAI under concurrency
-    const genAI = effectiveApiKey ? new GoogleGenerativeAI(effectiveApiKey) : this.genAI!;
+    const genAI = effectiveApiKey ? new GoogleGenerativeAI(effectiveApiKey) : this.genAI;
+    if (!genAI) throw new Error('Gemini API key missing. Provide it in settings or set GEMINI_API_KEY in .env.');
 
     const modelInstance = genAI.getGenerativeModel({
       model: model || 'gemini-3-flash-preview',

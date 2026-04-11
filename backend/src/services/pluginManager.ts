@@ -67,9 +67,11 @@ export class PluginManager {
     
     try {
       const files = await fs.readdir(providerDir);
-      const jsFiles = files.filter(file => 
-        (file.endsWith('.js') || file.endsWith('.ts')) && 
-        !file.endsWith('.d.ts')
+      const jsFiles = files.filter(file =>
+        (file.endsWith('.js') || file.endsWith('.ts')) &&
+        !file.endsWith('.d.ts') &&
+        !file.endsWith('.test.ts') &&
+        !file.endsWith('.spec.ts')
       );
       
       await Promise.allSettled(
@@ -105,9 +107,11 @@ export class PluginManager {
     
     try {
       const files = await fs.readdir(toolDir);
-      const jsFiles = files.filter(file => 
-        (file.endsWith('.js') || file.endsWith('.ts')) && 
-        !file.endsWith('.d.ts')
+      const jsFiles = files.filter(file =>
+        (file.endsWith('.js') || file.endsWith('.ts')) &&
+        !file.endsWith('.d.ts') &&
+        !file.endsWith('.test.ts') &&
+        !file.endsWith('.spec.ts')
       );
       
       await Promise.allSettled(

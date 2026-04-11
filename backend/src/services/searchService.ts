@@ -35,32 +35,42 @@ export class SearchService {
 
     const offset = (page - 1) * 20;
 
-    const fetchEndpoint = async (endpoint: string, resultKey: string) => {
-      try {
-        const response = await axios.get(endpoint, {
-          params: {
-            q: query,
-            count: 20,
-            offset,
-          },
-          headers: {
-            'Accept': 'application/json',
-            'Accept-Encoding': 'gzip',
-            'X-Subscription-Token': config.BRAVE_SEARCH_API_KEY,
-          },
-          timeout: 8000,
-        });
-        const rawResults = response.data[resultKey]?.results || [];
-        return rawResults.map((r: any) => ({
-          title: r.title,
-          link: r.url,
-          snippet: r.description,
-          source: resultKey, // 'web' or 'news' — used for UI badges later
-        }));
-      } catch (error: any) {
-        console.warn(`[SearchService] ${resultKey} endpoint failed: ${error.message}`);
-        return [];
+    const fetchEndpoint = async (endpoint: string, resultKey: string, retries = 2) => {
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          const response = await axios.get(endpoint, {
+            params: {
+              q: query,
+              count: 20,
+              offset,
+            },
+            headers: {
+              'Accept': 'application/json',
+              'Accept-Encoding': 'gzip',
+              'X-Subscription-Token': config.BRAVE_SEARCH_API_KEY,
+            },
+            timeout: 8000,
+          });
+          const rawResults = response.data[resultKey]?.results || [];
+          return rawResults.map((r: any) => ({
+            title: r.title,
+            link: r.url,
+            snippet: r.description,
+            source: resultKey, // 'web' or 'news' — used for UI badges later
+          }));
+        } catch (error: any) {
+          const is429 = error?.response?.status === 429;
+          if (is429 && attempt < retries) {
+            const waitSec = parseInt(error?.response?.headers?.['retry-after'], 10) || (2 * (attempt + 1));
+            console.warn(`[SearchService] ${resultKey} 429 — retrying in ${waitSec}s (attempt ${attempt + 1}/${retries})`);
+            await new Promise(r => setTimeout(r, waitSec * 1000));
+            continue;
+          }
+          console.warn(`[SearchService] ${resultKey} endpoint failed: ${error.message}`);
+          return [];
+        }
       }
+      return [];
     };
 
     const [webResults, newsResults] = await Promise.all([
@@ -89,63 +99,69 @@ export class SearchService {
     };
   }
 
-  private async braveSearch(query: string, page: number = 1) {
+  private async braveSearch(query: string, page: number = 1, retries: number = 2) {
     const offset = (page - 1) * 20;
     const isNewsQuery = /news|latest|articles|headlines/i.test(query);
+    const endpoint = isNewsQuery
+      ? 'https://api.search.brave.com/res/v1/news/search'
+      : 'https://api.search.brave.com/res/v1/web/search';
 
-    try {
-      const endpoint = isNewsQuery
-        ? 'https://api.search.brave.com/res/v1/news/search'
-        : 'https://api.search.brave.com/res/v1/web/search';
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const response = await axios.get(endpoint, {
+          params: {
+            q: query,
+            count: 20,
+            offset,
+            result_filter: isNewsQuery ? undefined : 'web',
+          },
+          headers: {
+            'Accept': 'application/json',
+            'Accept-Encoding': 'gzip',
+            'X-Subscription-Token': config.BRAVE_SEARCH_API_KEY,
+          },
+          timeout: 8000,
+        });
 
-      const response = await axios.get(endpoint, {
-        params: {
-          q: query,
-          count: 20,
-          offset,
-          result_filter: isNewsQuery ? undefined : 'web',
-        },
-        headers: {
-          'Accept': 'application/json',
-          'Accept-Encoding': 'gzip',
-          'X-Subscription-Token': config.BRAVE_SEARCH_API_KEY,
+        console.log(`[SearchService] Brave (${isNewsQuery ? 'news' : 'web'}) responded with status: ${response.status}`);
+
+        const data = response.data;
+        const rawResults = isNewsQuery
+          ? (data.news?.results || [])
+          : (data.web?.results || []);
+
+        const results = rawResults.map((r: any) => ({
+          title: r.title,
+          link: r.url,
+          snippet: r.description,
+          position: r.index,
+        }));
+
+        let answerBox = null;
+        if (data.infobox) {
+          answerBox = {
+            title: data.infobox.title || query,
+            answer: data.infobox.long_desc || data.infobox.description,
+            snippet: data.infobox.description,
+          };
         }
-      });
 
-      console.log(`[SearchService] Brave (${isNewsQuery ? 'news' : 'web'}) responded with status: ${response.status}`);
+        const relatedSearches = (data.query?.related_queries || []).map((q: string) => ({ query: q }));
 
-      const data = response.data;
-
-      // Normalize Brave response to match our existing format
-      const rawResults = isNewsQuery
-        ? (data.news?.results || [])
-        : (data.web?.results || []);
-
-      const results = rawResults.map((r: any) => ({
-        title: r.title,
-        link: r.url,
-        snippet: r.description,
-        position: r.index,
-      }));
-
-      // Extract answer box from infobox or FAQ
-      let answerBox = null;
-      if (data.infobox) {
-        answerBox = {
-          title: data.infobox.title || query,
-          answer: data.infobox.long_desc || data.infobox.description,
-          snippet: data.infobox.description,
-        };
+        return { results, answerBox, relatedSearches };
+      } catch (error: any) {
+        const is429 = error?.response?.status === 429;
+        if (is429 && attempt < retries) {
+          const waitSec = parseInt(error?.response?.headers?.['retry-after'], 10) || (2 * (attempt + 1));
+          console.warn(`[SearchService] Brave 429 — retrying in ${waitSec}s (attempt ${attempt + 1}/${retries})`);
+          await new Promise(r => setTimeout(r, waitSec * 1000));
+          continue;
+        }
+        console.error('[SearchService] Brave Search Error:', error.response?.data || error.message);
+        throw new Error(`Brave search failed: ${error.message}`);
       }
-
-      // Extract related searches
-      const relatedSearches = (data.query?.related_queries || []).map((q: string) => ({ query: q }));
-
-      return { results, answerBox, relatedSearches };
-    } catch (error: any) {
-      console.error('[SearchService] Brave Search Error:', error.response?.data || error.message);
-      throw new Error(`Brave search failed: ${error.message}`);
     }
+    throw new Error('Brave search failed: max retries exceeded');
   }
 
   private async serperSearch(query: string, page: number = 1) {

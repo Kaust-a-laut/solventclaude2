@@ -40,17 +40,21 @@ class IntelligentSearchService {
         [
           {
             role: 'system',
-            content: `You are a search query optimizer. Rewrite the user's query to get better search results. Rules:
-- Keep it SHORT (under 8 words)
-- Do NOT add filler words or long keyword lists
-- Add ONE specific term if it helps focus the intent
-- If the query mentions "latest" or "news", keep those words
+            content: `You are a search query optimizer. Your job is to maximize search result quality. Rules:
+- If the query is already specific and well-formed, return it UNCHANGED
+- If the query is vague or casual, sharpen it with precise terms
+- Keep queries concise but don't sacrifice clarity for brevity — use as many words as needed
+- Preserve the user's intent: don't add topics they didn't ask about
+- If the query mentions "latest" or "news", keep those temporal signals
+- Add a year (2026) only if recency matters and isn't already specified
 - Return ONLY the query string, nothing else
 
 Examples:
 "ai stuff" → "latest AI breakthroughs 2026"
 "how does react work" → "React fundamentals tutorial"
-"new papers on transformers" → "transformer research papers 2026"`,
+"new papers on transformers" → "transformer research papers 2026"
+"TypeScript generic constraints for mapped types" → "TypeScript generic constraints for mapped types"
+"best practices for kubernetes horizontal pod autoscaling" → "best practices for kubernetes horizontal pod autoscaling"`,
           },
           { role: 'user', content: query },
         ],

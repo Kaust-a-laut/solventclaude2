@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import axios from 'axios';
 import { storageService } from '../services/storageService';
+import { modelAvailabilityService } from '../services/modelAvailabilityService';
 
 const router = Router();
 
@@ -64,6 +65,15 @@ router.get('/health', async (req: Request, res: Response) => {
 
 router.get('/ready', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ready', timestamp: new Date().toISOString() });
+});
+
+// Model availability for waterfall presets — scanned on startup
+router.get('/health/models', (req: Request, res: Response) => {
+  const scan = modelAvailabilityService.getLastScan();
+  if (!scan) {
+    return res.json({ status: 'pending', message: 'Scan not yet completed' });
+  }
+  res.json(scan);
 });
 
 export default router;

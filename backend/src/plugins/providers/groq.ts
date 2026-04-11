@@ -55,28 +55,21 @@ export class GroqProviderPlugin implements IProviderPlugin {
   private apiKey: string | null = null;
 
   async initialize(options: Record<string, any>): Promise<void> {
-    this.apiKey = options.apiKey || config.GROQ_API_KEY;
-    logger.info(`[Groq] Initialize called. Options keys: ${Object.keys(options).join(', ')}`);
-    logger.info(`[Groq] Config GROQ_API_KEY exists: ${!!config.GROQ_API_KEY}`);
-    logger.info(`[Groq] Final API key set: ${!!this.apiKey}`);
-    if (!this.apiKey) {
-      throw new Error('Groq API Key missing. Please provide it in settings or .env file.');
-    }
+    this.apiKey = options.apiKey || config.GROQ_API_KEY || null;
     this.isInitialized = true;
-    logger.info('[Groq] Provider initialized successfully');
+    logger.info(`[Groq] Provider initialized (API key present: ${!!this.apiKey})`);
   }
 
   isReady(): boolean {
-    return this.isInitialized && !!this.apiKey;
+    return this.isInitialized;
   }
 
   async complete(messages: ChatMessage[], options: CompletionOptions): Promise<string> {
-    if (!this.apiKey) {
-      throw new Error('Groq provider not initialized or API key missing');
-    }
-
     const { model, temperature = 0.7, maxTokens = 2048, apiKey, jsonMode } = options;
     const effectiveApiKey = apiKey || this.apiKey;
+    if (!effectiveApiKey) {
+      throw new Error('Groq API key missing. Provide it in settings or set GROQ_API_KEY in .env.');
+    }
 
     // Validate messages array
     if (!messages || messages.length === 0) {
@@ -157,10 +150,6 @@ export class GroqProviderPlugin implements IProviderPlugin {
   }
 
   async *stream(messages: ChatMessage[], options: CompletionOptions): AsyncGenerator<string> {
-    if (!this.apiKey) {
-      throw new Error('Groq provider not initialized or API key missing');
-    }
-
     // Validate messages array
     if (!messages || messages.length === 0) {
       throw new Error('Messages array is empty or undefined');
@@ -186,6 +175,9 @@ export class GroqProviderPlugin implements IProviderPlugin {
 
     const { model, temperature = 0.7, maxTokens = 2048, apiKey } = options;
     const effectiveApiKey = apiKey || this.apiKey;
+    if (!effectiveApiKey) {
+      throw new Error('Groq API key missing. Provide it in settings or set GROQ_API_KEY in .env.');
+    }
 
     const requestBody = {
       model: model || this.defaultModel,

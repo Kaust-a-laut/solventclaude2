@@ -37,6 +37,7 @@ import { SocketBatcher } from './lib/socketBatcher';
 import { SocketRateLimiter } from './utils/socketRateLimiter';
 import { codebaseIndexer } from './services/codebaseIndexer';
 import { vectorService } from './services/vectorService';
+import { modelAvailabilityService } from './services/modelAvailabilityService';
 
 // Timing-safe secret comparison to prevent timing attacks
 function safeCompare(a: string, b: string): boolean {
@@ -267,6 +268,7 @@ app.use((req, res, next) => {
     req.path === '/api/v1/health' ||
     req.path === '/api/v1/ready' ||
     req.path === '/api/v1/health/services' ||
+    req.path === '/api/v1/health/models' ||
     req.path === '/api/v1/models' ||
     (req.path === '/api/settings' && req.method === 'GET') ||
     req.path.match(/^\/api\/settings\/providers\/\w+\/validate-key$/);
@@ -371,6 +373,11 @@ async function startServer(): Promise<void> {
 
   // Codebase indexing disabled — Solvent should not index its own source code.
   // Indexing will be triggered on-demand when a user uploads/opens a project.
+
+  // Scan preset model availability in background (non-blocking)
+  modelAvailabilityService.scan().catch(err => {
+    logger.warn('[Server] Model availability scan failed:', err);
+  });
 }
 
 startServer().catch(error => {

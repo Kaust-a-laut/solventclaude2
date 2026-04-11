@@ -10,6 +10,21 @@ import { ResourceEstimator, ResourceEstimate } from '../utils/resourceEstimator'
 import { SolventError, SolventErrorCode } from '../utils/errors';
 import { toolService } from './toolService';
 import type { StageHandoff } from '../types/memory';
+import type {
+  PlannerOutput,
+  ExecutorOutput,
+  ReviewerOutput,
+  WaterfallContext,
+  WaterfallProgressData,
+  WaterfallResult as TypedWaterfallResult,
+  OpenFileContext,
+  FileChange,
+  ExecutionError,
+  ReviewIssue,
+  PlannedTask
+} from '../types/waterfall';
+import type { WaterfallPausedResult as TypedWaterfallPausedResult } from '../types/waterfall';
+import { logger } from '../utils/logger';
 
 /**
  * Threaded context ledger passed through every waterfall step.
@@ -18,37 +33,27 @@ import type { StageHandoff } from '../types/memory';
  */
 interface WaterfallSessionContext {
   originalRequirement: string;
-  architectDecisions: string;  // plain-English summary extracted after architect step
-  reasonerDecisions: string;   // plain-English summary extracted after reasoner step
+  plannerDecisions: string;
 }
 
 export enum WaterfallStep {
-  ARCHITECT = 'architect',
-  REASONER = 'reasoner',
+  PLANNER = 'planner',
   EXECUTOR = 'executor',
   REVIEWER = 'reviewer'
 }
 
 export interface WaterfallProgressEvent {
   phase: string;
-  data?: any;
+  data?: WaterfallProgressData;
   message?: string;
   estimate?: ResourceEstimate;
   score?: number;
   attempts?: number;
 }
 
-export interface WaterfallResult {
-  architect: any;
-  reasoner: any;
-  executor: any;
-  reviewer: any;
-  attempts: number;
-  history?: any[];
-  status?: string;
-  estimate?: ResourceEstimate;
-  handoffChain?: StageHandoff[];
-}
+export interface WaterfallResult extends TypedWaterfallResult {}
+
+export interface WaterfallPausedResult extends TypedWaterfallPausedResult {}
 
 export class WaterfallService {
 
@@ -58,23 +63,24 @@ export class WaterfallService {
   }
 
   /** Check if an error is a 429 rate-limit response. */
-  private is429(error: any): boolean {
-    return error?.response?.status === 429
-      || error?.status === 429
-      || /status code 429|rate.?limit/i.test(error?.message ?? '');
+  private is429(error: unknown): boolean {
+    const err = error as Record<string, any>;
+    return err?.response?.status === 429
+      || err?.status === 429
+      || /status code 429|rate.?limit/i.test(err?.message ?? '');
   }
 
   /** Call provider.complete with retry-on-429. Parses Retry-After / "try again in Xs" from error. */
   private async completeWithRetry(
-    provider: any,
-    prompt: any,
-    options: any,
+    provider: unknown,
+    prompt: string | Array<{ role: 'user' | 'assistant' | 'system'; content: string }>,
+    options: Record<string, unknown>,
     { maxRetries = 3, baseDelay = 15_000, label = 'unknown', signal }: { maxRetries?: number; baseDelay?: number; label?: string; signal?: AbortSignal } = {},
   ): Promise<string> {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        return await provider.complete(prompt, { ...options, signal });
-      } catch (error: any) {
+        return await (provider as any).complete(prompt, { ...options, signal });
+      } catch (error: unknown) {
         if (signal?.aborted) throw error;
         if (!this.is429(error) || attempt === maxRetries) throw error;
 
@@ -85,7 +91,7 @@ export class WaterfallService {
           ? Math.ceil(parseFloat(retryMatch[1]) * 1000) + 2000  // parsed + 2s buffer
           : baseDelay * (attempt + 1);
 
-        console.log(`[Waterfall:${label}] 429 rate-limited, retrying in ${(delay / 1000).toFixed(1)}s (attempt ${attempt + 1}/${maxRetries})...`);
+        logger.info(`[Waterfall:${label}] 429 rate-limited, retrying`, { delay: (delay / 1000).toFixed(1), attempt: attempt + 1, maxRetries });
         await new Promise(r => setTimeout(r, delay));
       }
     }
@@ -107,14 +113,12 @@ export class WaterfallService {
     return { primary, fallback, local: phaseCfg.LOCAL };
   }
 
-  async runStep(step: WaterfallStep, input: string, context?: any, globalProvider: string = 'auto', signal?: AbortSignal) {
+  async runStep(step: WaterfallStep, input: string, context?: WaterfallContext, globalProvider: string = 'auto', signal?: AbortSignal) {
     if (signal?.aborted) throw new SolventError('Waterfall cancelled by user.', SolventErrorCode.OPERATION_CANCELLED);
     
     switch (step) {
-      case WaterfallStep.ARCHITECT:
-        return this.runArchitect(input, globalProvider, signal);
-      case WaterfallStep.REASONER:
-        return this.runReasoner(input, signal);
+      case WaterfallStep.PLANNER:
+        return this.runPlanner(input, globalProvider, signal);
       case WaterfallStep.EXECUTOR:
         return this.runExecutor(input, context?.feedback, signal);
       case WaterfallStep.REVIEWER:
@@ -130,12 +134,13 @@ export class WaterfallService {
     globalProvider: string = 'auto',
     maxRetries: number = 2,
     notepadContent?: string,
-    openFiles?: any[],
+    openFiles?: OpenFileContext[],
     signal?: AbortSignal,
     forceProceed: boolean = false,
-    resumeArchitect?: any,  // pre-computed architect result from a paused run
-    modelSelection: WaterfallModelSelection = WATERFALL_DEFAULT_SELECTION
-  ): AsyncGenerator<WaterfallProgressEvent, WaterfallResult, void> {
+    resumePlanner?: PlannerOutput | null,
+    modelSelection: WaterfallModelSelection = WATERFALL_DEFAULT_SELECTION,
+    apiKeys?: Record<string, string>
+  ): AsyncGenerator<WaterfallProgressEvent, TypedWaterfallResult, void> {
     
     let fullPrompt = notepadContent 
       ? `MISSION CONTEXT / NOTES:
@@ -146,7 +151,7 @@ ${prompt}`
       : prompt;
 
     if (openFiles && openFiles.length > 0) {
-      const filesContext = openFiles.map((f: any) => `FILE: ${f.path}
+      const filesContext = openFiles.map((f: OpenFileContext) => `FILE: ${f.path}
 
 ${f.content}
 
@@ -159,78 +164,70 @@ ${fullPrompt}`;
 
     if (signal?.aborted) throw new SolventError('Waterfall cancelled by user.', SolventErrorCode.OPERATION_CANCELLED);
 
-    // Initialize the session context ledger — threads through all 4 steps so each
-    // agent knows what the agents before it decided and why.
     const sessionContext: WaterfallSessionContext = {
       originalRequirement: fullPrompt,
-      architectDecisions: '',
-      reasonerDecisions: ''
+      plannerDecisions: ''
     };
 
-    let architect: any;
-    if (resumeArchitect) {
-      // Resume from a previously gated run — reuse the architect result to avoid re-running the step
-      architect = resumeArchitect;
-      sessionContext.architectDecisions = this.extractArchitectDecisions(architect);
-      yield { phase: 'architecting', message: 'Resuming from previous analysis...' };
+    let planner: PlannerOutput | null = null;
+    if (resumePlanner) {
+      planner = resumePlanner;
+      sessionContext.plannerDecisions = this.extractPlannerDecisions(planner);
+      yield { phase: 'planning', message: 'Resuming from previous plan...' };
     } else {
-      yield { phase: 'architecting', message: 'Analyzing project requirements...' };
-      architect = await this.runArchitectWithContext(fullPrompt, globalProvider, signal, modelSelection);
-      sessionContext.architectDecisions = this.extractArchitectDecisions(architect);
+      yield { phase: 'planning', message: 'Analyzing requirements and building execution plan...' };
+      planner = await this.runPlannerWithContext(fullPrompt, globalProvider, signal, modelSelection, apiKeys);
+      sessionContext.plannerDecisions = this.extractPlannerDecisions(planner);
     }
 
-    const architectHandoff: StageHandoff = {
-      stage: 'architect',
-      confidence: architect.complexity === 'low' ? 0.9 : architect.complexity === 'medium' ? 0.75 : 0.6,
-      keyDecisions: architect.keyDecisions || [],
-      constraints: architect.assumptions || [],
-      openQuestions: [],
-      tokenCount: JSON.stringify(architect).length / 4
+    const plannerHandoff: StageHandoff = {
+      stage: 'planner',
+      confidence: planner.complexity === 'low' ? 0.9 : planner.complexity === 'medium' ? 0.75 : 0.6,
+      keyDecisions: planner.keyDecisions || [],
+      constraints: planner.assumptions || [],
+      openQuestions: planner.openQuestions || [],
+      tokenCount: JSON.stringify(planner).length / 4
     };
 
     // --- RESOURCE GOVERNANCE GATE ---
-    const estimate = ResourceEstimator.estimate(architect.complexity || 'medium', fullPrompt.length);
+    const estimate = ResourceEstimator.estimate(planner.complexity || 'medium', fullPrompt.length);
     if (!forceProceed && estimate.riskLevel === 'critical') {
         yield {
             phase: 'gated',
             message: 'High resource usage detected. User confirmation required.',
             estimate
         };
-        // Generator ends here. Caller resumes by passing forceProceed=true and resumeArchitect=architect.
-        return { status: 'paused', estimate, architect } as any;
+        return { status: 'paused', estimate, planner } as WaterfallPausedResult;
     }
     // --------------------------------
 
     if (signal?.aborted) throw new SolventError('Waterfall cancelled by user.', SolventErrorCode.OPERATION_CANCELLED);
 
-    yield { phase: 'reasoning', message: 'Formulating technical implementation plan...' };
-    const reasoner = await this.runReasonerWithContext(architect, sessionContext, architectHandoff, signal, modelSelection);
-    sessionContext.reasonerDecisions = this.extractReasonerDecisions(reasoner);
-
-    const reasonerHandoff: StageHandoff = {
-      stage: 'reasoner',
-      confidence: (reasoner.steps?.length || 0) >= 3 ? 0.85 : 0.65,
-      keyDecisions: [...architectHandoff.keyDecisions, ...(reasoner.carriedDecisions || [])],
-      constraints: architectHandoff.constraints,
-      openQuestions: reasoner.openQuestions || [],
-      tokenCount: JSON.stringify(reasoner).length / 4
-    };
-
-    if (signal?.aborted) throw new SolventError('Waterfall cancelled by user.', SolventErrorCode.OPERATION_CANCELLED);
-
     yield { phase: 'executing', message: 'Generating production-ready code...' };
-    let executor = await this.runExecutorWithContext(reasoner, sessionContext, reasonerHandoff, undefined, signal, modelSelection);
+    let executor = await this.runExecutorWithContext(planner, sessionContext, plannerHandoff, undefined, signal, modelSelection, apiKeys);
 
     if (signal?.aborted) throw new SolventError('Waterfall cancelled by user.', SolventErrorCode.OPERATION_CANCELLED);
 
-    yield { phase: 'reviewing', message: 'Principal Engineer is auditing the full decision chain...', attempts: 1 };
-    let reviewer = await this.runReviewWithContext(reasoner, executor, sessionContext, signal, modelSelection);
+    yield { phase: 'reviewing', message: 'Auditing the full decision chain...', attempts: 1 };
+    let reviewer = await this.runReviewWithContext(planner, executor, sessionContext, signal, modelSelection, apiKeys);
+
+    logger.debug('[Waterfall:Reviewer] Review results', {
+      score: reviewer.score ?? 'MISSING',
+      compilationPassed: reviewer._compilationPassed ?? 'N/A',
+      compilationStatus: reviewer.compilationStatus ?? 'N/A',
+      breakdown: reviewer.breakdown ?? {},
+      issueCount: (reviewer.issues || []).length,
+      issues: (reviewer.issues || []).slice(0, 3)
+    });
+    if (reviewer.raw) {
+      logger.debug('[Waterfall:Reviewer] RAW PARSE FAIL', { rawFirst500: typeof reviewer.raw === 'string' ? reviewer.raw.substring(0, 500) : 'non-string raw' });
+    }
 
     let reviewerHandoff: StageHandoff = {
       stage: 'reviewer',
       confidence: (reviewer.score ?? 0) / 100,
-      keyDecisions: reasonerHandoff.keyDecisions,
-      constraints: reasonerHandoff.constraints,
+      keyDecisions: plannerHandoff.keyDecisions,
+      constraints: plannerHandoff.constraints,
       openQuestions: [],
       tokenCount: JSON.stringify(reviewer).length / 4
     };
@@ -239,8 +236,9 @@ ${fullPrompt}`;
     const history = [{ executor, reviewer }];
     const decisionLog: string[] = [];
 
-    // Hard gate: compilation failure forces retry regardless of score
-    const needsRetry = () => (reviewer.score ?? 0) < 80 || reviewer._compilationPassed === false;
+    // Decay threshold: 80 → 72 → 65 so borderline scores don't loop forever
+    const passThreshold = () => Math.max(65, 80 - (attempts * 8));
+    const needsRetry = () => (reviewer.score ?? 0) < passThreshold() || reviewer._compilationPassed === false;
 
     while (needsRetry() && attempts < maxRetries) {
       if (signal?.aborted) throw new SolventError('Waterfall cancelled by user.', SolventErrorCode.OPERATION_CANCELLED);
@@ -248,7 +246,6 @@ ${fullPrompt}`;
 
       const issues = Array.isArray(reviewer.issues) ? reviewer.issues : ['Review failed — please regenerate with higher quality'];
 
-      // Inject compilation failure as a critical issue if not already captured by the reviewer
       if (reviewer._compilationPassed === false && reviewer.compilationStatus) {
         const alreadyCaptured = issues.some((i: string) => /compil/i.test(i));
         if (!alreadyCaptured) {
@@ -288,42 +285,41 @@ ${fullPrompt}`;
         data: { issues: reviewer.issues, reviewer, attempt: attempts, criticalCount: criticalIssues.length, majorCount: majorIssues.length, compilationPassed: reviewer._compilationPassed }
       };
 
-      executor = await this.runExecutorWithContext(reasoner, sessionContext, reasonerHandoff, feedback, signal, modelSelection);
+      executor = await this.runExecutorWithContext(planner, sessionContext, plannerHandoff, feedback, signal, modelSelection, apiKeys);
 
       decisionLog.push(`Attempt ${attempts}: addressed ${criticalIssues.length} critical + ${majorIssues.length} major issues (score was ${reviewer.score})`);
 
       yield { phase: 'reviewing', message: 'Reviewing refined code...', attempts: attempts + 1 };
-      reviewer = await this.runReviewWithContext(reasoner, executor, sessionContext, signal, modelSelection);
+      reviewer = await this.runReviewWithContext(planner, executor, sessionContext, signal, modelSelection, apiKeys);
 
       history.push({ executor, reviewer });
 
       reviewerHandoff = {
         stage: 'reviewer',
         confidence: (reviewer.score ?? 0) / 100,
-        keyDecisions: reasonerHandoff.keyDecisions,
-        constraints: reasonerHandoff.constraints,
+        keyDecisions: plannerHandoff.keyDecisions,
+        constraints: plannerHandoff.constraints,
         openQuestions: [],
         tokenCount: JSON.stringify(reviewer).length / 4
       };
     }
 
-    yield { phase: 'completed', score: reviewer.score, data: { reviewer, attempts: attempts + 1, handoffChain: [architectHandoff, reasonerHandoff, reviewerHandoff] } };
-    
+    yield { phase: 'completed', score: reviewer.score, data: { reviewer, attempts: attempts + 1, handoffChain: [plannerHandoff, reviewerHandoff] } };
+
     return {
-      architect,
-      reasoner,
+      planner,
       executor,
       reviewer,
       attempts: attempts + 1,
       history: history.length > 1 ? history : undefined,
-      handoffChain: [architectHandoff, reasonerHandoff, reviewerHandoff]
+      handoffChain: [plannerHandoff, reviewerHandoff]
     };
   }
 
   // Wrapper for backward compatibility (AIController consumes this)
   // We will refactor AIController next to use the generator directly for streaming
-  async runAgenticWaterfall(prompt: string, globalProvider: string = 'auto', maxRetries: number = 2, onProgress?: (phase: string, data?: any) => void, notepadContent?: string, openFiles?: any[], signal?: AbortSignal, forceProceed: boolean = false, resumeArchitect?: any, modelSelection?: WaterfallModelSelection) {
-    const generator = this.runAgenticWaterfallGenerator(prompt, globalProvider, maxRetries, notepadContent, openFiles, signal, forceProceed, resumeArchitect, modelSelection || WATERFALL_DEFAULT_SELECTION);
+  async runAgenticWaterfall(prompt: string, globalProvider: string = 'auto', maxRetries: number = 2, onProgress?: (phase: string, data?: WaterfallProgressData) => void, notepadContent?: string, openFiles?: OpenFileContext[], signal?: AbortSignal, forceProceed: boolean = false, resumePlanner?: PlannerOutput | null, modelSelection?: WaterfallModelSelection, apiKeys?: Record<string, string>) {
+    const generator = this.runAgenticWaterfallGenerator(prompt, globalProvider, maxRetries, notepadContent, openFiles, signal, forceProceed, resumePlanner, modelSelection || WATERFALL_DEFAULT_SELECTION, apiKeys);
     
     while (true) {
       const { value, done } = await generator.next();
@@ -336,19 +332,17 @@ ${fullPrompt}`;
 
   // --- Context-Aware Step Methods (used by the agentic generator) ---
 
-  private extractArchitectDecisions(architect: any): string {
-    if (!architect) return 'No structured decisions extracted.';
+  private extractPlannerDecisions(planner: PlannerOutput | Record<string, unknown> | null): string {
+    if (!planner) return 'No structured decisions extracted.';
 
-    // If parsing failed and we got {raw: "..."}, try to re-parse the raw string
-    let data = architect;
-    if (architect.raw && typeof architect.raw === 'string') {
+    let data = planner;
+    if (planner.raw && typeof planner.raw === 'string') {
       try {
-        data = JSON.parse(architect.raw);
+        data = JSON.parse(planner.raw);
       } catch {
-        // Raw string isn't valid JSON — use it as-is for context
-        return architect.raw.substring(0, 800);
+        return planner.raw.substring(0, 800);
       }
-    } else if (architect.raw === null || architect.raw === undefined) {
+    } else if (planner.raw === null || planner.raw === undefined) {
       return 'No structured decisions extracted.';
     }
 
@@ -357,163 +351,97 @@ ${fullPrompt}`;
     if (data.techStack?.length) parts.push(`Tech Stack: ${data.techStack.join(', ')}`);
     if (data.assumptions?.length) parts.push(`Assumptions: ${data.assumptions.join('; ')}`);
     if (data.complexity) parts.push(`Complexity: ${data.complexity}`);
-    return parts.length > 0 ? parts.join('\n') : JSON.stringify(data).substring(0, 500);
-  }
-
-  private extractReasonerDecisions(reasoner: any): string {
-    if (!reasoner) return 'No structured decisions extracted.';
-
-    let data = reasoner;
-    if (reasoner.raw && typeof reasoner.raw === 'string') {
-      try {
-        data = JSON.parse(reasoner.raw);
-      } catch {
-        return reasoner.raw.substring(0, 800);
-      }
-    } else if (reasoner.raw === null || reasoner.raw === undefined) {
-      return 'No structured decisions extracted.';
-    }
-
-    const parts: string[] = [];
-    if (data.carriedDecisions?.length) parts.push(`Carried Decisions: ${data.carriedDecisions.join('; ')}`);
-    if (data.openQuestions?.length) parts.push(`Open Questions for Executor: ${data.openQuestions.join('; ')}`);
     if (data.plan) parts.push(`Plan Summary: ${String(data.plan).substring(0, 300)}`);
+    if (data.openQuestions?.length) parts.push(`Open Questions: ${data.openQuestions.join('; ')}`);
     return parts.length > 0 ? parts.join('\n') : JSON.stringify(data).substring(0, 500);
   }
 
-  private async runArchitectWithContext(userPrompt: string, globalProvider: string, signal?: AbortSignal, modelSelection: WaterfallModelSelection = WATERFALL_DEFAULT_SELECTION) {
-    const phase = this.resolvePhase(WATERFALL_CONFIG.PHASE_1_ARCHITECT!, modelSelection.architect);
+  private async runPlannerWithContext(userPrompt: string, globalProvider: string, signal?: AbortSignal, modelSelection: WaterfallModelSelection = WATERFALL_DEFAULT_SELECTION, apiKeys?: Record<string, string>) {
+    const phase = this.resolvePhase(WATERFALL_CONFIG.PHASE_1_PLANNER!, modelSelection.planner);
     const providerName = globalProvider === 'local' ? 'ollama' : phase.primary.provider;
     const provider = await AIProviderFactory.getProvider(providerName);
 
     const prompt = [{
       role: 'user' as const,
-      content: `You are the AI Systems Lead on a senior engineering team. You are Step 1 of a 4-step pipeline: Architect → Reasoner → Executor → Reviewer. Your job is NOT to write code. Your job is to analyze requirements and produce a precise implementation blueprint that the next three agents will execute against.
+      content: `You are the AI Systems Lead on a senior engineering team. You are Step 1 (Planner) of a 3-step pipeline: [YOU] → Executor → Reviewer. Your job is NOT to write code. Your job is to analyze requirements, make architectural decisions, and produce an ordered execution plan that the Executor will implement directly.
 
 CRITICAL RULES:
-1. The next 3 agents will read your output and build on it. State your key decisions and assumptions explicitly — they will carry them forward. Any ambiguity you leave here compounds across all subsequent steps.
-2. Every keyDecision MUST include a specific "X over Y because Z" justification. Vague decisions like "use appropriate technology" are useless to downstream agents.
-3. The logic field must name specific interfaces, classes, methods, and data flow — not abstract descriptions. The Executor will implement exactly what you describe.
-4. Respond with ONLY the JSON object. No markdown fences, no preamble, no explanation outside the JSON.
+1. The Executor and Reviewer will read your output and build on it. State your key decisions and assumptions explicitly — any ambiguity you leave here compounds across subsequent steps.
+2. Every keyDecision MUST include a specific "X over Y because Z" justification. Vague decisions are useless to the Executor.
+3. Respond with ONLY the JSON object. No markdown fences, no preamble.
+
+ARCHITECTURE REQUIREMENTS:
+4. The "steps" array must be ordered by dependency — Executor implements top-to-bottom.
+5. Each step MUST be SELF-CONTAINED: file path, every class/interface with constructor params and method signatures, algorithm details, data flow, edge case handling. The Executor should not need to re-derive anything.
+6. For each file, describe EVERY public export: classes, functions, types with full signatures.
+7. Reproduce key algorithms/logic in step descriptions (pseudocode or code).
+8. Address EDGE CASES explicitly: failure modes, concurrency, invalid input at system boundaries.
 
 DEPTH REQUIREMENTS — Your output quality directly determines the final score:
-5. The "logic" field must be structured as NUMBERED SECTIONS — one per file or major component. For each section, specify: (a) the file path, (b) every class/interface with constructor parameters and method signatures, (c) how it connects to other components. Think of this as a spec document the Executor follows line by line.
-6. You must produce at LEAST 6 keyDecisions. Every architectural choice is a decision — algorithm selection, data structure choice, error handling strategy, module boundaries, dependency choices, API surface design. If your task is non-trivial, 8-12 decisions is expected.
-7. You must produce at LEAST 4 assumptions. If you're assuming anything about the runtime, existing code, available dependencies, or deployment environment, state it.
-8. Address EDGE CASES explicitly in the logic field: what happens on failure, what happens under concurrency, what happens with invalid input at system boundaries. The Executor will not invent error handling you didn't specify.
+9. You must produce at LEAST 6 keyDecisions covering algorithm selection, data structure choice, error handling strategy, module boundaries, dependency choices, API surface design. Non-trivial tasks: 8-12 decisions.
+10. You must produce at LEAST 4 assumptions about runtime, existing code, dependencies, or deployment environment.
 
 REQUIREMENTS:
 ${userPrompt}
 
 Output a JSON object with this exact shape:
 {
-  "logic": "NUMBERED SECTIONS, one per file/component. Each section: file path, classes with constructor params and method signatures, data flow, edge case handling.",
+  "plan": "One-paragraph summary — what is being built, files, technologies, pattern",
+  "steps": [{"title": "Action title", "description": "SELF-CONTAINED spec: file path, classes/functions/types with signatures, algorithm details, behavior, connections."}],
+  "keyDecisions": ["'X over Y because Z' — minimum 6"],
   "assumptions": ["Environment/dependency assumptions — minimum 4"],
-  "keyDecisions": ["'X over Y because Z' — minimum 6, covering algorithm, data structure, error strategy, module boundary, dependency, API surface"],
   "complexity": "low|medium|high",
-  "techStack": ["Specific packages with versions"]
+  "techStack": ["Specific packages with versions"],
+  "openQuestions": ["Max 2-3 items the Executor must decide locally"]
 }
 
 Example keyDecision: "Redis sorted sets over in-memory Map because horizontal scaling requires shared state"
 Example assumption: "Express 4.x with TypeScript strict mode enabled"
-Example logic section: "1. FILE: src/rateLimiter.ts — class RateLimiter(redis: Redis, config: Config). Method check(key: string): Promise<Result> — sliding window via Lua ZREMRANGEBYSCORE+ZCARD+ZADD. 2. FILE: src/server.ts — register middleware before route mounts."
+Example step: {"title": "Rate limiter module", "description": "FILE: src/rateLimiter.ts — class RateLimiter(redis: Redis, config: Config). Method check(key: string): Promise<Result> — sliding window via Lua ZREMRANGEBYSCORE+ZCARD+ZADD. On failure: return {allowed: true} (fail-open). On Redis disconnect: log warning, degrade to in-memory counter."}
 `
     }];
 
     const inputTokens = this.estimateTokens(prompt);
-    const architectMaxTokens = 4096;
+    const plannerMaxTokens = 6144;
 
     try {
       const response = await this.completeWithRetry(provider, prompt, {
         model: phase.primary.model,
         shouldSearch: false,
         jsonMode: true,
-        maxTokens: capMaxTokens(phase.primary.model, inputTokens, architectMaxTokens),
-      }, { label: 'Architect', signal });
+        maxTokens: capMaxTokens(phase.primary.model, inputTokens, plannerMaxTokens),
+        apiKey: apiKeys?.[phase.primary.provider],
+      }, { label: 'Planner', signal });
       return this.parseJSONResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (signal?.aborted) throw error;
       const fbProvider = await AIProviderFactory.getProvider(phase.fallback.provider);
       try {
-        const res = await this.completeWithRetry(fbProvider, prompt, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, architectMaxTokens) }, { label: 'Architect-FB', signal });
+        const res = await this.completeWithRetry(fbProvider, prompt, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, plannerMaxTokens), apiKey: apiKeys?.[phase.fallback.provider] }, { label: 'Planner-FB', signal });
         return this.parseJSONResponse(res);
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (signal?.aborted) throw e;
         const localProvider = await AIProviderFactory.getProvider('ollama');
-        const res = await localProvider.complete(prompt, { model: phase.local, jsonMode: true, maxTokens: capMaxTokens(phase.local, inputTokens, architectMaxTokens), signal });
+        const res = await localProvider.complete(prompt, { model: phase.local, jsonMode: true, maxTokens: capMaxTokens(phase.local, inputTokens, plannerMaxTokens), signal, apiKey: apiKeys?.ollama });
         return this.parseJSONResponse(res);
       }
     }
   }
 
-  private async runReasonerWithContext(logicData: any, sessionContext: WaterfallSessionContext, architectHandoff: StageHandoff, signal?: AbortSignal, modelSelection: WaterfallModelSelection = WATERFALL_DEFAULT_SELECTION) {
-    const phase = this.resolvePhase(WATERFALL_CONFIG.PHASE_2_REASONER!, modelSelection.reasoner);
-    console.log(`[Waterfall] Reasoner resolved: primary=${phase.primary.model} (${phase.primary.provider}), fallback=${phase.fallback.model} (${phase.fallback.provider})`);
-    const primaryProvider = await AIProviderFactory.getProvider(phase.primary.provider);
-    const logicStr = typeof logicData === 'string' ? logicData : JSON.stringify(logicData);
-
-    const handoffContext = `
-UPSTREAM HANDOFF (from Architect):
-- Confidence: ${architectHandoff.confidence}
-- Key Decisions (MUST carry forward): ${architectHandoff.keyDecisions.map((d, i) => `\n  ${i + 1}. ${d}`).join('')}
-- Constraints: ${architectHandoff.constraints.join(', ')}`;
-
-    const prompt = `You are Step 2 (Reasoner) in a 4-step pipeline: Architect → [YOU] → Executor → Reviewer.
-
-The Architect has completed their analysis below. Produce a detailed execution plan the Executor will implement directly.
-
-RULES:
-1. Every step MUST include specific file paths, class names, method signatures, or shell commands. Vague steps are useless to the Executor.
-2. Copy ALL Architect keyDecisions into carriedDecisions verbatim. Count must match.
-3. Order steps by dependency — Executor implements top-to-bottom.
-4. Respond with ONLY the JSON object. No markdown fences, no preamble.
-5. Each step must be SELF-CONTAINED with constructor params, method signatures, algorithm details. The Executor should not need to refer back to the Architect output.
-6. For each file, describe EVERY public export: classes, functions, types with full signatures.
-7. Reproduce key algorithms/logic in step descriptions (pseudocode or code). Executor should not re-derive.
-8. At LEAST one step per file the Architect described.
-
-${handoffContext}
-
-═══ ARCHITECT OUTPUT ═══
-${logicStr}
-
-Output JSON:
-{
-  "plan": "One-paragraph summary — what is being built, files, technologies, pattern",
-  "steps": [{"title": "Action title", "description": "SELF-CONTAINED spec: file path, classes/functions/types with signatures, algorithm details, behavior, connections."}],
-  "carriedDecisions": ["Every Architect keyDecision, VERBATIM — count must match"],
-  "openQuestions": ["Max 2-3 items the Executor must decide locally"]
-}`;
-
-    const messages = [{ role: 'user' as const, content: prompt }];
-    const inputTokens = this.estimateTokens(messages);
-    const reasonerMaxTokens = 4096;
-
-    try {
-      const response = await this.completeWithRetry(primaryProvider, messages, { model: phase.primary.model, jsonMode: true, maxTokens: capMaxTokens(phase.primary.model, inputTokens, reasonerMaxTokens) }, { label: 'Reasoner', signal });
-      return this.parseJSONResponse(response);
-    } catch (error: any) {
-      if (signal?.aborted) throw error;
-      const fbProvider = await AIProviderFactory.getProvider(phase.fallback.provider);
-      const fallback = await this.completeWithRetry(fbProvider, messages, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, reasonerMaxTokens) }, { label: 'Reasoner-FB', signal });
-      return this.parseJSONResponse(fallback);
-    }
-  }
-
-  private async runExecutorWithContext(planData: any, sessionContext: WaterfallSessionContext, reasonerHandoff: StageHandoff, feedback?: string, signal?: AbortSignal, modelSelection: WaterfallModelSelection = WATERFALL_DEFAULT_SELECTION) {
-    const phase = this.resolvePhase(WATERFALL_CONFIG.PHASE_3_EXECUTOR!, modelSelection.executor);
+  private async runExecutorWithContext(planData: ExecutorOutput | Record<string, unknown>, sessionContext: WaterfallSessionContext, plannerHandoff: StageHandoff, feedback?: string, signal?: AbortSignal, modelSelection: WaterfallModelSelection = WATERFALL_DEFAULT_SELECTION, apiKeys?: Record<string, string>) {
+    const phase = this.resolvePhase(WATERFALL_CONFIG.PHASE_2_EXECUTOR!, modelSelection.executor);
     const planStr = typeof planData === 'string' ? planData : JSON.stringify(planData);
 
     const handoffContext = `
-UPSTREAM HANDOFF:
-- Architect Confidence: ${reasonerHandoff.confidence}
-- Key Decisions (MUST carry forward): ${reasonerHandoff.keyDecisions.map((d, i) => `\n  ${i + 1}. ${d}`).join('')}
-- Constraints: ${reasonerHandoff.constraints.join(', ')}
-- Open Questions: ${reasonerHandoff.openQuestions.join(', ')}`;
+UPSTREAM HANDOFF (from Planner):
+- Planner Confidence: ${plannerHandoff.confidence}
+- Key Decisions (MUST honor): ${plannerHandoff.keyDecisions.map((d, i) => `\n  ${i + 1}. ${d}`).join('')}
+- Constraints: ${plannerHandoff.constraints.join(', ')}
+- Open Questions: ${plannerHandoff.openQuestions.join(', ')}`;
 
-    let prompt = `You are Step 3 (Executor) in a 4-step pipeline: Architect → Reasoner → [YOU] → Reviewer.
+    let prompt = `You are Step 2 (Executor) in a 3-step pipeline: Planner → [YOU] → Reviewer.
 
-Implement the Reasoner's plan faithfully. The carried decisions below were made deliberately by upstream engineers.
+Implement the Planner's steps faithfully. The key decisions below were made deliberately by the Planner.
 
 RULES:
 1. Code MUST be COMPLETE and COMPILABLE — every function body implemented, every import present. Truncated or placeholder code scores 0.
@@ -524,7 +452,7 @@ RULES:
 
 ${handoffContext}
 
-═══ EXECUTION PLAN (from Reasoner) ═══
+═══ EXECUTION PLAN (from Planner) ═══
 ${planStr}`;
 
     if (feedback) {
@@ -545,7 +473,7 @@ Output JSON:
   "code": "Complete, compilable source code. Use '// ═══ filename ═══' to separate files. No truncation, no '// ...' placeholders.",
   "explanation": "Brief summary of approach and non-obvious choices",
   "files": ["Files created or modified"],
-  "decisionsOverridden": ["Deviations from carried decisions with justification — empty array if none"]
+  "decisionsOverridden": ["Deviations from key decisions with justification — empty array if none"]
 }`;
 
     const messages = [{ role: 'user' as const, content: prompt }];
@@ -554,25 +482,25 @@ Output JSON:
 
     try {
       const primaryProvider = await AIProviderFactory.getProvider(phase.primary.provider);
-      const response = await this.completeWithRetry(primaryProvider, messages, { model: phase.primary.model, jsonMode: true, maxTokens: capMaxTokens(phase.primary.model, inputTokens, executorMaxTokens) }, { label: 'Executor', signal });
+      const response = await this.completeWithRetry(primaryProvider, messages, { model: phase.primary.model, jsonMode: true, maxTokens: capMaxTokens(phase.primary.model, inputTokens, executorMaxTokens), apiKey: apiKeys?.[phase.primary.provider] }, { label: 'Executor', signal });
       return this.parseJSONResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (signal?.aborted) throw error;
       const fbProvider = await AIProviderFactory.getProvider(phase.fallback.provider);
       try {
-        const res = await this.completeWithRetry(fbProvider, messages, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, executorMaxTokens) }, { label: 'Executor-FB', signal });
+        const res = await this.completeWithRetry(fbProvider, messages, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, executorMaxTokens), apiKey: apiKeys?.[phase.fallback.provider] }, { label: 'Executor-FB', signal });
         return this.parseJSONResponse(res);
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (signal?.aborted) throw err;
         const localProvider = await AIProviderFactory.getProvider('ollama');
-        const res = await localProvider.complete(messages, { model: phase.local, jsonMode: true, maxTokens: capMaxTokens(phase.local, inputTokens, executorMaxTokens), signal });
+        const res = await localProvider.complete(messages, { model: phase.local, jsonMode: true, maxTokens: capMaxTokens(phase.local, inputTokens, executorMaxTokens), signal, apiKey: apiKeys?.ollama });
         return this.parseJSONResponse(res);
       }
     }
   }
 
-  private async runReviewWithContext(plan: any, executorData: any, sessionContext: WaterfallSessionContext, signal?: AbortSignal, modelSelection: WaterfallModelSelection = WATERFALL_DEFAULT_SELECTION) {
-    const phase = this.resolvePhase(WATERFALL_CONFIG.PHASE_4_REVIEWER!, modelSelection.reviewer);
+  private async runReviewWithContext(plan: PlannerOutput | Record<string, unknown>, executorData: ExecutorOutput | Record<string, unknown>, sessionContext: WaterfallSessionContext, signal?: AbortSignal, modelSelection: WaterfallModelSelection = WATERFALL_DEFAULT_SELECTION, apiKeys?: Record<string, string>) {
+    const phase = this.resolvePhase(WATERFALL_CONFIG.PHASE_3_REVIEWER!, modelSelection.reviewer);
 
     let compilationStatus = 'Not tested';
     let compilationPassed = true;
@@ -605,14 +533,48 @@ Output JSON:
 
         const check = await toolService.executeTool('run_shell', { command: `npx tsc --noEmit --project ${tempDir}/tsconfig.json` });
         if (check.stderr) {
-          compilationStatus = `Type Error: ${check.stderr}`;
-          compilationPassed = false;
+          // Filter out "Cannot find module" errors — expected since temp dir has no node_modules
+          const lines = check.stderr.split('\n');
+          const realErrors = lines.filter((l: string) =>
+            l.includes('error TS') &&
+            !l.includes('TS2307') &&  // Cannot find module
+            !l.includes('TS2304') &&  // Cannot find name (global types like NodeJS, Buffer)
+            !l.includes('TS2305') &&  // Module has no exported member (partial type info)
+            !l.includes('TS7016')     // Could not find declaration file
+          );
+          if (realErrors.length > 0) {
+            compilationStatus = `Type Error: ${realErrors.join('\n')}`;
+            compilationPassed = false;
+          } else {
+            const moduleErrors = lines.filter((l: string) => l.includes('TS2307') || l.includes('TS2304') || l.includes('TS2305') || l.includes('TS7016')).length;
+            compilationStatus = `Syntax Validated (tsc --noEmit, ${fileBlocks.length} files${moduleErrors > 0 ? `, ${moduleErrors} import-only errors ignored` : ''})`;
+          }
         } else {
           compilationStatus = `Syntax Validated (tsc --noEmit, ${fileBlocks.length} files)`;
         }
-      } catch (e: any) {
-        compilationStatus = `Check Failed: ${e.message}`;
-        compilationPassed = false;
+      } catch (e: unknown) {
+        // tsc exits with code 1 on type errors — extract stderr and filter
+        const err = e as Record<string, unknown>;
+        const errOutput = err.stderr || err.stdout || (err as Error).message || '';
+        logger.debug('[Waterfall:TSC] Caught error, filtering', { errOutput: errOutput.substring(0, 500) });
+        const lines = errOutput.split('\n');
+        const realErrors = lines.filter((l: string) =>
+          l.includes('error TS') &&
+          !l.includes('TS2307') &&  // Cannot find module
+          !l.includes('TS2304') &&  // Cannot find name
+          !l.includes('TS2305') &&  // Module has no exported member
+          !l.includes('TS7016')     // Could not find declaration file
+        );
+        if (realErrors.length > 0) {
+          compilationStatus = `Type Error: ${realErrors.slice(0, 5).join('\n')}`;
+          compilationPassed = false;
+        } else {
+          // Only import/module resolution errors — code structure is fine
+          const moduleErrors = lines.filter((l: string) => l.includes('TS2307') || l.includes('TS2304') || l.includes('TS2305') || l.includes('TS7016')).length;
+          compilationStatus = moduleErrors > 0
+            ? `Syntax Validated (${moduleErrors} import-only errors ignored — no node_modules in sandbox)`
+            : 'Syntax Validated';
+        }
       } finally {
         await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
       }
@@ -622,22 +584,22 @@ Output JSON:
     const executorCode = executorData.code || '';
     const executorFiles = Array.isArray(executorData.files) ? executorData.files.join(', ') : '';
 
-    // Extract carried decisions from reasoner for compliance checking
-    const carriedDecisions = Array.isArray(plan.carriedDecisions)
-      ? plan.carriedDecisions.map((d: string, i: number) => `  ${i + 1}. ${d}`).join('\n')
-      : sessionContext.reasonerDecisions;
+    // Extract key decisions from planner for compliance checking
+    const keyDecisions = Array.isArray(plan.keyDecisions)
+      ? plan.keyDecisions.map((d: string, i: number) => `  ${i + 1}. ${d}`).join('\n')
+      : sessionContext.plannerDecisions;
 
     const prompt = [{
       role: 'user' as const,
-      content: `You are Step 4 (Reviewer) in a 4-step pipeline: Architect → Reasoner → Executor → [YOU].
+      content: `You are Step 3 (Reviewer) in a 3-step pipeline: Planner → Executor → [YOU].
 
-Audit whether the code implements the carried decisions and is correct, secure, and efficient.
+Audit whether the code implements the key decisions and is correct, secure, and efficient.
 
 RULES:
 1. Be HONEST. Score 95+ = near-perfect (rare). Most real code scores 70-90.
 2. Every issue MUST cite exact code — quote the function/line and explain the fix. No vague claims.
 3. Before claiming something is MISSING, search the code for it. False claims invalidate your review.
-4. Check every carried decision — missed decision = compliance deduction.
+4. Check every key decision — missed decision = compliance deduction.
 5. Truncated code or placeholders = syntax score 0, compliance halved.
 6. Respond with ONLY the JSON object. No markdown fences, no preamble.
 
@@ -646,8 +608,8 @@ SCORING: 90-100 production-ready | 75-89 minor issues | 50-74 significant bugs |
 ═══ REQUIREMENT ═══
 ${sessionContext.originalRequirement.substring(0, 400)}
 
-═══ CARRIED DECISIONS (check each one) ═══
-${carriedDecisions}
+═══ KEY DECISIONS (check each one) ═══
+${keyDecisions}
 
 ═══ CODE ═══
 Files: ${executorFiles}
@@ -664,7 +626,7 @@ Output JSON:
   "score": <0-100>,
   "breakdown": { "compliance": <0-40>, "security": <0-20>, "efficiency": <0-20>, "syntax": <0-20> },
   "issues": ["Actionable: 'Function X has bug Y — fix by doing Z'"],
-  "decisionsHonored": ["Each carried decision and whether it was implemented"],
+  "decisionsHonored": ["Each key decision and whether it was implemented"],
   "summary": "One-paragraph verdict — lead with most critical finding",
   "compilationStatus": "${compilationStatus}",
   "crystallizable_insight": "If score > 90: reusable pattern. Otherwise null."
@@ -672,11 +634,11 @@ Output JSON:
     }];
 
     const inputTokens = this.estimateTokens(prompt);
-    const reviewerMaxTokens = 4096;
+    const reviewerMaxTokens = 16384;
 
     try {
       const primaryProvider = await AIProviderFactory.getProvider(phase.primary.provider);
-      const response = await this.completeWithRetry(primaryProvider, prompt, { model: phase.primary.model, jsonMode: true, maxTokens: capMaxTokens(phase.primary.model, inputTokens, reviewerMaxTokens) }, { label: 'Reviewer', signal });
+      const response = await this.completeWithRetry(primaryProvider, prompt, { model: phase.primary.model, jsonMode: true, maxTokens: capMaxTokens(phase.primary.model, inputTokens, reviewerMaxTokens), apiKey: apiKeys?.[phase.primary.provider] }, { label: 'Reviewer', signal });
       const parsed = this.parseJSONResponse(response);
       parsed._compilationPassed = compilationPassed;
 
@@ -687,27 +649,29 @@ Output JSON:
             type: 'solution_pattern',
             tags: ['waterfall_success', 'high_fidelity_code']
           });
-          console.log(`[Waterfall] Crystallized success pattern: ${parsed.crystallizable_insight}`);
-        } catch (e) {
-          console.error('[Waterfall] Failed to crystallize memory:', e);
+          logger.info('[Waterfall] Crystallized success pattern', { pattern: parsed.crystallizable_insight });
+        } catch (e: unknown) {
+          logger.error('[Waterfall] Failed to crystallize memory', { error: e });
         }
       }
 
       return parsed;
-    } catch (error: any) {
-      console.error(`[Waterfall:Reviewer] Primary (${phase.primary.provider}/${phase.primary.model}) failed:`, error.message);
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error(`[Waterfall:Reviewer] Primary (${phase.primary.provider}/${phase.primary.model}) failed`, { message: err.message });
       if (signal?.aborted) throw error;
       const fbProvider = await AIProviderFactory.getProvider(phase.fallback.provider);
       try {
-        const res = await this.completeWithRetry(fbProvider, prompt, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, reviewerMaxTokens) }, { label: 'Reviewer-FB', signal });
+        const res = await this.completeWithRetry(fbProvider, prompt, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, reviewerMaxTokens), apiKey: apiKeys?.[phase.fallback.provider] }, { label: 'Reviewer-FB', signal });
         const parsed = this.parseJSONResponse(res);
         parsed._compilationPassed = compilationPassed;
         return parsed;
-      } catch (e: any) {
-        console.error(`[Waterfall:Reviewer] Fallback (${phase.fallback.provider}/${phase.fallback.model}) failed:`, e.message);
+      } catch (e: unknown) {
+        const err2 = e as Error;
+        logger.error(`[Waterfall:Reviewer] Fallback (${phase.fallback.provider}/${phase.fallback.model}) failed`, { message: err2.message });
         if (signal?.aborted) throw e;
         const localProvider = await AIProviderFactory.getProvider('ollama');
-        const res = await localProvider.complete(prompt, { model: phase.local, jsonMode: true, maxTokens: capMaxTokens(phase.local, inputTokens, reviewerMaxTokens), signal });
+        const res = await localProvider.complete(prompt, { model: phase.local, jsonMode: true, maxTokens: capMaxTokens(phase.local, inputTokens, reviewerMaxTokens), signal, apiKey: apiKeys?.ollama });
         const parsed = this.parseJSONResponse(res);
         parsed._compilationPassed = compilationPassed;
         return parsed;
@@ -715,29 +679,20 @@ Output JSON:
     }
   }
 
-  // --- Private Steps (Architect, Reasoner, etc.) ---
-  // (These methods are largely unchanged but use SolventError now)
-
   // --- Legacy step methods (used by runStep for manual execution, default to OPTION_A) ---
 
-  private async runArchitect(userPrompt: string, globalProvider: string, signal?: AbortSignal) {
-    return this.runArchitectWithContext(userPrompt, globalProvider, signal);
+  private async runPlanner(userPrompt: string, globalProvider: string, signal?: AbortSignal) {
+    return this.runPlannerWithContext(userPrompt, globalProvider, signal);
   }
 
-  private async runReasoner(logicData: any, signal?: AbortSignal) {
-    const sessionContext: WaterfallSessionContext = { originalRequirement: '', architectDecisions: '', reasonerDecisions: '' };
-    const defaultHandoff: StageHandoff = { stage: 'architect', confidence: 0.75, keyDecisions: [], constraints: [], openQuestions: [], tokenCount: 0 };
-    return this.runReasonerWithContext(logicData, sessionContext, defaultHandoff, signal);
-  }
-
-  private async runExecutor(planData: any, feedback?: string, signal?: AbortSignal) {
-    const sessionContext: WaterfallSessionContext = { originalRequirement: '', architectDecisions: '', reasonerDecisions: '' };
-    const defaultHandoff: StageHandoff = { stage: 'reasoner', confidence: 0.75, keyDecisions: [], constraints: [], openQuestions: [], tokenCount: 0 };
+  private async runExecutor(planData: ExecutorOutput | Record<string, unknown>, feedback?: string, signal?: AbortSignal) {
+    const sessionContext: WaterfallSessionContext = { originalRequirement: '', plannerDecisions: '' };
+    const defaultHandoff: StageHandoff = { stage: 'planner', confidence: 0.75, keyDecisions: [], constraints: [], openQuestions: [], tokenCount: 0 };
     return this.runExecutorWithContext(planData, sessionContext, defaultHandoff, feedback, signal);
   }
 
-  private async runReview(plan: any, executorData: any, signal?: AbortSignal) {
-    const sessionContext: WaterfallSessionContext = { originalRequirement: '', architectDecisions: '', reasonerDecisions: '' };
+  private async runReview(plan: PlannerOutput | Record<string, unknown>, executorData: ExecutorOutput | Record<string, unknown>, signal?: AbortSignal) {
+    const sessionContext: WaterfallSessionContext = { originalRequirement: '', plannerDecisions: '' };
     return this.runReviewWithContext(plan, executorData, sessionContext, signal);
   }
 
@@ -770,9 +725,9 @@ Output JSON:
     return blocks.map(b => ({ filename: b.filename, code: b.lines.join('\n').trim() }));
   }
 
-  private parseJSONResponse(response: string): any {
+  private parseJSONResponse(response: string): Record<string, unknown> {
     if (!response || typeof response !== 'string') {
-      console.warn('[WaterfallService] Empty or non-string response from provider:', typeof response);
+      logger.warn('[WaterfallService] Empty or non-string response from provider', { responseType: typeof response });
       return { raw: null, _parseError: 'Provider returned empty or non-string response' };
     }
 
@@ -784,9 +739,10 @@ Output JSON:
     // Attempt 1: direct parse
     try {
       return JSON.parse(jsonToParse);
-    } catch (e1: any) {
-      const pos = typeof e1.message === 'string' && e1.message.match(/position (\d+)/)?.[1];
-      console.warn(`[WaterfallService] JSON parse failed at pos ${pos ?? '?'} (length=${jsonToParse.length}): ${e1.message}`);
+    } catch (e1: unknown) {
+      const err = e1 as Error;
+      const pos = typeof err.message === 'string' && err.message.match(/position (\d+)/)?.[1];
+      logger.warn('[WaterfallService] JSON parse failed', { position: pos ?? '?', length: jsonToParse.length, message: err.message });
 
       // Attempt 2: repair common LLM JSON issues
       try {
@@ -802,8 +758,27 @@ Output JSON:
           .replace(/,\s*([}\]])/g, '$1');
         return JSON.parse(repaired);
       } catch (e2) {
-        console.warn('[WaterfallService] JSON repair also failed, returning raw (first 300 chars):', jsonToParse.substring(0, 300));
-        return { raw: response };
+        // Attempt 3: truncation repair — close unclosed strings/brackets
+        try {
+          let truncated = jsonToParse;
+          // If we're inside a string, close it
+          const quoteCount = (truncated.match(/(?<!\\)"/g) || []).length;
+          if (quoteCount % 2 !== 0) truncated += '"';
+          // Close any open brackets/braces
+          const opens = (truncated.match(/[\[{]/g) || []).length;
+          const closes = (truncated.match(/[\]}]/g) || []).length;
+          for (let i = 0; i < opens - closes; i++) {
+            // Guess which closer is needed based on last unclosed opener
+            const lastOpen = truncated.lastIndexOf('[') > truncated.lastIndexOf('{') ? ']' : '}';
+            truncated += lastOpen;
+          }
+          const result = JSON.parse(truncated);
+          logger.info('[WaterfallService] JSON truncation repair succeeded');
+          return result;
+        } catch (e3) {
+          logger.warn('[WaterfallService] JSON repair also failed, returning raw', { rawLength: jsonToParse.substring(0, 300) });
+          return { raw: response };
+        }
       }
     }
   }

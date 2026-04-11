@@ -45,6 +45,11 @@ const PROVIDER_ENDPOINTS: Record<string, { url: string; keyEnv: string; parseMod
     keyEnv: 'CEREBRAS_API_KEY',
     parseModels: (data) => (data.data || []).map((m: any) => m.id),
   },
+  fireworks: {
+    url: 'https://api.fireworks.ai/inference/v1/models',
+    keyEnv: 'FIREWORKS_API_KEY',
+    parseModels: (data) => (data.data || []).map((m: any) => m.id),
+  },
 };
 
 class ModelAvailabilityService {
@@ -59,7 +64,7 @@ class ModelAvailabilityService {
 
     for (const [presetKey, preset] of Object.entries(WATERFALL_PRESETS)) {
       const sel = preset.selection;
-      for (const phase of ['architect', 'reasoner', 'executor', 'reviewer'] as const) {
+      for (const phase of ['planner', 'executor', 'reviewer'] as const) {
         const choice = sel[phase];
         if (typeof choice === 'object') {
           const key = `${choice.provider}/${choice.model}`;

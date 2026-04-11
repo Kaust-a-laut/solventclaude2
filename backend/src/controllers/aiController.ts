@@ -69,8 +69,7 @@ const phaseSelectionSchema = z.union([
 ]);
 
 const modelSelectionSchema = z.object({
-  architect: phaseSelectionSchema,
-  reasoner: phaseSelectionSchema,
+  planner: phaseSelectionSchema,
   executor: phaseSelectionSchema,
   reviewer: phaseSelectionSchema,
 }).optional();
@@ -82,10 +81,11 @@ const waterfallRequestSchema = z.object({
   openFiles: z.array(z.object({ path: z.string(), content: z.string() })).optional(),
   forceProceed: z.boolean().optional(),
   modelSelection: modelSelectionSchema,
+  apiKeys: z.record(z.string()).optional(),
 });
 
 const waterfallStepRequestSchema = z.object({
-  step: z.enum([WaterfallStep.ARCHITECT, WaterfallStep.REASONER, WaterfallStep.EXECUTOR, WaterfallStep.REVIEWER]),
+  step: z.enum([WaterfallStep.PLANNER, WaterfallStep.EXECUTOR, WaterfallStep.REVIEWER]),
   input: z.string(),
   context: z.record(z.unknown()).nullable().optional(),
   globalProvider: z.string().optional()
@@ -193,7 +193,7 @@ export class AIController {
         return;
       }
       
-      const { prompt, globalProvider, notepadContent, openFiles, forceProceed, modelSelection } = parseResult.data;
+      const { prompt, globalProvider, notepadContent, openFiles, forceProceed, modelSelection, apiKeys } = parseResult.data;
 
       const result = await aiService.runAgenticWaterfall(
         prompt,
@@ -209,7 +209,8 @@ export class AIController {
         controller.signal,
         forceProceed,
         undefined,
-        modelSelection
+        modelSelection,
+        apiKeys
       );
 
       if (!controller.signal.aborted) {
@@ -236,7 +237,7 @@ export class AIController {
         });
       }
       const { step, input, context, globalProvider } = parseResult.data;
-      const result = await aiService.runWaterfallStep(step, input, context, globalProvider);
+      const result = await aiService.runWaterfallStep(step as WaterfallStep, input, context, globalProvider);
       res.json(result);
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));
