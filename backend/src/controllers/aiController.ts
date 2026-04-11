@@ -237,7 +237,7 @@ export class AIController {
         });
       }
       const { step, input, context, globalProvider } = parseResult.data;
-      const result = await aiService.runWaterfallStep(step as WaterfallStep, input, context, globalProvider);
+      const result = await aiService.runWaterfallStep(step as WaterfallStep, input, (context ?? undefined) as import('../types/waterfall').WaterfallContext | undefined, globalProvider);
       res.json(result);
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));

@@ -313,9 +313,10 @@ export class MemoryConsolidationService {
           logger.info(`[Memory] Dual-Output Amnesia Cycle complete via ${providerInfo.name}.`);
           return result;
 
-        } catch (err: any) {
+        } catch (err: unknown) {
+          const error = err as Error;
           attempts++;
-          const isRateLimit = err.message.includes('429') || err.message.includes('quota');
+          const isRateLimit = error.message.includes('429') || error.message.includes('quota');
           
           if (isRateLimit && attempts < maxProviderAttempts) {
             const delay = 2000 * attempts;
@@ -324,7 +325,7 @@ export class MemoryConsolidationService {
             continue;
           }
 
-          logger.warn(`[Memory] Amnesia Cycle failed with ${providerInfo.name}: ${err.message}`);
+          logger.warn(`[Memory] Amnesia Cycle failed with ${providerInfo.name}: ${error.message}`);
           break; // Switch to next provider
         }
       }

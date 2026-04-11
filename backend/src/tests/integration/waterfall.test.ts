@@ -87,9 +87,9 @@ describe('WaterfallService Integration (Mocked AI)', () => {
     expect(result.reviewer).toBeDefined();
 
     // Verify Content
-    expect(result.planner.complexity).toBe('low');
-    expect(result.executor.code).toContain('Hello Integration');
-    expect(result.reviewer.score).toBe(95);
+    expect(result.planner!.complexity).toBe('low');
+    expect((result.executor as { code?: string })!.code).toContain('Hello Integration');
+    expect((result.reviewer as { score?: number })!.score).toBe(95);
 
     // Verify interactions
     expect(mockProvider.complete).toHaveBeenCalledTimes(3); // Planner, Executor, Reviewer
@@ -121,6 +121,6 @@ describe('WaterfallService Integration (Mocked AI)', () => {
     expect(result.attempts).toBe(2);
     expect(result.history).toBeDefined();
     expect(result.history?.length).toBe(2);
-    expect(result.reviewer.score).toBe(90);
+    expect((result.reviewer as { score?: number })!.score).toBe(90);
   });
 });

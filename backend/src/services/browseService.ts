@@ -115,8 +115,9 @@ class BrowseService {
   private async fetchWithFallback(url: string) {
     try {
       return await this.fetchHtml(url);
-    } catch (error: any) {
-      const status = error?.response?.status;
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number }; restricted?: boolean; restrictedResult?: unknown; message?: string; code?: string };
+      const status = err?.response?.status;
 
       // For auth/blocked errors, try Wayback Machine cache
       if (status === 401 || status === 403) {
@@ -146,10 +147,10 @@ class BrowseService {
       if (status === 404) {
         throw new Error('Page not found (404)');
       }
-      if (error.code === 'ECONNABORTED') {
+      if (err.code === 'ECONNABORTED') {
         throw new Error('Page took too long to load');
       }
-      throw new Error(`Failed to fetch page: ${error.message}`);
+      throw new Error(`Failed to fetch page: ${err.message}`);
     }
   }
 
@@ -164,9 +165,10 @@ class BrowseService {
     let response;
     try {
       response = await this.fetchWithFallback(url);
-    } catch (error: any) {
-      if (error.restricted) {
-        return error.restrictedResult as PageContent;
+    } catch (error: unknown) {
+      const err = error as { restricted?: boolean; restrictedResult?: unknown };
+      if (err.restricted) {
+        return err.restrictedResult as PageContent;
       }
       throw error;
     }

@@ -129,8 +129,9 @@ export class VectorService {
       if (this.useHNSW && this.hnswIndex && this.hnswIndex.size() === 0 && this.memory.length > 0) {
         this.rebuildHNSWIndex();
       }
-    } catch (e: any) {
-      logger.error(`[VectorService] Failed to load memory: ${e.message}`);
+    } catch (e: unknown) {
+      const err = e as Error;
+      logger.error(`[VectorService] Failed to load memory: ${err.message}`);
 
       // Attempt recovery from backup
       const recovered = await this.attemptRecovery();
@@ -186,13 +187,14 @@ export class VectorService {
         }
       }
       logger.info(`[VectorService] Loaded ${loadedCount} cached embeddings from disk.`);
-    } catch (e: any) {
-      if (e.code === 'ENOENT') {
+    } catch (e: unknown) {
+      const err = e as NodeJS.ErrnoException;
+      if (err.code === 'ENOENT') {
         // File doesn't exist yet, that's fine
         logger.debug('[VectorService] No embedding cache file found, starting fresh.');
       } else {
         // JSON parse error or other issue
-        logger.warn(`[VectorService] Failed to load embedding cache: ${e.message}. Starting fresh.`);
+        logger.warn(`[VectorService] Failed to load embedding cache: ${err.message}. Starting fresh.`);
       }
     }
   }

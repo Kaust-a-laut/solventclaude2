@@ -1,5 +1,6 @@
 import { AIProviderFactory } from './aiProviderFactory';
 import { WaterfallService, WaterfallStep } from './waterfallService';
+import { WaterfallContext } from '../types/waterfall';
 import { contextService, getHarnessSnapshot } from './contextService';
 import { ChatRequestData, ChatMessage, CompletionOptions } from '../types/ai';
 import { randomUUID as uuidv4 } from 'crypto';
@@ -95,7 +96,7 @@ export class AIService {
     return searchService.webSearch(query, page);
   }
 
-  async runWaterfallStep(step: WaterfallStep, input: string, context: unknown, globalProvider?: string) {
+  async runWaterfallStep(step: WaterfallStep, input: string, context: WaterfallContext | undefined, globalProvider?: string) {
     return this.waterfallService.runStep(step, input, context, globalProvider);
   }
 
@@ -208,7 +209,7 @@ export class AIService {
       this.consolidateMemory(mode, data.messages, responseData);
 
       // 7. Log Telemetry
-      telemetryService.logTransaction({
+      await telemetryService.logTransaction({
         id: uuidv4(),
         type: 'chat',
         model: responseData.model || model,
@@ -222,7 +223,7 @@ export class AIService {
 
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));
-      telemetryService.logTransaction({
+      await telemetryService.logTransaction({
         id: uuidv4(),
         type: 'chat',
         model: model,
@@ -316,7 +317,7 @@ export class AIService {
     try {
       const result = await this.generateImage(prompt, undefined, apiKeys?.gemini, imageProvider || 'auto', { apiKeys });
 
-      telemetryService.logTransaction({
+      await telemetryService.logTransaction({
         id: uuidv4(),
         type: 'image',
         model: imageProvider || 'auto',
@@ -496,8 +497,9 @@ After </thinking>, deliver the answer cleanly without restating the reasoning.`
       if (isCodeRequest) {
         logger.info("[AIService] Vision-to-Code bridge triggered.");
         const waterfallResult = await this.runAgenticWaterfall(`Convert this UI analysis into production code: ${response}`, undefined, APP_CONSTANTS.WATERFALL.MAX_RETRIES, undefined, undefined, openFiles);
+        const executorCode = (waterfallResult.executor as { code?: string } | null)?.code ?? '(no code generated)';
         return {
-          response: `### Vision Analysis\n${response}\n\n### Generated Implementation\n${waterfallResult.executor.code}`,
+          response: `### Vision Analysis\n${response}\n\n### Generated Implementation\n${executorCode}`,
           model,
           waterfall: waterfallResult
         };
@@ -576,7 +578,7 @@ After </thinking>, deliver the answer cleanly without restating the reasoning.`
     try {
       const result = await pollinationsService.generateImage(prompt);
       return this.saveImage(result.base64, 'Pollinations.ai');
-    } catch (pollError: any) {
+    } catch (pollError: unknown) {
       throw SolventError.provider('All image providers failed.');
     }
   }
