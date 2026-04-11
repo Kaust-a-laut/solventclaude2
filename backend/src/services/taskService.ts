@@ -1,4 +1,4 @@
-import { Queue, Worker, Job, QueueEvents, UnrecoverableError } from 'bullmq';
+import { Queue, Worker, Job, JobsOptions, QueueEvents, UnrecoverableError } from 'bullmq';
 import Redis from 'ioredis';
 import { logger } from '../utils/logger';
 
@@ -12,12 +12,12 @@ export enum TaskQueue {
 
 export interface TaskPayload {
   type: string;
-  data: any;
+  data: Record<string, unknown>;
 }
 
 export interface TaskResult {
   success: boolean;
-  data?: any;
+  data?: Record<string, unknown>;
   error?: string;
 }
 
@@ -69,14 +69,14 @@ export class TaskService {
     return this.queueEvents.get(queueName)!;
   }
 
-  async dispatchJob(queueName: TaskQueue, jobName: string, payload: TaskPayload, opts?: any): Promise<string> {
+  async dispatchJob(queueName: TaskQueue, jobName: string, payload: TaskPayload, opts?: JobsOptions): Promise<string> {
     const queue = this.getQueue(queueName);
     const job = await queue.add(jobName, payload, opts);
     logger.info(`[TaskService] Dispatched job ${jobName} to queue ${queueName} with ID ${job.id}`);
     return job.id!;
   }
 
-  async dispatchIndexingJob(projectPath: string, opts?: any): Promise<string> {
+  async dispatchIndexingJob(projectPath: string, opts?: JobsOptions): Promise<string> {
     return this.dispatchJob(
       TaskQueue.INDEXING,
       'index-project',
@@ -85,7 +85,7 @@ export class TaskService {
     );
   }
 
-  async dispatchMemoryMaintenanceJob(opts?: any): Promise<string> {
+  async dispatchMemoryMaintenanceJob(opts?: JobsOptions): Promise<string> {
     return this.dispatchJob(
       TaskQueue.MEMORY_GARDENING,
       'memory-maintenance',
@@ -97,7 +97,7 @@ export class TaskService {
   /**
    * Enqueue a memory consolidation or extraction job with retry support.
    */
-  async enqueueMemoryJob(jobType: 'consolidation' | 'extraction', data: any): Promise<string> {
+  async enqueueMemoryJob(jobType: 'consolidation' | 'extraction', data: Record<string, unknown>): Promise<string> {
     return this.dispatchJob(
       TaskQueue.MEMORY_GARDENING,
       `memory-${jobType}`,
@@ -106,7 +106,7 @@ export class TaskService {
     );
   }
 
-  async dispatchImageGenerationJob(prompt: string, model?: string, opts?: any): Promise<string> {
+  async dispatchImageGenerationJob(prompt: string, model?: string, opts?: JobsOptions): Promise<string> {
     return this.dispatchJob(
       TaskQueue.IMAGE_GEN,
       'image-generation',
@@ -118,9 +118,9 @@ export class TaskService {
   async dispatchOrchestrationJob(
     templateId: string,
     goal: string,
-    template: any,
+    template: unknown,
     options?: { providerOverride?: string; modelOverride?: string },
-    opts?: any
+    opts?: JobsOptions
   ): Promise<string> {
     return this.dispatchJob(
       TaskQueue.ORCHESTRATION,
@@ -139,7 +139,7 @@ export class TaskService {
     );
   }
 
-  async getJobStatus(jobId: string): Promise<{ status: string; progress: number; result?: any; error?: string }> {
+  async getJobStatus(jobId: string): Promise<{ status: string; progress: number; result?: unknown; error?: string }> {
     // Look for the job in all queues — use getState() for a single Redis round-trip
     for (const queue of this.queues.values()) {
       const job = await queue.getJob(jobId);
@@ -163,7 +163,7 @@ export class TaskService {
     };
   }
 
-  async scheduleMaintenance(opts?: any): Promise<string> {
+  async scheduleMaintenance(opts?: JobsOptions): Promise<string> {
     // Schedule a maintenance job with a delay to avoid immediate execution
     return this.dispatchJob(
       TaskQueue.MEMORY_GARDENING,

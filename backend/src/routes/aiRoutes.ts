@@ -181,8 +181,9 @@ router.get('/plugins', async (req, res) => {
     };
 
     res.json(pluginsInfo);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error: unknown) {
+    const err = error as { message?: string };
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -260,15 +261,16 @@ router.put('/sessions/:id', async (req, res) => {
         ...existing.metadata,
         messageCount: messages ? messages.length : existing.metadata.messageCount,
         modelsUsed: messages
-          ? [...new Set(messages.map((m: any) => m.model).filter(Boolean))] as string[]
+          ? [...new Set(messages.map((m: { model?: string }) => m.model).filter(Boolean))] as string[]
           : existing.metadata.modelsUsed
       }
     };
     
     await storageService.saveSession(updated);
     res.json(updated);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error: unknown) {
+    const err = error as { message?: string };
+    res.status(500).json({ error: err.message });
   }
 });
 

@@ -7,9 +7,9 @@ interface TransactionLogEntry {
   id: string;
   timestamp: string;
   tool: string;
-  args: any;
+  args: Record<string, unknown>;
   status: 'pending' | 'success' | 'failed' | 'denied';
-  result?: any;
+  result?: unknown;
   error?: string;
   cycleId?: string;
 }
@@ -21,7 +21,7 @@ export class TransactionService {
     this.logPath = path.join(PROJECT_ROOT, '.solvent_audit.jsonl');
   }
 
-  async logStart(tool: string, args: any, cycleId?: string): Promise<string> {
+  async logStart(tool: string, args: Record<string, unknown>, cycleId?: string): Promise<string> {
     const id = Math.random().toString(36).substring(7);
     const entry: TransactionLogEntry = {
       id,
@@ -35,15 +35,15 @@ export class TransactionService {
     return id;
   }
 
-  async logComplete(id: string, result: any) {
-    await this.appendLog({ id, status: 'success', result, timestamp: new Date().toISOString() } as any);
+  async logComplete(id: string, result: unknown) {
+    await this.appendLog({ id, status: 'success', result, timestamp: new Date().toISOString() } as TransactionLogEntry);
   }
 
   async logError(id: string, error: string) {
-    await this.appendLog({ id, status: 'failed', error, timestamp: new Date().toISOString() } as any);
+    await this.appendLog({ id, status: 'failed', error, timestamp: new Date().toISOString() } as TransactionLogEntry);
   }
 
-  async logDenial(tool: string, args: any, reason: string) {
+  async logDenial(tool: string, args: Record<string, unknown>, reason: string) {
      const id = Math.random().toString(36).substring(7);
      await this.appendLog({
        id,

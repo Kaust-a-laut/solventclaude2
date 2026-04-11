@@ -1,7 +1,7 @@
 export interface IStorageProvider {
-  get(key: string): Promise<any | null>;
-  set(key: string, value: any, ttl?: number): Promise<void>;
-  saveTrace(data: any): Promise<string>;
+  get(key: string): Promise<unknown | null>;
+  set(key: string, value: unknown, ttl?: number): Promise<void>;
+  saveTrace(data: Record<string, unknown>): Promise<string>;
 }
 
 import fs from 'fs/promises';
@@ -25,7 +25,7 @@ export class FileStorageProvider implements IStorageProvider {
     await fs.mkdir(this.tracesDir, { recursive: true });
   }
 
-  async get(key: string): Promise<any | null> {
+  async get(key: string): Promise<unknown | null> {
     const cachePath = path.join(this.cacheDir, `${key}.json`);
     try {
       const data = await fs.readFile(cachePath, 'utf-8');
@@ -35,12 +35,12 @@ export class FileStorageProvider implements IStorageProvider {
     }
   }
 
-  async set(key: string, value: any): Promise<void> {
+  async set(key: string, value: unknown): Promise<void> {
     const cachePath = path.join(this.cacheDir, `${key}.json`);
     await fs.writeFile(cachePath, JSON.stringify(value, null, 2));
   }
 
-  async saveTrace(data: any): Promise<string> {
+  async saveTrace(data: Record<string, unknown>): Promise<string> {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const traceId = `trace-${timestamp}-${randomBytes(4).toString('hex')}`;
     const tracePath = path.join(this.tracesDir, `${traceId}.json`);

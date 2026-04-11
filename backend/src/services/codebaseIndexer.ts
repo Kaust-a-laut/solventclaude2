@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { createHash } from 'crypto';
 import { logger } from '../utils/logger';
-import { vectorService } from './vectorService';
+import { vectorService, VectorMetadata } from './vectorService';
 
 interface FileWatcherConfig {
   rootPath: string;
@@ -176,7 +176,7 @@ export class CodebaseIndexer {
     logger.info(`[CodebaseIndexer] Indexing ${this.pendingChanges.size} changed files...`);
 
     try {
-      const entries: { text: string; metadata: any }[] = [];
+      const entries: { text: string; metadata: VectorMetadata }[] = [];
 
       for (const [relativePath, fileData] of this.pendingChanges.entries()) {
         const chunks = this.chunkFile(fileData.content, fileData.path);
@@ -205,14 +205,14 @@ export class CodebaseIndexer {
   /**
    * Add a batch of entries to the vector index
    */
-  private async addEntriesBatch(entries: { text: string; metadata: any }[]) {
+  private async addEntriesBatch(entries: { text: string; metadata: VectorMetadata }[]) {
     if (entries.length === 0) return;
 
     await vectorService.addEntriesBatch(entries);
 
     // Resolve semantic relationships for code files
     for (const entry of entries) {
-      if (entry.metadata.type === 'code_block') {
+      if (entry.metadata.type === 'code_block' && entry.metadata.id) {
         const links = this.findReferenceTargets(entry.text, entry.metadata.id);
         if (links.length > 0) {
           await vectorService.addLinks(entry.metadata.id, links);
@@ -224,14 +224,14 @@ export class CodebaseIndexer {
   /**
    * Chunk a file into indexable pieces
    */
-  private chunkFile(content: string, filePath: string): { text: string; metadata: any }[] {
+  private chunkFile(content: string, filePath: string): { text: string; metadata: VectorMetadata }[] {
     const maxChunkSize = 1200;
     const overlapSize = 200;
     const relativePath = path.relative(this.config!.rootPath, filePath);
     const ext = path.extname(filePath).toLowerCase();
     const isCodeFile = ['.ts', '.tsx', '.js', '.jsx', '.py'].includes(ext);
 
-    const chunks: { text: string; metadata: any }[] = [];
+    const chunks: { text: string; metadata: VectorMetadata }[] = [];
     
     // Split at declaration boundaries for code files
     let blocks: string[];
@@ -369,8 +369,9 @@ export class CodebaseIndexer {
       const data = await fs.readFile(cachePath, 'utf-8');
       this.fileHashes = new Map(JSON.parse(data));
       logger.info('[CodebaseIndexer] Loaded file hash cache');
-    } catch (error: any) {
-      if (error.code !== 'ENOENT') {
+    } catch (error: unknown) {
+      const err = error as NodeJS.ErrnoException;
+      if (err.code !== 'ENOENT') {
         logger.warn('[CodebaseIndexer] Failed to load file hash cache, starting fresh');
       }
       this.fileHashes = new Map();

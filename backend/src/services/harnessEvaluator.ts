@@ -1,4 +1,4 @@
-import { traceLogger } from './traceLogger';
+import { traceLogger, RetrievalTrace } from './traceLogger';
 import { HarnessProposal, EvaluationResult } from '../types/harness';
 
 /**
@@ -13,7 +13,7 @@ export class HarnessEvaluator {
    * Evaluates a proposal by simulating its parameter changes against
    * the recent trace history.
    */
-  async evaluate(proposal: HarnessProposal, allTraces?: any[]): Promise<EvaluationResult> {
+  async evaluate(proposal: HarnessProposal, allTraces?: RetrievalTrace[]): Promise<EvaluationResult> {
     const traces = allTraces || await traceLogger.readTraces();
     if (traces.length === 0) {
       return this.emptyResult(proposal);
@@ -67,10 +67,10 @@ export class HarnessEvaluator {
     };
   }
 
-  private simulateProposal(traces: any[], proposal: HarnessProposal): any[] {
+  private simulateProposal(traces: RetrievalTrace[], proposal: HarnessProposal): RetrievalTrace[] {
     const { deltas } = proposal;
     return traces.map(trace => {
-      const newActive = trace.active.filter((item: any) => {
+      const newActive = trace.active.filter((item) => {
         const score = item.score || 0;
         if (deltas.MIN_SCORE_STANDARD_CONTEXT !== undefined) {
           const oldMin = 0.60;
@@ -80,7 +80,7 @@ export class HarnessEvaluator {
         return true;
       });
 
-      const newSuppressed = trace.active.filter((item: any) => {
+      const newSuppressed = trace.active.filter((item) => {
         const score = item.score || 0;
         if (deltas.MIN_SCORE_STANDARD_CONTEXT !== undefined) {
           const oldMin = 0.60;

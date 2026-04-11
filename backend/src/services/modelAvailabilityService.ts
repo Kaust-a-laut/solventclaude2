@@ -24,31 +24,35 @@ interface AvailabilityScanResult {
 }
 
 // Provider model list endpoints
-const PROVIDER_ENDPOINTS: Record<string, { url: string; keyEnv: string; parseModels: (data: any) => string[] }> = {
+interface ModelListResponse {
+  data?: Array<{ id: string }>;
+}
+
+const PROVIDER_ENDPOINTS: Record<string, { url: string; keyEnv: string; parseModels: (data: ModelListResponse) => string[] }> = {
   groq: {
     url: 'https://api.groq.com/openai/v1/models',
     keyEnv: 'GROQ_API_KEY',
-    parseModels: (data) => (data.data || []).map((m: any) => m.id),
+    parseModels: (data) => (data.data || []).map((m) => m.id),
   },
   openrouter: {
     url: 'https://openrouter.ai/api/v1/models',
     keyEnv: 'OPENROUTER_API_KEY',
-    parseModels: (data) => (data.data || []).map((m: any) => m.id),
+    parseModels: (data) => (data.data || []).map((m) => m.id),
   },
   dashscope: {
     url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/models',
     keyEnv: 'DASHSCOPE_API_KEY',
-    parseModels: (data) => (data.data || []).map((m: any) => m.id),
+    parseModels: (data) => (data.data || []).map((m) => m.id),
   },
   cerebras: {
     url: 'https://api.cerebras.ai/v1/models',
     keyEnv: 'CEREBRAS_API_KEY',
-    parseModels: (data) => (data.data || []).map((m: any) => m.id),
+    parseModels: (data) => (data.data || []).map((m) => m.id),
   },
   fireworks: {
     url: 'https://api.fireworks.ai/inference/v1/models',
     keyEnv: 'FIREWORKS_API_KEY',
-    parseModels: (data) => (data.data || []).map((m: any) => m.id),
+    parseModels: (data) => (data.data || []).map((m) => m.id),
   },
 };
 
@@ -164,7 +168,7 @@ class ModelAvailabilityService {
     const endpoint = PROVIDER_ENDPOINTS[provider];
     if (!endpoint) return null;  // unknown provider (e.g. ollama — skip for now)
 
-    const apiKey = (config as any)[endpoint.keyEnv] || process.env[endpoint.keyEnv];
+    const apiKey = (config as Record<string, unknown>)[endpoint.keyEnv] as string | undefined || process.env[endpoint.keyEnv];
     if (!apiKey) {
       logger.debug(`[ModelAvailability] No API key for ${provider}, skipping scan`);
       return null;
@@ -181,7 +185,7 @@ class ModelAvailabilityService {
         return null;
       }
 
-      const data = await response.json();
+      const data = await response.json() as ModelListResponse;
       return endpoint.parseModels(data);
     } catch (err: unknown) {
       logger.warn(`[ModelAvailability] Failed to fetch ${provider} models:`, err instanceof Error ? err.message : String(err));

@@ -15,9 +15,15 @@ interface Synthesis {
   sources: string[];
 }
 
+interface SearchResultItem {
+  title: string;
+  link: string;
+  snippet: string;
+}
+
 interface IntelligentSearchResult {
   results: RankedResult[];
-  answerBox?: any;
+  answerBox?: { snippet?: string; title?: string; link?: string };
   relatedSearches?: { query: string }[];
   synthesis?: Synthesis;
   expandedQuery?: string;
@@ -105,7 +111,7 @@ Examples:
     // On pagination (page > 1), skip re-ranking and synthesis
     if (page > 1) {
       return {
-        results: (rawResults.results || []).map((r: any, i: number) => ({
+        results: (rawResults.results || []).map((r: SearchResultItem, i: number) => ({
           title: r.title,
           link: r.link,
           snippet: r.snippet,
@@ -127,7 +133,7 @@ Examples:
     let rankedResults: RankedResult[];
     if (totalFound <= 5) {
       logger.info(`[IntelligentSearch] Small result pool (${totalFound}), skipping re-rank`);
-      rankedResults = (rawResults.results || []).map((r: any, i: number) => ({
+      rankedResults = (rawResults.results || []).map((r: SearchResultItem, i: number) => ({
         title: r.title,
         link: r.link,
         snippet: r.snippet,
@@ -161,13 +167,13 @@ Examples:
    * Stage 3: AI Re-rank & Filter
    * LLM scores each result 0-100 for relevance, removes duplicates and low scores.
    */
-  private async rerankResults(query: string, results: any[]): Promise<RankedResult[]> {
+  private async rerankResults(query: string, results: SearchResultItem[]): Promise<RankedResult[]> {
     if (!results.length) return [];
 
     try {
       const groq = await AIProviderFactory.getProvider('groq');
 
-      const resultsForLLM = results.map((r: any, i: number) => ({
+      const resultsForLLM = results.map((r: SearchResultItem, i: number) => ({
         index: i,
         title: r.title,
         url: r.link,
@@ -232,7 +238,7 @@ Sort by score descending. Include ALL results — the UI handles visual differen
       // would show zero results
       if (ranked.length === 0 && results.length > 0) {
         logger.info(`[IntelligentSearch] All results filtered by relevance, falling back to raw results`);
-        return results.map((r: any, i: number) => ({
+        return results.map((r: SearchResultItem, i: number) => ({
           title: r.title,
           link: r.link,
           snippet: r.snippet,
@@ -245,7 +251,7 @@ Sort by score descending. Include ALL results — the UI handles visual differen
       return ranked;
     } catch (error) {
       logger.warn(`[IntelligentSearch] Re-rank failed, returning raw results: ${error}`);
-      return results.map((r: any, i: number) => ({
+      return results.map((r: SearchResultItem, i: number) => ({
         title: r.title,
         link: r.link,
         snippet: r.snippet,

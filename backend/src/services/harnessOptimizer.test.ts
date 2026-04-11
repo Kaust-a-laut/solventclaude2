@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { RetrievalTrace } from './traceLogger';
 
 vi.mock('fs/promises');
 vi.mock('./traceLogger', () => ({
@@ -71,7 +72,7 @@ describe('HarnessEvaluator', () => {
     const result = await harnessEvaluator.evaluate({
       id: 'p1', runId: 'r1', iteration: 1, ts: '', deltas: {},
       rationale: 'test', targetsFailureModes: [],
-    }, traces);
+    }, traces as unknown as RetrievalTrace[]);
 
     expect(result.acceptanceRate).toBe(0.7);
     expect(result.avgActiveItems).toBeGreaterThan(0);

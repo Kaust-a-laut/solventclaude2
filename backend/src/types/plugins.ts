@@ -88,14 +88,14 @@ export interface IToolPlugin extends IPlugin {
     description: string;
     parameters: {
       type: 'object';
-      properties: Record<string, any>;
+      properties: Record<string, unknown>;
       required: string[];
     };
   };
-  
+
   /** Execute the tool with given arguments */
-  execute(args: Record<string, any>): Promise<any>;
-  
+  execute(args: Record<string, unknown>): Promise<unknown>;
+
   /** Validate arguments before execution */
-  validate?(args: Record<string, any>): { isValid: boolean; errors?: string[] };
+  validate?(args: Record<string, unknown>): { isValid: boolean; errors?: string[] };
 }

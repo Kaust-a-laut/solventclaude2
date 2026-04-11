@@ -1,13 +1,13 @@
-import { traceLogger } from './traceLogger';
+import { traceLogger, RetrievalTrace } from './traceLogger';
 import { getHarnessSnapshot } from './contextService';
-import { HarnessProposal, TracePattern } from '../types/harness';
+import { EvaluationResult, HarnessProposal, TracePattern } from '../types/harness';
 import { randomUUID as uuidv4 } from 'crypto';
 
 interface ProposerContext {
   runId: string;
   iteration: number;
   priorProposals: HarnessProposal[];
-  priorEvaluations: { proposalId: string; result: any }[];
+  priorEvaluations: { proposalId: string; result: EvaluationResult }[];
 }
 
 /**
@@ -49,7 +49,7 @@ export class ProposerAgent {
     };
   }
 
-  private detectPatterns(traces: any[]): TracePattern[] {
+  private detectPatterns(traces: RetrievalTrace[]): TracePattern[] {
     const patterns: TracePattern[] = [];
     const recent = traces.slice(0, 50); // Most recent 50 traces
 
@@ -71,7 +71,7 @@ export class ProposerAgent {
 
     // Pattern: Low average score on active items — min score threshold too low
     const avgActiveScore = recent.reduce(
-      (sum, t) => sum + (t.active.reduce((s: number, a: any) => s + (a.score || 0), 0) / Math.max(t.active.length, 1)), 0
+      (sum, t) => sum + (t.active.reduce((s: number, a) => s + (a.score || 0), 0) / Math.max(t.active.length, 1)), 0
     ) / Math.max(recent.length, 1);
     if (avgActiveScore < 0.55) {
       patterns.push({
@@ -130,7 +130,7 @@ export class ProposerAgent {
     const itemFreq = new Map<string, number>();
     recent.forEach(t => {
       const seen = new Set<string>();
-      t.active?.forEach((a: any) => { if (!seen.has(a.id)) { itemFreq.set(a.id, (itemFreq.get(a.id) || 0) + 1); seen.add(a.id); } });
+      t.active?.forEach((a) => { if (!seen.has(a.id)) { itemFreq.set(a.id, (itemFreq.get(a.id) || 0) + 1); seen.add(a.id); } });
     });
     const repeatedItems = [...itemFreq.entries()].filter(([, count]) => count > recent.length * 0.5);
     if (repeatedItems.length > 3) {

@@ -1,6 +1,6 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, Tool } from '@google/generative-ai';
 import { config } from '../config';
-import { AIProvider, ChatMessage, CompletionOptions } from '../types/ai';
+import { AIProvider, ChatMessage, CompletionOptions, ImageContent } from '../types/ai';
 import { toolService } from './toolService';
 import { getGeminiTools } from '../constants/tools';
 import { logger } from '../utils/logger';
@@ -42,9 +42,9 @@ export class GeminiService implements AIProvider {
     const { model: modelName, shouldSearch, temperature = 0.7, maxTokens = 2048, apiKey } = options;
 
     const genAI = this.getGenAI(apiKey);
-    const tools: any[] = this.getToolDefinitions();
+    const tools = this.getToolDefinitions() as Tool[];
 
-    const modelConfig: any = {
+    const model = genAI.getGenerativeModel({
       model: modelName,
       tools,
       generationConfig: {
@@ -52,9 +52,7 @@ export class GeminiService implements AIProvider {
         maxOutputTokens: maxTokens,
         ...(options.jsonMode ? { responseMimeType: 'application/json' } : {})
       }
-    };
-
-    const model = genAI.getGenerativeModel(modelConfig);
+    });
 
     // Use shared message normalization
     const history = normalizeMessagesForGemini(messages.slice(0, -1));
@@ -70,7 +68,7 @@ export class GeminiService implements AIProvider {
       while (call && call.functionCall) {
         const toolResult = await toolService.executeTool(call.functionCall.name, call.functionCall.args);
 
-        let messagePart: any = {
+        const fnResponse = {
           functionResponse: {
             name: call.functionCall.name,
             response: { content: toolResult }
@@ -78,11 +76,12 @@ export class GeminiService implements AIProvider {
         };
 
         // If it was a UI capture, inject the image into the next turn for visual reasoning
+        let messageParts: Parameters<typeof chat.sendMessage>[0];
         if (call.functionCall.name === 'capture_ui' && toolResult.base64) {
           const imageInfo = extractImageFromDataUrl(toolResult.base64);
           if (imageInfo) {
-            messagePart = [
-              messagePart,
+            messageParts = [
+              fnResponse,
               {
                 inlineData: {
                   data: imageInfo.data,
@@ -91,17 +90,22 @@ export class GeminiService implements AIProvider {
               },
               { text: "Above is the screenshot I just captured. Analyze it to verify the UI state." }
             ];
+          } else {
+            messageParts = [fnResponse];
           }
+        } else {
+          messageParts = [fnResponse];
         }
 
-        result = await withTimeout(chat.sendMessage(Array.isArray(messagePart) ? messagePart : [messagePart]), GEMINI_TIMEOUT_MS, 'Gemini tool response');
+        result = await withTimeout(chat.sendMessage(messageParts), GEMINI_TIMEOUT_MS, 'Gemini tool response');
         response = await result.response;
         call = response.candidates?.[0]?.content?.parts?.find(p => p.functionCall);
       }
 
       return response.text();
-    } catch (error: any) {
-      console.error(`[GeminiService] Error:`, error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error(`[GeminiService] Error:`, err);
       throw error;
     }
   }
@@ -131,7 +135,7 @@ export class GeminiService implements AIProvider {
     }
   }
 
-  async generateVisionContent(prompt: string, imageParts: any[], options?: any) {
+  async generateVisionContent(prompt: string, imageParts: ImageContent[], options?: CompletionOptions) {
     const { model: modelName, temperature = 0.7, maxTokens = 2048, apiKey } = options || {};
     const genAI = this.getGenAI(apiKey);
     const model = genAI.getGenerativeModel({
@@ -141,7 +145,8 @@ export class GeminiService implements AIProvider {
         maxOutputTokens: maxTokens,
       }
     });
-    const result = await withTimeout(model.generateContent([prompt, ...imageParts]), GEMINI_TIMEOUT_MS, 'Gemini vision');
+    const geminiParts = imageParts.map(img => ({ inlineData: { data: img.data, mimeType: img.mimeType } }));
+    const result = await withTimeout(model.generateContent([prompt, ...geminiParts]), GEMINI_TIMEOUT_MS, 'Gemini vision');
     const response = await result.response;
     return response.text();
   }

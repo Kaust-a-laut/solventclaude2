@@ -50,7 +50,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     if (extension === '.pdf') {
       const dataBuffer = await fs.readFile(filePath);
       const { default: pdf } = await import('pdf-parse');
-      const data = await (pdf as any)(dataBuffer);
+      const data = await (pdf as (buffer: Buffer) => Promise<{ text: string }>)(dataBuffer);
       content = data.text;
     } else if (['.docx', '.doc'].includes(extension)) {
       const result = await mammoth.extractRawText({ path: filePath });
@@ -191,11 +191,12 @@ router.get('/raw', async (req, res) => {
     res.setHeader('Content-Type', MIME_TYPES[ext] || 'application/octet-stream');
     res.setHeader('Cache-Control', 'public, max-age=300');
     res.send(data);
-  } catch (error: any) {
-    if (error.message.includes('Access denied')) {
+  } catch (error: unknown) {
+    const err = error as { message?: string; code?: string };
+    if (err.message?.includes('Access denied')) {
       return res.status(403).json({ error: 'Access denied' });
     }
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+    if (err.code === 'ENOENT') {
       return res.status(404).json({ error: 'File not found' });
     }
     handleRouteError({ res, error, context: 'file-raw' });
@@ -211,11 +212,12 @@ router.get('/read', async (req, res) => {
     const fullPath = await getSecurePath(filePath as string, root);
     const content = await fs.readFile(fullPath, 'utf-8');
     res.json({ content });
-  } catch (error: any) {
-    if (error.message.includes('Access denied')) {
+  } catch (error: unknown) {
+    const err = error as { message?: string; code?: string };
+    if (err.message?.includes('Access denied')) {
       return res.status(403).json({ error: 'Access denied' });
     }
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+    if (err.code === 'ENOENT') {
       return res.status(404).json({ error: 'File not found' });
     }
     handleRouteError({ res, error, context: 'file-read' });
@@ -232,8 +234,9 @@ router.post('/write', async (req, res) => {
     await fs.mkdir(path.dirname(fullPath), { recursive: true });
     await fs.writeFile(fullPath, content);
     res.json({ status: 'success' });
-  } catch (error: any) {
-    if (error.message.includes('Access denied')) {
+  } catch (error: unknown) {
+    const err = error as { message?: string };
+    if (err.message?.includes('Access denied')) {
       return res.status(403).json({ error: 'Access denied' });
     }
     handleRouteError({ res, error, context: 'file-write' });

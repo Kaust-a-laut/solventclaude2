@@ -3,7 +3,7 @@ import { logger } from '../utils/logger';
 // Interface allows swapping for Redis later
 export interface IStorage {
   get<T>(key: string): Promise<T | null>;
-  set(key: string, value: any, ttlSeconds?: number): Promise<void>;
+  set(key: string, value: unknown, ttlSeconds?: number): Promise<void>;
   incr(key: string): Promise<number>;
   del(key: string): Promise<void>;
 }
@@ -11,7 +11,7 @@ export interface IStorage {
 export class StorageService implements IStorage {
   // In-memory fallback. Circuit breaker state is lost on restart.
   // In production, replace this implementation with a Redis-backed store.
-  private memory = new Map<string, { val: any, exp: number }>();
+  private memory = new Map<string, { val: unknown, exp: number }>();
 
   constructor() {
     if (process.env.NODE_ENV === 'production') {
@@ -29,7 +29,7 @@ export class StorageService implements IStorage {
     return data.val as T;
   }
 
-  async set(key: string, value: any, ttlSeconds: number = 0): Promise<void> {
+  async set(key: string, value: unknown, ttlSeconds: number = 0): Promise<void> {
     const exp = ttlSeconds === 0 ? 0 : Date.now() + (ttlSeconds * 1000);
     this.memory.set(key, { val: value, exp });
   }

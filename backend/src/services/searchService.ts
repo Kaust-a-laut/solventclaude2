@@ -3,6 +3,19 @@ import path from 'path';
 import axios from 'axios';
 import { config } from '../config';
 
+interface BraveSearchResult {
+  title: string;
+  url: string;
+  description: string;
+  index?: number;
+}
+
+interface DirectoryNode {
+  name: string;
+  files: string[];
+  directories: DirectoryNode[];
+}
+
 export class SearchService {
   private rootDir: string;
 
@@ -52,21 +65,22 @@ export class SearchService {
             timeout: 8000,
           });
           const rawResults = response.data[resultKey]?.results || [];
-          return rawResults.map((r: any) => ({
+          return rawResults.map((r: BraveSearchResult) => ({
             title: r.title,
             link: r.url,
             snippet: r.description,
             source: resultKey, // 'web' or 'news' — used for UI badges later
           }));
-        } catch (error: any) {
-          const is429 = error?.response?.status === 429;
+        } catch (error: unknown) {
+          const err = error as { response?: { status?: number; headers?: Record<string, string>; data?: unknown }; message?: string };
+          const is429 = err?.response?.status === 429;
           if (is429 && attempt < retries) {
-            const waitSec = parseInt(error?.response?.headers?.['retry-after'], 10) || (2 * (attempt + 1));
+            const waitSec = parseInt(err?.response?.headers?.['retry-after'] || '', 10) || (2 * (attempt + 1));
             console.warn(`[SearchService] ${resultKey} 429 — retrying in ${waitSec}s (attempt ${attempt + 1}/${retries})`);
             await new Promise(r => setTimeout(r, waitSec * 1000));
             continue;
           }
-          console.warn(`[SearchService] ${resultKey} endpoint failed: ${error.message}`);
+          console.warn(`[SearchService] ${resultKey} endpoint failed: ${err.message}`);
           return [];
         }
       }
@@ -80,7 +94,7 @@ export class SearchService {
 
     // Merge: news first (fresher), then web — deduplicate by normalized URL
     const seen = new Set<string>();
-    const merged: any[] = [];
+    const merged: Array<{ title: string; link: string; snippet: string; source: string }> = [];
 
     for (const r of [...newsResults, ...webResults]) {
       const normalizedUrl = r.link.replace(/\/$/, '').toLowerCase();
@@ -130,7 +144,7 @@ export class SearchService {
           ? (data.news?.results || [])
           : (data.web?.results || []);
 
-        const results = rawResults.map((r: any) => ({
+        const results = rawResults.map((r: BraveSearchResult) => ({
           title: r.title,
           link: r.url,
           snippet: r.description,
@@ -149,16 +163,17 @@ export class SearchService {
         const relatedSearches = (data.query?.related_queries || []).map((q: string) => ({ query: q }));
 
         return { results, answerBox, relatedSearches };
-      } catch (error: any) {
-        const is429 = error?.response?.status === 429;
+      } catch (error: unknown) {
+        const err = error as { response?: { status?: number; headers?: Record<string, string>; data?: unknown }; message?: string };
+        const is429 = err?.response?.status === 429;
         if (is429 && attempt < retries) {
-          const waitSec = parseInt(error?.response?.headers?.['retry-after'], 10) || (2 * (attempt + 1));
+          const waitSec = parseInt(err?.response?.headers?.['retry-after'] || '', 10) || (2 * (attempt + 1));
           console.warn(`[SearchService] Brave 429 — retrying in ${waitSec}s (attempt ${attempt + 1}/${retries})`);
           await new Promise(r => setTimeout(r, waitSec * 1000));
           continue;
         }
-        console.error('[SearchService] Brave Search Error:', error.response?.data || error.message);
-        throw new Error(`Brave search failed: ${error.message}`);
+        console.error('[SearchService] Brave Search Error:', err.response?.data || err.message);
+        throw new Error(`Brave search failed: ${err.message}`);
       }
     }
     throw new Error('Brave search failed: max retries exceeded');
@@ -192,9 +207,10 @@ export class SearchService {
         answerBox: response.data.answerBox,
         relatedSearches: response.data.relatedSearches
       };
-    } catch (error: any) {
-      console.error('[SearchService] Serper Search Error:', error.response?.data || error.message);
-      throw new Error(`Serper search failed: ${error.message}`);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: unknown }; message?: string };
+      console.error('[SearchService] Serper Search Error:', err.response?.data || err.message);
+      throw new Error(`Serper search failed: ${err.message}`);
     }
   }
 
@@ -202,11 +218,11 @@ export class SearchService {
     return await this.scanDir(this.rootDir, 0, maxDepth);
   }
 
-  private async scanDir(currentPath: string, depth: number, maxDepth: number): Promise<any> {
+  private async scanDir(currentPath: string, depth: number, maxDepth: number): Promise<DirectoryNode | null> {
     if (depth > maxDepth) return null;
 
     const entries = await fs.readdir(currentPath, { withFileTypes: true });
-    const summary: any = {
+    const summary: DirectoryNode = {
       name: path.basename(currentPath) || 'root',
       files: [],
       directories: []

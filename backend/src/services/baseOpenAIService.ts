@@ -32,8 +32,7 @@ export abstract class BaseOpenAIService implements AIProvider {
     const apiKey = options.apiKey || this.apiKey;
     if (!apiKey) throw new Error(`${this.name} API Key missing`);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- accumulates tool-response objects during the loop
-    const currentMessages: any[] = [...normalizeMessages(messages)];
+    const currentMessages: Array<{ role: string; content: string; name?: string; tool_call_id?: string; tool_calls?: unknown }> = normalizeMessages(messages).map(m => ({ role: m.role, content: m.content }));
     const model = options.model || this.defaultModel;
 
     try {
@@ -41,7 +40,7 @@ export abstract class BaseOpenAIService implements AIProvider {
       const maxIterations = 5;
 
       while (iteration < maxIterations) {
-        const payload: any = {
+        const payload: Record<string, unknown> = {
           model,
           messages: currentMessages,
           temperature: options.temperature ?? 0.7,
@@ -94,13 +93,14 @@ export abstract class BaseOpenAIService implements AIProvider {
               name: name,
               content: JSON.stringify(result)
             });
-          } catch (toolError: any) {
-            logger.error(`[${this.name}] Tool execution failed (${name}): ${toolError.message}`);
+          } catch (toolError: unknown) {
+            const toolErr = toolError as Error;
+            logger.error(`[${this.name}] Tool execution failed (${name}): ${toolErr.message}`);
             currentMessages.push({
               role: "tool",
               tool_call_id: toolCall.id,
               name: name,
-              content: JSON.stringify({ error: toolError.message })
+              content: JSON.stringify({ error: toolErr.message })
             });
           }
         }
@@ -109,8 +109,9 @@ export abstract class BaseOpenAIService implements AIProvider {
       }
 
       throw new Error(`${this.name} agent exceeded maximum tool-calling iterations.`);
-    } catch (error: any) {
-      const errorMsg = error.response?.data?.error?.message || error.message;
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
+      const errorMsg = err.response?.data?.error?.message || err.message;
       logger.error(`[${this.name}] Request Failed: ${errorMsg}`);
       throw new Error(`${this.name} API failed: ${errorMsg}`);
     }
@@ -129,8 +130,7 @@ export abstract class BaseOpenAIService implements AIProvider {
     const apiKey = options.apiKey || this.apiKey;
     if (!apiKey) throw new Error(`${this.name} API Key missing`);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- accumulates tool-response objects during the loop
-    const currentMessages: any[] = [...normalizeMessages(messages)];
+    const currentMessages: Array<{ role: string; content: string; name?: string; tool_call_id?: string; tool_calls?: unknown }> = normalizeMessages(messages).map(m => ({ role: m.role, content: m.content }));
     const model = options.model || this.defaultModel;
 
     try {
@@ -138,7 +138,7 @@ export abstract class BaseOpenAIService implements AIProvider {
       const maxIterations = 5;
 
       while (iteration < maxIterations) {
-        const payload: any = {
+        const payload: Record<string, unknown> = {
           model,
           messages: currentMessages,
           temperature: options.temperature ?? 0.7,
@@ -199,14 +199,15 @@ export abstract class BaseOpenAIService implements AIProvider {
               name,
               content: JSON.stringify(result)
             });
-          } catch (toolError: any) {
-            logger.error(`[${this.name}] Tool execution failed (${name}): ${toolError.message}`);
-            onEvent({ type: 'tool_error', tool: name, error: toolError.message, iteration, callId });
+          } catch (toolError: unknown) {
+            const toolErr = toolError as Error;
+            logger.error(`[${this.name}] Tool execution failed (${name}): ${toolErr.message}`);
+            onEvent({ type: 'tool_error', tool: name, error: toolErr.message, iteration, callId });
             currentMessages.push({
               role: "tool",
               tool_call_id: callId,
               name,
-              content: JSON.stringify({ error: toolError.message })
+              content: JSON.stringify({ error: toolErr.message })
             });
           }
         }
@@ -215,8 +216,9 @@ export abstract class BaseOpenAIService implements AIProvider {
       }
 
       throw new Error(`${this.name} agent exceeded maximum tool-calling iterations.`);
-    } catch (error: any) {
-      const errorMsg = error.response?.data?.error?.message || error.message;
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
+      const errorMsg = err.response?.data?.error?.message || err.message;
       logger.error(`[${this.name}] Request Failed: ${errorMsg}`);
       throw new Error(`${this.name} API failed: ${errorMsg}`);
     }
