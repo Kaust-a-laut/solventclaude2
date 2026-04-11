@@ -27,7 +27,7 @@ export const Navigation = () => {
     return glowMap[color || 'text-jb-accent'] ?? 'text-jb-accent drop-shadow-[0_0_8px_rgba(60,113,247,0.6)]';
   };
 
-  const NavItem = ({ mode, icon: Icon, label, color }: any) => {
+  const NavItem = ({ mode, icon: Icon, label, color }: { mode: string; icon: React.ElementType; label: string; color: string }) => {
     const isActive = currentMode === mode;
 
     const getLineColor = (color?: string): string => {

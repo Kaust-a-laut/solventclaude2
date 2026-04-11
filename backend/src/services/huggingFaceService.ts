@@ -49,15 +49,17 @@ export class HuggingFaceService {
       const base64 = Buffer.from(response.data, 'binary').toString('base64');
       return { base64, mimeType: contentType.includes('image') ? contentType : 'image/png' };
 
-    } catch (error: any) {
-      logger.error(`[HuggingFace] Primary generation failed: ${error.message}. Initiating internal fallback.`);
-      
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error(`[HuggingFace] Primary generation failed: ${err.message}. Initiating internal fallback.`);
+
       // Internal Fallback to Pollinations to ensure UI consistency
       try {
         const result = await pollinationsService.generateImage(prompt);
         return result;
-      } catch (pollError: any) {
-        throw new Error(`Hugging Face failed (${error.message}) and fallback also failed.`);
+      } catch (pollError: unknown) {
+        const pollErr = pollError as Error;
+        throw new Error(`Hugging Face failed (${err.message}) and fallback also failed.`);
       }
     }
   }

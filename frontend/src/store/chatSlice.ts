@@ -3,7 +3,7 @@ import { AppState, Message } from './types';
 import { api } from '../lib/api';
 import { generateUUID } from '../lib/crypto';
 
-function debounce<T extends (...args: any[]) => any>(
+function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -28,7 +28,7 @@ export interface ChatSlice {
   setLastGeneratedImage: (url: string | null) => void;
   persistSession: () => Promise<void>;
   loadSession: (sessionId: string) => Promise<void>;
-  listSessions: (mode?: string) => Promise<any[]>;
+  listSessions: (mode?: string) => Promise<unknown[]>;
   deleteSession: (sessionId: string) => Promise<void>;
   forkFromMessage: (messageId: string) => string;
   setCurrentSessionId: (id: string | null) => void;
@@ -115,7 +115,7 @@ export const createChatSlice: StateCreator<AppState, [], [], ChatSlice> = (set, 
       const response = await api.get(`/sessions/${sessionId}`);
       const session = response.data;
       
-      const messages = session.messages.map((m: any) => ({
+      const messages = session.messages.map((m: Message) => ({
         id: m.id,
         role: m.role,
         content: m.content,

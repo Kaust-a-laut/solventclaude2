@@ -89,7 +89,7 @@ export const GlobalSearch: React.FC = () => {
       if (sessionsRes.data.sessions) {
         for (const session of sessionsRes.data.sessions) {
           // Find matching message if search matched within messages
-          const matchingMessage = session.messages?.find((m: any) => 
+          const matchingMessage = session.messages?.find((m: { role?: string; content?: string }) => 
             m.content.toLowerCase().includes(searchQuery.toLowerCase())
           );
 

@@ -72,8 +72,9 @@ export class ConversationStorageService {
           logger.warn('[ConversationStorage] Concurrent modification detected, skipping save');
           return; // Skip save - newer version exists
         }
-      } catch (e: any) {
-        if (e.code !== 'ENOENT') throw e; // File doesn't exist is OK
+      } catch (e: unknown) {
+        const err = e as NodeJS.ErrnoException;
+        if (err.code !== 'ENOENT') throw e; // File doesn't exist is OK
       }
       
       await fs.writeFile(filePath, JSON.stringify(session, null, 2), 'utf-8');
@@ -93,8 +94,9 @@ export class ConversationStorageService {
       const filePath = this.getSessionFilePath(sessionId);
       const data = await fs.readFile(filePath, 'utf-8');
       return JSON.parse(data);
-    } catch (error: any) {
-      if (error.code === 'ENOENT') {
+    } catch (error: unknown) {
+      const err = error as NodeJS.ErrnoException;
+      if (err.code === 'ENOENT') {
         logger.warn(`[ConversationStorage] Session ${sessionId} not found`);
         return null;
       }
@@ -117,8 +119,9 @@ export class ConversationStorageService {
       
       // Sort by updatedAt descending
       return index.sort((a, b) => b.updatedAt - a.updatedAt);
-    } catch (error: any) {
-      if (error.code === 'ENOENT') {
+    } catch (error: unknown) {
+      const err = error as NodeJS.ErrnoException;
+      if (err.code === 'ENOENT') {
         return [];
       }
       logger.error('[ConversationStorage] Failed to list sessions', error);
@@ -135,8 +138,9 @@ export class ConversationStorageService {
       await fs.unlink(filePath);
       await this.removeFromIndex(sessionId);
       logger.info(`[ConversationStorage] Deleted session ${sessionId}`);
-    } catch (error: any) {
-      if (error.code !== 'ENOENT') {
+    } catch (error: unknown) {
+      const err = error as NodeJS.ErrnoException;
+      if (err.code !== 'ENOENT') {
         logger.error('[ConversationStorage] Failed to delete session', error);
         throw error;
       }
@@ -247,8 +251,9 @@ export class ConversationStorageService {
       const index: StoredSession[] = JSON.parse(data);
       const filtered = index.filter(s => s.id !== sessionId);
       await fs.writeFile(INDEX_FILE, JSON.stringify(filtered, null, 2), 'utf-8');
-    } catch (error: any) {
-      if (error.code !== 'ENOENT') {
+    } catch (error: unknown) {
+      const err = error as NodeJS.ErrnoException;
+      if (err.code !== 'ENOENT') {
         logger.error('[ConversationStorage] Index removal failed', error);
       }
     }

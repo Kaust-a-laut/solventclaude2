@@ -1,6 +1,7 @@
 import { IProviderPlugin } from '../../types/plugins';
 import { ChatMessage, CompletionOptions } from '../../types/ai';
 import { config } from '../../config';
+import { logger } from '../../utils/logger';
 import axios from 'axios';
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
@@ -24,8 +25,8 @@ export class OpenRouterProviderPlugin implements IProviderPlugin {
   private isInitialized = false;
   private apiKey: string | null = null;
 
-  async initialize(options: Record<string, any>): Promise<void> {
-    this.apiKey = options.apiKey || config.OPENROUTER_API_KEY || null;
+  async initialize(options: Record<string, unknown>): Promise<void> {
+    this.apiKey = (options.apiKey as string) || config.OPENROUTER_API_KEY || null;
     this.isInitialized = true;
   }
 
@@ -61,7 +62,7 @@ export class OpenRouterProviderPlugin implements IProviderPlugin {
     const effectiveApiKey = apiKey || this.apiKey;
     if (!effectiveApiKey) throw new Error('OpenRouter API key missing. Provide it in settings or set OPENROUTER_API_KEY in .env.');
     const effectiveModel = model || this.defaultModel;
-    console.log(`[OpenRouter] Sending request: model=${effectiveModel}, messages=${messages.length}, maxTokens=${maxTokens}`);
+    logger.info(`[OpenRouter] Sending request: model=${effectiveModel}, messages=${messages.length}, maxTokens=${maxTokens}`);
 
     // Reasoning models (R1, thinking models) use <think> blocks before JSON,
     // so response_format: json_object can break them. Skip jsonMode for these.
@@ -85,12 +86,13 @@ export class OpenRouterProviderPlugin implements IProviderPlugin {
         timeout: 180_000, // 3 minutes — reasoning models can be slow
       });
 
-      console.log(`[OpenRouter] Response OK: model=${effectiveModel}`);
+      logger.info(`[OpenRouter] Response OK: model=${effectiveModel}`);
       return response.data.choices[0].message.content;
-    } catch (error: any) {
-      const status = error?.response?.status;
-      const errData = error?.response?.data;
-      console.error(`[OpenRouter] Request error (${status}): model=${effectiveModel}`, JSON.stringify(errData || error.message));
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number; data?: unknown }; message?: string };
+      const status = err?.response?.status;
+      const errData = err?.response?.data;
+      logger.error(`[OpenRouter] Request error (${status}): model=${effectiveModel}`, JSON.stringify(errData || err.message));
       throw error;
     }
   }

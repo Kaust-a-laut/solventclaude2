@@ -246,34 +246,36 @@ export const AgentChatPanel: React.FC = () => {
           const jsonStr = line.slice(6).trim();
           if (!jsonStr) continue;
 
-          let event: any;
+          let event: unknown;
           try {
             event = JSON.parse(jsonStr);
           } catch {
             continue;
           }
+          if (typeof event !== 'object' || event === null) continue;
+          const evt = event as Record<string, unknown>;
 
-          switch (event.type) {
+          switch (evt.type) {
             case 'tool_start':
             case 'tool_result':
             case 'tool_error': {
               const toolEvent: ToolEvent = {
-                type: event.type,
-                tool: event.tool,
-                args: event.args,
-                result: event.result,
-                error: event.error,
-                iteration: event.iteration,
-                callId: event.callId,
+                type: evt.type as string,
+                tool: evt.tool as string,
+                args: evt.args as Record<string, unknown>,
+                result: evt.result,
+                error: evt.error as string | undefined,
+                iteration: evt.iteration as number | undefined,
+                callId: evt.callId as string | undefined,
               };
               appendToolEvent(assistantId, toolEvent);
 
               // Dispatch IDE actions for completed tool calls
-              if (event.type === 'tool_result') {
+              if (evt.type === 'tool_result') {
                 dispatchIDEActions(toolEvent);
 
                 // Handle deferred sandbox tool
-                if (event.tool === 'ide_run_in_sandbox' && event.result?.status === 'deferred_to_frontend') {
+                if (evt.tool === 'ide_run_in_sandbox' && (evt.result as Record<string, unknown>)?.status === 'deferred_to_frontend') {
                   handleDeferredSandboxTool(toolEvent);
                 }
               }
@@ -293,7 +295,7 @@ export const AgentChatPanel: React.FC = () => {
 
             case 'error': {
               updateAgentMessage(assistantId, {
-                content: `Error: ${event.message}`,
+                content: `Error: ${evt.message as string}`,
                 isStreaming: false,
               });
               break;

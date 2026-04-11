@@ -77,7 +77,7 @@ export class ToolService {
    *   loop. This enforces the per-cycle tool budget. Internal calls (waterfall, crystallize, etc.)
    *   must NOT set this flag to avoid consuming Overseer budget slots.
    */
-  async executeTool(toolName: string, args: any, fromOverseer: boolean = false) {
+  async executeTool(toolName: string, args: Record<string, unknown>, fromOverseer: boolean = false) {
     const txId = await transactionService.logStart(toolName, args);
     logger.info(`[ToolService] Executing ${toolName}... (TX: ${txId})`, args);
     
@@ -112,31 +112,31 @@ export class ToolService {
       let result;
       switch (toolName) {
         case 'read_file':
-          result = await this.readFile(args.path);
+          result = await this.readFile(args.path as string);
           break;
         case 'write_file':
           // GUARD: Approval for NEW files
-          await this.ensureApprovalForWrite(args.path);
-          result = await this.writeFile(args.path, args.content);
+          await this.ensureApprovalForWrite(args.path as string);
+          result = await this.writeFile(args.path as string, args.content as string);
           break;
         case 'list_files':
-          result = await this.listFiles(args.path || '.');
+          result = await this.listFiles((args.path as string) || '.');
           break;
         case 'run_shell':
           // Shell is already allowlisted, but let's be extra safe for sensitive ops if needed
-          result = await this.runShell(args.command);
+          result = await this.runShell(args.command as string);
           break;
         // ... (other cases map directly)
-        case 'web_search': result = await this.webSearch(args.query); break;
-        case 'fetch_web_content': result = await this.fetchWebContent(args.url); break;
+        case 'web_search': result = await this.webSearch(args.query as string); break;
+        case 'fetch_web_content': result = await this.fetchWebContent(args.url as string); break;
         case 'capture_ui': result = await this.captureUI(); break;
         case 'get_ui_text': result = await this.getUIText(); break;
-        case 'resize_image': result = await this.resizeImage(args.path, args.width, args.height); break;
-        case 'crop_image': result = await this.cropImage(args.path, args.left, args.top, args.width, args.height); break;
-        case 'apply_image_filter': result = await this.applyImageFilter(args.path, args.filter); break;
-        case 'get_image_info': result = await this.getImageInfo(args.path); break;
-        case 'crystallize_memory': result = await this.crystallizeMemory(args.content, args.type, args.tags); break;
-        case 'invalidate_memory': result = await this.invalidateMemory(args.memoryId, args.reason, args.replacementId); break;
+        case 'resize_image': result = await this.resizeImage(args.path as string, args.width as number | undefined, args.height as number | undefined); break;
+        case 'crop_image': result = await this.cropImage(args.path as string, args.left as number, args.top as number, args.width as number, args.height as number); break;
+        case 'apply_image_filter': result = await this.applyImageFilter(args.path as string, args.filter as 'grayscale' | 'sepia' | 'blur' | 'sharpen'); break;
+        case 'get_image_info': result = await this.getImageInfo(args.path as string); break;
+        case 'crystallize_memory': result = await this.crystallizeMemory(args.content as string, args.type as string, args.tags as string[] | undefined); break;
+        case 'invalidate_memory': result = await this.invalidateMemory(args.memoryId as string, args.reason as string, args.replacementId as string | undefined); break;
         case 'read_core_memory':
           result = JSON.stringify(coreMemory.getAll());
           break;
@@ -169,8 +169,9 @@ export class ToolService {
       await transactionService.logComplete(txId, result);
       return result;
 
-    } catch (error: any) {
-      await transactionService.logError(txId, error.message);
+    } catch (error: unknown) {
+      const err = error as Error;
+      await transactionService.logError(txId, err.message);
       throw error;
     }
   }

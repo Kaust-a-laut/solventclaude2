@@ -54,15 +54,20 @@ if (rootElement) {
   console.error('❌ Critical: Root element not found in DOM');
 }
 
+interface ElectronAPI {
+  getDeviceCapability?: () => Promise<DeviceCapability>;
+  setTelemetryInterval?: (ms: number) => void;
+}
+
 // Detect performance tier on startup (Electron only)
-if ((window as any).electron?.getDeviceCapability) {
-  (window as any).electron.getDeviceCapability().then((cap: DeviceCapability) => {
+if ((window as unknown as { electron?: ElectronAPI }).electron?.getDeviceCapability) {
+  (window as unknown as { electron?: ElectronAPI }).electron!.getDeviceCapability().then((cap: DeviceCapability) => {
     const tier = detectTier(cap);
     useAppStore.getState().setDetectedTier(tier);
     console.log(`[Performance] Detected tier: ${tier}`, cap);
 
     // Inform Electron main process of the appropriate telemetry interval
     const interval = TIER_CONFIG[tier].telemetryIntervalMs;
-    (window as any).electron?.setTelemetryInterval?.(interval);
+    (window as unknown as { electron?: ElectronAPI }).electron?.setTelemetryInterval?.(interval);
   });
 }

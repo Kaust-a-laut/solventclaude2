@@ -164,7 +164,7 @@ export const SettingsModal = () => {
 
   if (!settingsOpen) return null;
 
-  const tabs: { id: TabId; label: string; icon: any; shortcut: string }[] = [
+  const tabs: { id: TabId; label: string; icon: React.ElementType; shortcut: string }[] = [
     { id: 'models',    label: 'Models',    icon: Cpu,      shortcut: '\u2318 1' },
     { id: 'behavior',  label: 'Behavior',  icon: Sliders,  shortcut: '\u2318 2' },
     { id: 'api-keys',  label: 'API Keys',  icon: Key,      shortcut: '\u2318 3' },

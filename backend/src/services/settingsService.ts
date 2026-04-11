@@ -179,9 +179,10 @@ export class SettingsService {
         apiKey,
       });
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Pass message string only — AxiosError has circular refs that crash logger.scrub()
-      logger.error(`[SettingsService] API key validation failed for ${providerId}: ${error?.message || error}`);
+      const err = error as { message?: string };
+      logger.error(`[SettingsService] API key validation failed for ${providerId}: ${err?.message || String(error)}`);
       return false;
     }
   }

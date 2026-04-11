@@ -83,7 +83,7 @@ router.post('/memory/search', async (req: Request, res: Response) => {
   if (!query) return res.status(400).json({ error: 'query is required' });
 
   const results = await vectorService.search(query, limit);
-  const formattedResults = results.map((r: any) => ({
+  const formattedResults = results.map((r: { id: string; score: number; metadata?: Record<string, unknown> }) => ({
     id: r.id,
     score: r.score,
     text: r.metadata?.content || r.metadata?.summary || '',

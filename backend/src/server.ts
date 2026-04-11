@@ -101,7 +101,7 @@ io.use((socket, next) => {
 
 // --- Socket Connection ---
 io.on('connection', (socket) => {
-  console.log(`[Socket] Client connected: ${socket.id}`);
+  logger.info(`[Socket] Client connected: ${socket.id}`);
   // Join a session room so we can target emissions later
   const sessionRoom = `session:${socket.id}`;
   socket.join(sessionRoom);
@@ -131,7 +131,7 @@ io.on('connection', (socket) => {
       });
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));
-      console.error('[Socket] SYNC_NOTES handler error:', err);
+      logger.error('[Socket] SYNC_NOTES handler error:', err);
       socket.emit('error', { message: err.message, type: 'SYNC_NOTES_FAILED' });
     }
   });
@@ -160,7 +160,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log(`[Socket] Client disconnected: ${socket.id}`);
+    logger.info(`[Socket] Client disconnected: ${socket.id}`);
     socketLimiter.cleanup(socket.id);
   });
 });
@@ -192,9 +192,9 @@ try {
     io.emit('MISSION_FAILED', { jobId, error: failedReason });
   });
 
-  console.log('[Server] Mission progress bridge initialized');
+  logger.info('[Server] Mission progress bridge initialized');
 } catch (err) {
-  console.warn('[Server] Mission progress bridge unavailable (Redis not running — missions/task queue disabled)');
+  logger.warn('[Server] Mission progress bridge unavailable (Redis not running — missions/task queue disabled)');
 }
 
 // --- Global Middleware ---
@@ -236,7 +236,7 @@ app.use('/files', express.static(uploadDir));
 
 const API_SECRET = config.BACKEND_INTERNAL_SECRET;
 
-console.log(`[Server] API_SECRET initialized: ${API_SECRET === 'solvent_dev_insecure_default' ? '✓ Using default (dev mode)' : '✓ Using custom secret'}`);
+logger.info(`[Server] API_SECRET initialized: ${API_SECRET === 'solvent_dev_insecure_default' ? '✓ Using default (dev mode)' : '✓ Using custom secret'}`);
 
 // Dev-only secret exchange endpoint — mirrors what Electron's getSessionSecret() preload does.
 // Allows the browser frontend (running at localhost:5173) to retrieve the session secret
@@ -247,7 +247,7 @@ if (process.env.NODE_ENV === 'development') {
     const ip = req.ip || '';
     const isLocalhost = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
     if (!isLocalhost) {
-      console.warn(`[Security] /dev-secret accessed from non-localhost IP: ${ip}`);
+      logger.warn(`[Security] /dev-secret accessed from non-localhost IP: ${ip}`);
       return res.status(403).json({ error: 'Forbidden' });
     }
     res.json({ secret: API_SECRET });
@@ -280,7 +280,7 @@ app.use((req, res, next) => {
     // Don't log browser noise (direct visits to backend URL)
     const browserNoise = ['/', '/favicon.ico', '/robots.txt'];
     if (!browserNoise.includes(req.path)) {
-      console.warn(`[SECURITY] Unauthorized request to ${req.path} from ${req.ip}`);
+      logger.warn(`[SECURITY] Unauthorized request to ${req.path} from ${req.ip}`);
     }
     return res.status(401).json({ error: 'Unauthorized: Invalid session secret' });
   }
@@ -298,8 +298,12 @@ app.use('/api/debug', debugRoutes);
 app.use('/api/settings', settingsRoutes);
 
 // --- Error Handling Middleware ---
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('[Global Error Handler]', err);
+interface HttpError extends Error {
+  status?: number;
+}
+
+app.use((err: HttpError, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  logger.error('[Global Error Handler]', err);
   const status = err.status || 500;
   const message = err.message || 'Internal Server Error';
   res.status(status).json({
@@ -320,9 +324,9 @@ async function initializePlugins(): Promise<void> {
   try {
     await pluginManager.initialize();
     pluginsInitialized = true;
-    console.log('[Server] Plugin system initialized successfully');
+    logger.info('[Server] Plugin system initialized successfully');
   } catch (error) {
-    console.error('[Server] Failed to initialize plugin system:', error);
+    logger.error('[Server] Failed to initialize plugin system:', error);
     // Mark as degraded but don't exit - health check will reflect this
     pluginsDegraded = true;
   }
@@ -333,9 +337,9 @@ async function startCodebaseIndexing(): Promise<void> {
   try {
     // Start file watcher for incremental indexing
     await codebaseIndexer.start({ rootPath: process.cwd() });
-    console.log('[Server] Codebase indexer started with file watcher enabled');
+    logger.info('[Server] Codebase indexer started with file watcher enabled');
   } catch (error) {
-    console.error('[Server] Failed to start codebase indexer:', error);
+    logger.error('[Server] Failed to start codebase indexer:', error);
     // Don't fail server - indexing is optional
   }
 }
@@ -355,9 +359,9 @@ async function startServer(): Promise<void> {
   // Initialize settings before plugins
   try {
     await settingsService.initialize();
-    console.log('[Server] Settings service initialized successfully');
+    logger.info('[Server] Settings service initialized successfully');
   } catch (error) {
-    console.error('[Server] Failed to initialize settings service:', error);
+    logger.error('[Server] Failed to initialize settings service:', error);
   }
 
   // Wait for plugins to initialize before accepting requests
@@ -365,9 +369,9 @@ async function startServer(): Promise<void> {
 
   const host = process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1');
   httpServer.listen(port, host, () => {
-    console.log(`Server with Real-Time Overseer running on http://${host}:${port}`);
+    logger.info(`Server with Real-Time Overseer running on http://${host}:${port}`);
     if (pluginsDegraded) {
-      console.warn('[Server] Running in degraded mode - some plugin features may be unavailable');
+      logger.warn('[Server] Running in degraded mode - some plugin features may be unavailable');
     }
   });
 
@@ -381,7 +385,7 @@ async function startServer(): Promise<void> {
 }
 
 startServer().catch(error => {
-  console.error('[Server] Failed to start server:', error);
+  logger.error('[Server] Failed to start server:', error);
   process.exit(1);
 });
 

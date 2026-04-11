@@ -29,7 +29,7 @@ export class FireworksProviderPlugin implements IProviderPlugin {
       });
       return response.ok;
     } catch (error) {
-      console.error(`[Fireworks] Health check failed:`, error);
+      logger.error(`[Fireworks] Health check failed:`, error);
       return false;
     }
   }
@@ -50,8 +50,8 @@ export class FireworksProviderPlugin implements IProviderPlugin {
   private isInitialized = false;
   private apiKey: string | null = null;
 
-  async initialize(options: Record<string, any>): Promise<void> {
-    this.apiKey = options.apiKey || config.FIREWORKS_API_KEY || null;
+  async initialize(options: Record<string, unknown>): Promise<void> {
+    this.apiKey = (options.apiKey as string) || config.FIREWORKS_API_KEY || null;
     this.isInitialized = true;
     if (this.apiKey) {
       logger.info(`[Fireworks] Provider initialized (API key present: true)`);
@@ -96,7 +96,7 @@ export class FireworksProviderPlugin implements IProviderPlugin {
     // complete() contract for callers.
     const mustStream = maxTokens > 4096;
 
-    const requestBody: Record<string, any> = {
+    const requestBody: Record<string, unknown> = {
       model: model || this.defaultModel,
       messages: formattedMessages,
       temperature,
@@ -194,15 +194,16 @@ export class FireworksProviderPlugin implements IProviderPlugin {
       }
 
       return content;
-    } catch (error: any) {
-      if (error.response) {
-        logger.error(`[Fireworks] HTTP ${error.response.status}: ${JSON.stringify(error.response.data)}`);
-        throw new Error(`Fireworks API error (${error.response.status}): ${error.response.data?.error?.message || 'Unknown error'}`);
-      } else if (error.request) {
-        logger.error(`[Fireworks] No response received: ${error.message}`);
+    } catch (error: unknown) {
+      const err = error as { response?: { status: number; data: unknown }; request?: unknown; message?: string };
+      if (err.response) {
+        logger.error(`[Fireworks] HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`);
+        throw new Error(`Fireworks API error (${err.response.status}): ${(err.response.data as { error?: { message?: string } })?.error?.message || 'Unknown error'}`);
+      } else if (err.request) {
+        logger.error(`[Fireworks] No response received: ${err.message}`);
         throw new Error('Fireworks API did not respond - check network/API key');
       } else {
-        logger.error(`[Fireworks] Request error: ${error.message}`);
+        logger.error(`[Fireworks] Request error: ${err.message}`);
         throw error;
       }
     }
@@ -290,15 +291,16 @@ export class FireworksProviderPlugin implements IProviderPlugin {
           }
         }
       }
-    } catch (error: any) {
-      if (error.response) {
-        logger.error(`[Fireworks] Stream HTTP ${error.response.status}: ${JSON.stringify(error.response.data)}`);
-        throw new Error(`Fireworks API error (${error.response.status}): ${error.response.data?.error?.message || 'Unknown error'}`);
-      } else if (error.request) {
-        logger.error(`[Fireworks] Stream no response: ${error.message}`);
+    } catch (error: unknown) {
+      const err = error as { response?: { status: number; data: unknown }; request?: unknown; message?: string };
+      if (err.response) {
+        logger.error(`[Fireworks] Stream HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`);
+        throw new Error(`Fireworks API error (${err.response.status}): ${(err.response.data as { error?: { message?: string } })?.error?.message || 'Unknown error'}`);
+      } else if (err.request) {
+        logger.error(`[Fireworks] Stream no response: ${err.message}`);
         throw new Error('Fireworks API did not respond - check network/API key');
       } else {
-        logger.error(`[Fireworks] Stream error: ${error.message}`);
+        logger.error(`[Fireworks] Stream error: ${err.message}`);
         throw error;
       }
     }

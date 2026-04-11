@@ -29,7 +29,7 @@ export class CerebrasProviderPlugin implements IProviderPlugin {
       });
       return response.ok;
     } catch (error) {
-      console.error(`[Cerebras] Health check failed:`, error);
+      logger.error(`[Cerebras] Health check failed:`, error);
       return false;
     }
   }
@@ -50,8 +50,8 @@ export class CerebrasProviderPlugin implements IProviderPlugin {
   private isInitialized = false;
   private apiKey: string | null = null;
 
-  async initialize(options: Record<string, any>): Promise<void> {
-    this.apiKey = options.apiKey || config.CEREBRAS_API_KEY || null;
+  async initialize(options: Record<string, unknown>): Promise<void> {
+    this.apiKey = (options.apiKey as string) || config.CEREBRAS_API_KEY || null;
     this.isInitialized = true;
     logger.info(`[Cerebras] Provider initialized (API key present: ${!!this.apiKey})`);
   }
@@ -124,15 +124,16 @@ export class CerebrasProviderPlugin implements IProviderPlugin {
       }
 
       return response.data.choices[0].message.content;
-    } catch (error: any) {
-      if (error.response) {
-        logger.error(`[Cerebras] HTTP ${error.response.status}: ${JSON.stringify(error.response.data)}`);
-        throw new Error(`Cerebras API error (${error.response.status}): ${error.response.data?.error?.message || 'Unknown error'}`);
-      } else if (error.request) {
-        logger.error(`[Cerebras] No response received: ${error.message}`);
+    } catch (error: unknown) {
+      const err = error as { response?: { status: number; data: unknown }; request?: unknown; message?: string };
+      if (err.response) {
+        logger.error(`[Cerebras] HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`);
+        throw new Error(`Cerebras API error (${err.response.status}): ${(err.response.data as { error?: { message?: string } })?.error?.message || 'Unknown error'}`);
+      } else if (err.request) {
+        logger.error(`[Cerebras] No response received: ${err.message}`);
         throw new Error('Cerebras API did not respond - check network/API key');
       } else {
-        logger.error(`[Cerebras] Request error: ${error.message}`);
+        logger.error(`[Cerebras] Request error: ${err.message}`);
         throw error;
       }
     }
@@ -221,15 +222,16 @@ export class CerebrasProviderPlugin implements IProviderPlugin {
           }
         }
       }
-    } catch (error: any) {
-      if (error.response) {
-        logger.error(`[Cerebras] Stream HTTP ${error.response.status}: ${JSON.stringify(error.response.data)}`);
-        throw new Error(`Cerebras API error (${error.response.status}): ${error.response.data?.error?.message || 'Unknown error'}`);
-      } else if (error.request) {
-        logger.error(`[Cerebras] Stream no response: ${error.message}`);
+    } catch (error: unknown) {
+      const err = error as { response?: { status: number; data: unknown }; request?: unknown; message?: string };
+      if (err.response) {
+        logger.error(`[Cerebras] Stream HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`);
+        throw new Error(`Cerebras API error (${err.response.status}): ${(err.response.data as { error?: { message?: string } })?.error?.message || 'Unknown error'}`);
+      } else if (err.request) {
+        logger.error(`[Cerebras] Stream no response: ${err.message}`);
         throw new Error('Cerebras API did not respond - check network/API key');
       } else {
-        logger.error(`[Cerebras] Stream error: ${error.message}`);
+        logger.error(`[Cerebras] Stream error: ${err.message}`);
         throw error;
       }
     }

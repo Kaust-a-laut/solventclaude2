@@ -248,8 +248,10 @@ export function getOpenAITools() {
       description: tool.description,
       parameters: {
         type: "object",
-        properties: Object.keys(tool.parameters.properties).reduce((acc: any, key) => {
-          const prop = (tool.parameters.properties as any)[key];
+        properties: Object.keys(tool.parameters.properties).reduce((acc: Record<string, unknown>, key) => {
+          const props = tool.parameters.properties as Record<string, { type: string; description: string; enum?: unknown[]; items?: { type: string } }>;
+          const prop = props[key];
+          if (!prop) return acc;
           acc[key] = {
             type: prop.type.toLowerCase(),
             description: prop.description,

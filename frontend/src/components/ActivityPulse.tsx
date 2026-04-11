@@ -93,7 +93,7 @@ export const ActivityPulse: React.FC<ActivityPulseProps> = ({ collapsed = false 
       {/* Activity List */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin">
         <AnimatePresence initial={false}>
-          {activities.slice(0, 50).map((activity: any, i: number) => (
+          {activities.slice(0, 50).map((activity, i: number) => (
             <motion.div
               key={activity.id || `activity-${i}-${activity.timestamp}`}
               initial={{ opacity: 0, x: 20, height: 0 }}

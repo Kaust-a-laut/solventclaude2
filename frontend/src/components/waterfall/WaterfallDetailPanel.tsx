@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { useAppStore } from '../../store/useAppStore';
 import { STAGE_CONFIGS, type StageKey } from './WaterfallStageCard';
+import type { WaterfallStepPayload } from '../../store/waterfallSlice';
 import {
   AlertCircle, FileCode, ListChecks, Lightbulb, ShieldAlert,
   CheckCircle2, XCircle, GitBranch, HelpCircle, Layers,
@@ -11,7 +12,7 @@ import {
 
 interface WaterfallDetailPanelProps {
   selectedStage: StageKey | null;
-  steps: Record<StageKey, { status: string; data: any; error: string | null }>;
+  steps: Record<StageKey, { status: string; data: WaterfallStepPayload | null; error: string | null }>;
 }
 
 // ─── Data normalization ────────────────────────────────────────────────────
@@ -19,12 +20,13 @@ interface WaterfallDetailPanelProps {
 // comes back as { raw: "..." } when JSON parsing failed on the backend.
 // Normalize once so the renderers can stay clean.
 
-function normalizeData(data: any): any {
+function normalizeData(data: WaterfallStepPayload | null): WaterfallStepPayload | null {
   if (!data) return null;
   // Backend returns { raw: "..." } when JSON parse fails
-  if (data.raw && typeof data.raw === 'string') {
+  if (typeof data === 'object' && data !== null && 'raw' in data && typeof (data as Record<string, unknown>).raw === 'string') {
+    const raw = (data as Record<string, string>).raw!;
     try {
-      const cleaned = data.raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+      const cleaned = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
         .replace(/```json/g, '').replace(/```/g, '').trim();
       const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
       if (jsonMatch) return JSON.parse(jsonMatch[0]);
@@ -36,15 +38,17 @@ function normalizeData(data: any): any {
 
 /** SSE processing markers have { phase: 'planning', message: '...' } — not real output */
 const SSE_PHASES = ['planning', 'executing', 'reviewing', 'completed', 'retrying'];
-function isProcessingMarker(data: any): boolean {
+function isProcessingMarker(data: WaterfallStepPayload | null): boolean {
   if (!data || typeof data !== 'object') return false;
-  return SSE_PHASES.includes(data.phase);
+  return SSE_PHASES.includes((data as Record<string, unknown>).phase as string);
 }
 
 /** Check if data has any of the given keys with truthy values */
-function hasAny(data: any, keys: string[]): boolean {
+function hasAny(data: WaterfallStepPayload | null, keys: string[]): boolean {
+  if (!data || typeof data !== 'object') return false;
+  const obj = data as Record<string, unknown>;
   return keys.some((k) => {
-    const v = data[k];
+    const v = obj[k];
     if (v == null) return false;
     if (Array.isArray(v)) return v.length > 0;
     if (typeof v === 'string') return v.length > 0;
@@ -54,12 +58,14 @@ function hasAny(data: any, keys: string[]): boolean {
 
 // ─── Planner output (merged architect + reasoner) ─────────────────────────
 
-const PlannerOutput = ({ data, textColor }: { data: any; textColor: string }) => {
+const PlannerOutput = ({ data, textColor }: { data: WaterfallStepPayload | null; textColor: string }) => {
   if (!data) return null;
   const d = normalizeData(data);
+  if (!d) return null;
+  const dd = d as Record<string, unknown>;
 
   // Raw string fallback
-  if (d.raw && typeof d.raw === 'string') return <RawOutput text={d.raw} />;
+  if (dd.raw && typeof dd.raw === 'string') return <RawOutput text={dd.raw as string} />;
 
   // Check if data has any known planner fields
   if (!hasAny(d, ['plan', 'steps', 'keyDecisions', 'assumptions', 'techStack', 'complexity', 'openQuestions'])) {
@@ -68,60 +74,63 @@ const PlannerOutput = ({ data, textColor }: { data: any; textColor: string }) =>
 
   return (
     <div className="space-y-5">
-      {d.plan && (
+      {dd.plan != null && (
         <Section label="Implementation Plan">
-          <FormattedText text={d.plan} />
+          <FormattedText text={String(dd.plan)} />
         </Section>
       )}
-      {d.complexity && (
+      {dd.complexity != null && (
         <div className="flex items-center gap-2">
           <Label>Complexity</Label>
-          <ComplexityBadge level={d.complexity} />
+          <ComplexityBadge level={String(dd.complexity)} />
         </div>
       )}
-      {d.steps?.length > 0 && (
-        <Section label={`Execution Steps (${d.steps.length})`}>
+      {Array.isArray(dd.steps) && dd.steps.length > 0 && (
+        <Section label={`Execution Steps (${dd.steps.length})`}>
           <div className="space-y-3">
-            {d.steps.map((s: any, i: number) => (
-              <div key={i} className="flex items-start gap-3">
-                <span className={cn(
-                  'w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-black shrink-0 mt-0.5',
-                  'bg-jb-purple/10 text-jb-purple border border-jb-purple/20',
-                )}>
-                  {i + 1}
-                </span>
-                <div className="flex-1 min-w-0">
-                  {s.title && (
-                    <strong className="text-[14px] text-slate-200 block mb-1">{s.title}</strong>
-                  )}
-                  <FormattedText text={s.description || (typeof s === 'string' ? s : JSON.stringify(s))} size="sm" />
+            {dd.steps.map((s: unknown, i: number) => {
+              const step = typeof s === 'object' && s !== null ? s as Record<string, unknown> : null;
+              return (
+                <div key={i} className="flex items-start gap-3">
+                  <span className={cn(
+                    'w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-black shrink-0 mt-0.5',
+                    'bg-jb-purple/10 text-jb-purple border border-jb-purple/20',
+                  )}>
+                    {i + 1}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    {step?.title != null && (
+                      <strong className="text-[14px] text-slate-200 block mb-1">{String(step.title)}</strong>
+                    )}
+                    <FormattedText text={step?.description != null ? String(step.description) : typeof s === 'string' ? s : JSON.stringify(s)} size="sm" />
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Section>
       )}
-      {d.keyDecisions?.length > 0 && (
+      {Array.isArray(dd.keyDecisions) && dd.keyDecisions.length > 0 && (
         <Section label="Key Decisions">
-          <NumberedList items={d.keyDecisions} color={textColor} />
+          <NumberedList items={dd.keyDecisions.map(String)} color={textColor} />
         </Section>
       )}
-      {d.assumptions?.length > 0 && (
+      {dd.assumptions != null && (
         <Section label="Assumptions">
           <BulletList
-            items={Array.isArray(d.assumptions) ? d.assumptions : [d.assumptions]}
+            items={(Array.isArray(dd.assumptions) ? dd.assumptions.map(String) : [String(dd.assumptions)])}
             className="text-slate-300 italic"
           />
         </Section>
       )}
-      {d.techStack?.length > 0 && (
+      {Array.isArray(dd.techStack) && dd.techStack.length > 0 && (
         <Section label="Tech Stack">
-          <ChipList items={d.techStack} />
+          <ChipList items={dd.techStack.map(String)} />
         </Section>
       )}
-      {d.openQuestions?.length > 0 && (
+      {Array.isArray(dd.openQuestions) && dd.openQuestions.length > 0 && (
         <Section label="Open Questions" icon={<HelpCircle size={10} />}>
-          <BulletList items={d.openQuestions} className="text-amber-400/70" icon={<HelpCircle size={9} className="text-amber-400/50 mt-0.5 shrink-0" />} />
+          <BulletList items={dd.openQuestions.map(String)} className="text-amber-400/70" icon={<HelpCircle size={9} className="text-amber-400/50 mt-0.5 shrink-0" />} />
         </Section>
       )}
     </div>
@@ -149,31 +158,33 @@ const CopyButton = ({ text }: { text: string }) => {
 
 // ─── Executor output ───────────────────────────────────────────────────────
 
-const ExecutorOutput = ({ data }: { data: any }) => {
+const ExecutorOutput = ({ data }: { data: WaterfallStepPayload | null }) => {
   if (!data) return null;
   const d = normalizeData(data);
+  if (!d) return null;
+  const dd = d as Record<string, unknown>;
 
-  if (d.raw && typeof d.raw === 'string') return <RawOutput text={d.raw} />;
+  if (dd.raw && typeof dd.raw === 'string') return <RawOutput text={dd.raw as string} />;
   if (!hasAny(d, ['code', 'explanation', 'files', 'decisionsOverridden'])) {
     return <GenericOutput data={d} />;
   }
 
   // Split code into file sections
-  const codeBlocks = splitCodeByFiles(d.code);
+  const codeBlocks = splitCodeByFiles(typeof dd.code === 'string' ? dd.code : undefined);
 
   return (
     <div className="space-y-5">
-      {d.explanation && (
+      {dd.explanation != null && (
         <Section label="Explanation">
-          <FormattedText text={d.explanation} />
+          <FormattedText text={String(dd.explanation)} />
         </Section>
       )}
-      {d.files?.length > 0 && (
+      {Array.isArray(dd.files) && dd.files.length > 0 && (
         <Section label="Files" icon={<Layers size={10} />}>
           <div className="flex flex-wrap gap-1.5">
-            {d.files.map((f: string, i: number) => (
+            {dd.files.map((f: unknown, i: number) => (
               <span key={i} className="px-2.5 py-1 rounded-lg bg-jb-orange/10 border border-jb-orange/20 text-[13px] font-mono text-jb-orange/80 font-medium">
-                {f}
+                {String(f)}
               </span>
             ))}
           </div>
@@ -199,9 +210,9 @@ const ExecutorOutput = ({ data }: { data: any }) => {
           </div>
         </Section>
       )}
-      {d.decisionsOverridden?.length > 0 && (
+      {Array.isArray(dd.decisionsOverridden) && dd.decisionsOverridden.length > 0 && (
         <Section label="Decisions Overridden">
-          <BulletList items={d.decisionsOverridden} className="text-amber-400/70" icon={<XCircle size={9} className="text-amber-400/50 mt-0.5 shrink-0" />} />
+          <BulletList items={dd.decisionsOverridden as string[]} className="text-amber-400/70" icon={<XCircle size={9} className="text-amber-400/50 mt-0.5 shrink-0" />} />
         </Section>
       )}
     </div>
@@ -217,33 +228,36 @@ const scoreColor = (score: number) => {
   return { text: 'text-rose-400', bg: 'bg-rose-500', ring: 'ring-rose-500/30' };
 };
 
-const ReviewerOutput = ({ data }: { data: any }) => {
+const ReviewerOutput = ({ data }: { data: WaterfallStepPayload | null }) => {
   if (!data) return null;
   const d = normalizeData(data);
+  if (!d) return null;
+  const dd = d as Record<string, unknown>;
 
-  if (d.raw && typeof d.raw === 'string') return <RawOutput text={d.raw} />;
+  if (dd.raw && typeof dd.raw === 'string') return <RawOutput text={dd.raw as string} />;
   if (!hasAny(d, ['score', 'summary', 'issues', 'breakdown', 'decisionsHonored', 'compilationStatus'])) {
     return <GenericOutput data={d} />;
   }
 
-  const sc = d.score != null ? scoreColor(d.score) : null;
+  const scoreNum = typeof dd.score === 'number' ? dd.score : Number(dd.score);
+  const sc = dd.score != null ? scoreColor(scoreNum) : null;
 
   return (
     <div className="space-y-5">
       {/* Score header */}
-      {d.score != null && (
+      {dd.score != null && (
         <div className="flex items-center gap-4">
           <div className={cn('w-16 h-16 rounded-2xl flex items-center justify-center ring-2', sc!.ring, 'bg-white/[0.03]')}>
-            <span className={cn('text-2xl font-black tabular-nums', sc!.text)}>{d.score}</span>
+            <span className={cn('text-2xl font-black tabular-nums', sc!.text)}>{scoreNum}</span>
           </div>
           <div>
             <span className="text-[12px] font-black text-slate-300 uppercase tracking-widest block">Quality Score</span>
-            {d.compilationStatus && (
+            {dd.compilationStatus != null && (
               <span className={cn(
                 'text-[11px] font-mono mt-1 block',
-                d.compilationStatus.includes('Validated') ? 'text-emerald-400/60' : 'text-amber-400/60',
+                String(dd.compilationStatus).includes('Validated') ? 'text-emerald-400/60' : 'text-amber-400/60',
               )}>
-                {d.compilationStatus}
+                {String(dd.compilationStatus)}
               </span>
             )}
           </div>
@@ -251,12 +265,12 @@ const ReviewerOutput = ({ data }: { data: any }) => {
       )}
 
       {/* Breakdown grid */}
-      {d.breakdown && (
+      {dd.breakdown != null && typeof dd.breakdown === 'object' && (
         <Section label="Score Breakdown" icon={<ShieldAlert size={10} />}>
           <div className="grid grid-cols-4 gap-2">
-            {Object.entries(d.breakdown).map(([key, val]) => (
+            {Object.entries(dd.breakdown).map(([key, val]) => (
               <div key={key} className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-center">
-                <div className="text-[18px] font-black text-white tabular-nums">{val as number}</div>
+                <div className="text-[18px] font-black text-white tabular-nums">{String(val)}</div>
                 <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider mt-0.5">{key}</div>
               </div>
             ))}
@@ -264,42 +278,42 @@ const ReviewerOutput = ({ data }: { data: any }) => {
         </Section>
       )}
 
-      {d.summary && (
+      {dd.summary != null && (
         <Section label="Summary">
-          <FormattedText text={d.summary} />
+          <FormattedText text={String(dd.summary)} />
         </Section>
       )}
 
-      {d.issues?.length > 0 && (
-        <Section label={`Issues (${d.issues.length})`} icon={<ListChecks size={10} />}>
+      {Array.isArray(dd.issues) && dd.issues.length > 0 && (
+        <Section label={`Issues (${dd.issues.length})`} icon={<ListChecks size={10} />}>
           <div className="space-y-2">
-            {d.issues.map((issue: string, i: number) => (
+            {dd.issues.map((issue: unknown, i: number) => (
               <div key={i} className="flex items-start gap-2.5 text-[14px] text-slate-400 leading-relaxed">
                 <span className="w-2 h-2 rounded-full bg-rose-500/60 mt-1.5 shrink-0" />
-                <span>{issue}</span>
+                <span>{String(issue)}</span>
               </div>
             ))}
           </div>
         </Section>
       )}
 
-      {d.decisionsHonored?.length > 0 && (
+      {Array.isArray(dd.decisionsHonored) && dd.decisionsHonored.length > 0 && (
         <Section label="Decisions Honored">
           <div className="space-y-1.5">
-            {d.decisionsHonored.map((dec: string, i: number) => (
+            {dd.decisionsHonored.map((dec: unknown, i: number) => (
               <div key={i} className="flex items-start gap-2.5 text-[14px] text-emerald-400/70 leading-relaxed">
                 <CheckCircle2 size={11} className="text-emerald-500/50 mt-0.5 shrink-0" />
-                <span>{dec}</span>
+                <span>{String(dec)}</span>
               </div>
             ))}
           </div>
         </Section>
       )}
 
-      {d.crystallizable_insight && (
+      {dd.crystallizable_insight != null && (
         <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/15">
           <Label icon={<Lightbulb size={10} className="text-emerald-400" />}>Crystallized Insight</Label>
-          <p className="text-[14px] text-emerald-300/80 leading-relaxed mt-1">{d.crystallizable_insight}</p>
+          <p className="text-[14px] text-emerald-300/80 leading-relaxed mt-1">{String(dd.crystallizable_insight)}</p>
         </div>
       )}
     </div>
@@ -433,16 +447,18 @@ function triggerDownload(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-function downloadStageJSON(stage: string, data: any) {
+function downloadStageJSON(stage: string, data: WaterfallStepPayload | null) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   triggerDownload(blob, `solvent-waterfall-${stage}.json`);
 }
 
 /** Extract individual {path, content} files from executor code string */
-function extractCodeFiles(executorData: any): { path: string; content: string }[] {
+function extractCodeFiles(executorData: WaterfallStepPayload | null): { path: string; content: string }[] {
   const d = normalizeData(executorData);
-  if (!d?.code) return [];
-  const blocks = splitCodeByFiles(d.code);
+  if (!d || typeof d !== 'object' || !('code' in d)) return [];
+  const code = (d as Record<string, unknown>).code;
+  if (typeof code !== 'string') return [];
+  const blocks = splitCodeByFiles(code);
   return blocks
     .filter((b) => b.code.trim())
     .map((b) => ({ path: b.filename || 'pipeline-output.txt', content: b.code.trim() }));
@@ -461,9 +477,9 @@ const RawOutput = ({ text }: { text: string }) => (
   </div>
 );
 
-const GenericOutput = ({ data }: { data: any }) => {
-  // Try to render known-ish fields first
-  const entries = Object.entries(data).filter(([k, v]) =>
+const GenericOutput = ({ data }: { data: WaterfallStepPayload | null }) => {
+  if (!data) return null;
+  const entries = Object.entries(data as Record<string, unknown>).filter(([k, v]) =>
     v != null && k !== 'message' && k !== '_parseError' && k !== 'raw'
   );
 
@@ -479,7 +495,7 @@ const GenericOutput = ({ data }: { data: any }) => {
           {typeof val === 'string' ? (
             <FormattedText text={val} />
           ) : Array.isArray(val) ? (
-            <BulletList items={val.map((v: any) => typeof v === 'string' ? v : JSON.stringify(v))} className="text-slate-400" />
+            <BulletList items={val.map((v: unknown) => typeof v === 'string' ? v : JSON.stringify(v))} className="text-slate-400" />
           ) : typeof val === 'object' ? (
             <pre className="p-3 bg-black/40 rounded-xl font-mono text-[12px] text-slate-400 overflow-x-auto scrollbar-thin">
               {JSON.stringify(val, null, 2)}

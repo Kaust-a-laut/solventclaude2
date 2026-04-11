@@ -236,7 +236,10 @@ async function createWindow() {
       BrowserWindow.getAllWindows().forEach(win => {
         win.webContents.send('system-telemetry', stats);
       });
-    } catch (e) {}
+    } catch (e) {
+      // Log silently — telemetry failures should not crash the main process
+      console.error('[Main] System telemetry failed:', e);
+    }
 
     setTimeout(runTelemetry, telemetryInterval);
   };

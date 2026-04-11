@@ -3,17 +3,17 @@ import { fetchWithRetry } from './api-client';
 const API_BASE = '/api/v1';
 
 interface ApiClient {
-  get: <T = any>(url: string, options?: RequestInit) => Promise<{ data: T }>;
-  post: <T = any>(url: string, data?: any, options?: RequestInit) => Promise<{ data: T }>;
-  put: <T = any>(url: string, data?: any, options?: RequestInit) => Promise<{ data: T }>;
-  delete: <T = any>(url: string, options?: RequestInit) => Promise<{ data: T }>;
-  patch: <T = any>(url: string, data?: any, options?: RequestInit) => Promise<{ data: T }>;
+  get: <T = unknown>(url: string, options?: RequestInit) => Promise<{ data: T }>;
+  post: <T = unknown>(url: string, data?: BodyInit | null | Record<string, unknown>, options?: RequestInit) => Promise<{ data: T }>;
+  put: <T = unknown>(url: string, data?: BodyInit | null | Record<string, unknown>, options?: RequestInit) => Promise<{ data: T }>;
+  delete: <T = unknown>(url: string, options?: RequestInit) => Promise<{ data: T }>;
+  patch: <T = unknown>(url: string, data?: BodyInit | null | Record<string, unknown>, options?: RequestInit) => Promise<{ data: T }>;
 }
 
-async function request<T = any>(
+async function request<T = unknown>(
   url: string,
   method: string,
-  body?: any,
+  body?: BodyInit | null | Record<string, unknown>,
   options?: RequestInit
 ): Promise<{ data: T }> {
   const fullUrl = url.startsWith('http') ? url : `${API_BASE}${url}`;

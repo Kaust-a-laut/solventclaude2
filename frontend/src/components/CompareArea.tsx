@@ -46,7 +46,7 @@ export const CompareArea = () => {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Comparison failed.');
       setResults(data);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       setError(e.message);
     } finally {

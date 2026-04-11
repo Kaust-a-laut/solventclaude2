@@ -344,12 +344,13 @@ export async function* runConversation(
         maxTokens: 1024,
         signal,
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (signal?.aborted) {
         session.status = 'cancelled';
         break;
       }
-      logger.error(`[ConversationService] Agent ${nextAgent.id} failed:`, e.message);
+      const err = e as Error;
+      logger.error(`[ConversationService] Agent ${nextAgent.id} failed:`, err.message);
       content = `[I encountered an issue formulating my response. Let me defer to the next expert.]`;
     }
 
@@ -456,9 +457,10 @@ IMPORTANT:
         event: 'synthesis_done',
         data: { synthesis }
       };
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (!signal?.aborted) {
-        logger.error('[ConversationService] Synthesis failed:', e.message);
+        const err = e as Error;
+        logger.error('[ConversationService] Synthesis failed:', err.message);
         session.synthesis = 'Synthesis failed — please review the transcript above for key takeaways.';
         session.status = 'complete';
         yield {

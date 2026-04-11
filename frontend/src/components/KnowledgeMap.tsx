@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { forceSimulation, forceLink, forceManyBody, forceCenter, forceX, forceY } from 'd3-force';
+import { forceSimulation, forceLink, forceManyBody, forceCenter, forceX, forceY, SimulationLinkDatum } from 'd3-force';
 import { select } from 'd3-selection';
 import { zoom as d3Zoom } from 'd3-zoom';
 import { drag as d3Drag } from 'd3-drag';
@@ -8,6 +8,8 @@ import { TIER_CONFIG } from '../lib/performanceTier';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { X, Save } from 'lucide-react';
+
+type SimNode = GraphNode & { x: number; y: number; fx?: number | null; fy?: number | null };
 
 export const KnowledgeMap = () => {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -23,7 +25,7 @@ export const KnowledgeMap = () => {
   // Handle Resize for the Knowledge Map container
   useEffect(() => {
     if (!containerRef.current) return;
-    
+
     const observer = new ResizeObserver((entries) => {
       for (let entry of entries) {
         setDimensions({
@@ -32,7 +34,7 @@ export const KnowledgeMap = () => {
         });
       }
     });
-    
+
     observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, []);
@@ -68,10 +70,13 @@ export const KnowledgeMap = () => {
         g.attr("transform", event.transform);
       });
 
-    svg.call(zoom as any);
+    svg.call(zoom);
 
-    const simulation = forceSimulation(displayNodes as any)
-      .force("link", forceLink(displayEdges).id((d: any) => d.id).distance(100))
+    const nodes = displayNodes.map(n => ({ ...n, x: width / 2, y: height / 2 })) as SimNode[];
+    const links = displayEdges as SimulationLinkDatum<SimNode>[];
+
+    const simulation = forceSimulation<SimNode>(nodes)
+      .force("link", forceLink<SimNode, SimulationLinkDatum<SimNode>>(links).id((d) => d.id).distance(100))
       .force("charge", forceManyBody().strength(-400))
       .force("center", forceCenter(width / 2, height / 2))
       .force("x", forceX(width / 2).strength(0.1))
@@ -81,7 +86,7 @@ export const KnowledgeMap = () => {
     simulation.alphaDecay(activeTier === 'lite' ? 0.05 : 0.0228);
 
     // --- VISUALIZATION HELPERS ---
-    const getNodeColor = (d: any) => {
+    const getNodeColor = (d: SimNode) => {
       // 1. Crystallized Memory Types
       if (d.type === 'permanent_rule') return '#F59E0B'; // Gold (Law)
       if (d.type === 'solution_pattern') return '#06B6D4'; // Cyan (Blueprint)
@@ -95,7 +100,7 @@ export const KnowledgeMap = () => {
 
     // Define holographic gradients and filters
     const defs = svg.append("defs");
-    
+
     const nodeGradient = defs.append("radialGradient")
       .attr("id", "nodeHologram")
       .attr("cx", "30%")
@@ -130,7 +135,7 @@ export const KnowledgeMap = () => {
       .on("click", (event, d) => {
         event.stopPropagation();
         setSelectedEdge(d);
-        setEdgeData(d.data || JSON.stringify({ source: (d.source as any).id, target: (d.target as any).id, status: "pending" }, null, 2));
+        setEdgeData(d.data || JSON.stringify({ source: (d.source as SimulationLinkDatum<SimNode>).source?.id ?? d.source, target: (d.target as SimulationLinkDatum<SimNode>).target?.id ?? d.target, status: "pending" }, null, 2));
       });
 
     const node = g.append("g")
@@ -138,8 +143,25 @@ export const KnowledgeMap = () => {
       .data(displayNodes)
       .join("g")
       .attr("cursor", "grab")
-      .call(drag(simulation) as any)
-      .on("mouseover", (event, d: any) => {
+      .call(d3Drag()
+        .on("start", function(event) {
+          if (!event.active) simulation.alphaTarget(0.3).restart();
+          event.subject.fx = event.subject.x;
+          event.subject.fy = event.subject.y;
+          select(event.sourceEvent.currentTarget).attr("cursor", "grabbing");
+        })
+        .on("drag", function(event) {
+          event.subject.fx = event.x;
+          event.subject.fy = event.y;
+        })
+        .on("end", function(event) {
+          if (!event.active) simulation.alphaTarget(0);
+          event.subject.fx = null;
+          event.subject.fy = null;
+          select(event.sourceEvent.currentTarget).attr("cursor", "grab");
+        })
+      )
+      .on("mouseover", (event, d: SimNode) => {
          select(event.currentTarget).select("circle.outer-glow").attr("r", 14).attr("opacity", 0.4);
          setHoveredNode(d);
       })
@@ -152,7 +174,7 @@ export const KnowledgeMap = () => {
     node.append("circle")
       .attr("class", "outer-glow")
       .attr("r", 10)
-      .attr("fill", (d: any) => getNodeColor(d))
+      .attr("fill", (d: SimNode) => getNodeColor(d))
       .attr("filter", "blur(4px)")
       .attr("opacity", 0.2)
       .style("transition", "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)");
@@ -161,14 +183,14 @@ export const KnowledgeMap = () => {
     node.append("circle")
       .attr("r", 6)
       .attr("fill", "url(#nodeHologram)")
-      .style("color", (d: any) => getNodeColor(d))
+      .style("color", (d: SimNode) => getNodeColor(d))
       .attr("stroke", "rgba(255,255,255,0.2)")
       .attr("stroke-width", 0.5)
       .style("box-shadow", "inset 0 0 10px rgba(255,255,255,0.5)");
 
     // Labels
     node.append("text")
-      .text((d: any) => d.title)
+      .text((d: SimNode) => d.title)
       .attr("x", 10)
       .attr("y", 4)
       .style("font-size", "9px")
@@ -181,36 +203,13 @@ export const KnowledgeMap = () => {
 
     simulation.on("tick", () => {
       link
-        .attr("x1", (d: any) => d.source.x)
-        .attr("y1", (d: any) => d.source.y)
-        .attr("x2", (d: any) => d.target.x)
-        .attr("y2", (d: any) => d.target.y);
+        .attr("x1", (d: SimulationLinkDatum<SimNode>) => (d.source as SimNode).x)
+        .attr("y1", (d: SimulationLinkDatum<SimNode>) => (d.source as SimNode).y)
+        .attr("x2", (d: SimulationLinkDatum<SimNode>) => (d.target as SimNode).x)
+        .attr("y2", (d: SimulationLinkDatum<SimNode>) => (d.target as SimNode).y);
 
-      node.attr("transform", (d: any) => `translate(${d.x},${d.y})`);
+      node.attr("transform", (d: SimNode) => `translate(${d.x},${d.y})`);
     });
-
-    function drag(simulation: any) {
-      function dragstarted(event: any) {
-        if (!event.active) simulation.alphaTarget(0.3).restart();
-        event.subject.fx = event.subject.x;
-        event.subject.fy = event.subject.y;
-        select(event.sourceEvent.currentTarget).attr("cursor", "grabbing");
-      }
-      function dragged(event: any) {
-        event.subject.fx = event.x;
-        event.subject.fy = event.y;
-      }
-      function dragended(event: any) {
-        if (!event.active) simulation.alphaTarget(0);
-        event.subject.fx = null;
-        event.subject.fy = null;
-        select(event.sourceEvent.currentTarget).attr("cursor", "grab");
-      }
-      return d3Drag()
-        .on("start", dragstarted)
-        .on("drag", dragged)
-        .on("end", dragended);
-    }
 
     return () => {
       simulation.stop();
@@ -219,29 +218,22 @@ export const KnowledgeMap = () => {
 
   const handleSaveEdgeData = () => {
     if (!selectedEdge) return;
-    
+
     // Update the edge data in the store
     const newEdges = graphEdges.map(e => {
         // d3 modifies the source/target objects, so we check IDs
-        const sId = (e.source as any).id || e.source;
-        const tId = (e.target as any).id || e.target;
-        const selSId = (selectedEdge.source as any).id || selectedEdge.source;
-        const selTId = (selectedEdge.target as any).id || selectedEdge.target;
+        const sId = (e.source as { id?: string })?.id ?? e.source;
+        const tId = (e.target as { id?: string })?.id ?? e.target;
+        const selSId = (selectedEdge.source as { id?: string })?.id ?? selectedEdge.source;
+        const selTId = (selectedEdge.target as { id?: string })?.id ?? selectedEdge.target;
 
         if (sId === selSId && tId === selTId) {
             return { ...e, data: edgeData };
         }
         return e;
     });
-    
+
     setGraphData(graphNodes, newEdges);
-    
-    // Here we would also notify the Supervisor Agent via IPC
-    // window.electron?.send('supervisor-edge-override', { 
-    //   source: (selectedEdge.source as any).id, 
-    //   target: (selectedEdge.target as any).id, 
-    //   data: edgeData 
-    // });
 
     setSelectedEdge(null);
   };

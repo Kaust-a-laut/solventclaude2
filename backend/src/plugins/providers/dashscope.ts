@@ -1,6 +1,7 @@
 import { IProviderPlugin } from '../../types/plugins';
 import { ChatMessage, CompletionOptions } from '../../types/ai';
 import { config } from '../../config';
+import { logger } from '../../utils/logger';
 import axios from 'axios';
 
 const DASHSCOPE_BASE_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1';
@@ -24,8 +25,8 @@ export class DashScopeProviderPlugin implements IProviderPlugin {
   private isInitialized = false;
   private apiKey: string | null = null;
 
-  async initialize(options: Record<string, any>): Promise<void> {
-    this.apiKey = options.apiKey || config.DASHSCOPE_API_KEY || null;
+  async initialize(options: Record<string, unknown>): Promise<void> {
+    this.apiKey = (options.apiKey as string) || config.DASHSCOPE_API_KEY || null;
     this.isInitialized = true;
   }
 
@@ -81,12 +82,13 @@ export class DashScopeProviderPlugin implements IProviderPlugin {
         timeout: 180_000,
       });
 
-      console.log(`[DashScope] Response OK: model=${effectiveModel}`);
+      logger.info(`[DashScope] Response OK: model=${effectiveModel}`);
       return response.data.choices[0].message.content;
-    } catch (error: any) {
-      const status = error?.response?.status;
-      const errData = error?.response?.data;
-      console.error(`[DashScope] Request error (${status}): model=${effectiveModel}`, JSON.stringify(errData || error.message));
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number; data?: unknown }; message?: string };
+      const status = err?.response?.status;
+      const errData = err?.response?.data;
+      logger.error(`[DashScope] Request error (${status}): model=${effectiveModel}`, JSON.stringify(errData || err.message));
       throw error;
     }
   }

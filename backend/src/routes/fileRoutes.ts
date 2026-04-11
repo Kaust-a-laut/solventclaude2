@@ -71,7 +71,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-async function getFileTree(dir: string, base: string = ''): Promise<any[]> {
+async function getFileTree(dir: string, base: string = ''): Promise<Array<{ name: string; type: string; path?: string; children?: Array<unknown> }>> {
   try {
     const entries = await fs.readdir(dir, { withFileTypes: true });
     const nodes = [];

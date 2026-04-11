@@ -11,6 +11,15 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
+import type { SearchResultSet } from '../store/types';
+
+interface SearchResultItem {
+  title: string;
+  link: string;
+  snippet?: string;
+  relevanceScore?: number;
+}
+
 const URL_PATTERN = /^https?:\/\//i;
 
 function extractHostname(url: string): string {
@@ -59,7 +68,7 @@ export const IntelPanel: React.FC = () => {
         const items = results?.results || results?.organic || [];
         const answer = results?.answerBox || null;
         const related = results?.relatedSearches || [];
-        const searchResults = {
+        const searchResults: SearchResultSet = {
           results: items,
           answerBox: answer,
           relatedSearches: related,
@@ -68,7 +77,7 @@ export const IntelPanel: React.FC = () => {
           stats: results?.stats,
         };
         if (!items.length && !answer) {
-          (searchResults as any).error = 'Zero matches returned';
+          searchResults.error = 'Zero matches returned';
         }
         setIntelPanelContent({ type: 'search', searchResults, query });
       } catch {
@@ -99,7 +108,7 @@ export const IntelPanel: React.FC = () => {
       context = intelPanelContent.pageContent.content;
     } else if (intelPanelContent.type === 'search' && intelPanelContent.searchResults) {
       const results = intelPanelContent.searchResults.results || [];
-      context = results.slice(0, 5).map((r: any) => `${r.title}: ${r.snippet || ''}`).join('\n');
+      context = results.slice(0, 5).map((r: SearchResultItem) => `${r.title}: ${r.snippet || ''}`).join('\n');
       if (intelPanelContent.searchResults.synthesis?.answer) {
         context = intelPanelContent.searchResults.synthesis.answer + '\n\n' + context;
       }
@@ -128,7 +137,7 @@ export const IntelPanel: React.FC = () => {
       const syn = intelPanelContent.searchResults.synthesis;
       if (syn) return `Search: "${intelPanelContent.query}"\n\n${syn.answer}`;
       const top = (intelPanelContent.searchResults.results || []).slice(0, 3);
-      return `Search: "${intelPanelContent.query}"\n\n` + top.map((r: any) => `- ${r.title}: ${r.snippet || ''}`).join('\n');
+      return `Search: "${intelPanelContent.query}"\n\n` + top.map((r: SearchResultItem) => `- ${r.title}: ${r.snippet || ''}`).join('\n');
     }
     return '';
   }, [intelPanelContent]);
@@ -297,7 +306,7 @@ export const IntelPanel: React.FC = () => {
             )}
 
             {/* Results List */}
-            {(intelPanelContent.searchResults.results || []).map((result: any, i: number) => (
+            {(intelPanelContent.searchResults.results || []).map((result: SearchResultItem, i: number) => (
               <button
                 key={i}
                 onClick={() => handleResultClick(result.link)}

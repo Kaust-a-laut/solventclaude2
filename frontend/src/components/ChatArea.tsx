@@ -15,6 +15,8 @@ import { SupervisorHistory } from './SupervisorHistory';
 import { KnowledgeMapMini } from './KnowledgeMapMini';
 import { cn } from '../lib/utils';
 
+import type { ActivityEvent } from '../store/types';
+
 // Lazy load feature areas to slim down the main bundle
 const DebateArea = lazy(() => import('./DebateArea').then(m => ({ default: m.DebateArea })));
 const CompareArea = lazy(() => import('./CompareArea').then(m => ({ default: m.CompareArea })));
@@ -78,7 +80,7 @@ export const ChatArea = () => {
   useEffect(() => {
     if (window.electron?.onModeChanged) {
       return window.electron.onModeChanged((mode: string) => {
-        setCurrentMode(mode as any);
+        setCurrentMode(mode);
       });
     }
   }, [setCurrentMode]);
@@ -96,7 +98,7 @@ export const ChatArea = () => {
 
   useEffect(() => {
     if (window.electron?.onSupervisorNudge) {
-      const cleanup = window.electron.onSupervisorNudge((nudge: any) => {
+      const cleanup = window.electron.onSupervisorNudge((nudge: { message: string }) => {
         setSupervisorInsight(nudge.message);
         setTimeout(() => setSupervisorInsight(null), 10000);
       });
@@ -105,8 +107,9 @@ export const ChatArea = () => {
   }, []);
 
   useEffect(() => {
-    if (window.electron && (window.electron as any).onSupervisorData) {
-      return (window.electron as any).onSupervisorData((activity: any) => {
+    const electron = window.electron as Record<string, unknown> | undefined;
+    if (electron && typeof electron.onSupervisorData === 'function') {
+      return (electron.onSupervisorData as (cb: (activity: ActivityEvent) => void) => (() => void) | undefined)((activity: ActivityEvent) => {
         addActivity(activity);
       });
     }

@@ -1,6 +1,7 @@
 import { IProviderPlugin } from '../../types/plugins';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { config } from '../../config';
+import { logger } from '../../utils/logger';
 import { ChatMessage, CompletionOptions } from '../../types/ai';
 
 export class GeminiProviderPlugin implements IProviderPlugin {
@@ -28,7 +29,7 @@ export class GeminiProviderPlugin implements IProviderPlugin {
       const result = await model.generateContent('Hello');
       return !!result.response.text();
     } catch (error) {
-      console.error(`[Gemini] Health check failed:`, error);
+      logger.error(`[Gemini] Health check failed:`, error);
       return false;
     }
   }
@@ -52,8 +53,8 @@ export class GeminiProviderPlugin implements IProviderPlugin {
   private genAI: GoogleGenerativeAI | null = null;
   private isInitialized = false;
 
-  async initialize(options: Record<string, any>): Promise<void> {
-    const apiKey = options.apiKey || config.GEMINI_API_KEY;
+  async initialize(options: Record<string, unknown>): Promise<void> {
+    const apiKey = (options.apiKey as string) || config.GEMINI_API_KEY;
     if (apiKey) {
       this.genAI = new GoogleGenerativeAI(apiKey);
     }

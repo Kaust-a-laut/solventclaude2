@@ -22,6 +22,12 @@ export class APIError extends Error {
   }
 }
 
+export interface ViteEnv {
+  VITE_BACKEND_SECRET?: string;
+  DEV?: boolean;
+  [key: string]: unknown;
+}
+
 let cachedSecret: string | null = null;
 
 /**
@@ -46,7 +52,8 @@ export async function getSecret(): Promise<string> {
 
   // Dev mode fallback: read secret from Vite env variable
   // Set VITE_BACKEND_SECRET in frontend/.env to match BACKEND_INTERNAL_SECRET
-  const devSecret = (import.meta as any).env?.VITE_BACKEND_SECRET;
+  const env = import.meta.env as ViteEnv;
+  const devSecret = env?.VITE_BACKEND_SECRET;
   if (devSecret) {
     cachedSecret = devSecret;
     return cachedSecret!;
@@ -57,7 +64,7 @@ export async function getSecret(): Promise<string> {
   // the backend already has the correct secret; we just ask for it over localhost.
   // /dev-secret only exists in NODE_ENV=development and only responds to localhost IPs.
   // In production builds import.meta.env.DEV is false so this branch never runs.
-  if ((import.meta as any).env?.DEV) {
+  if (env?.DEV) {
     try {
       const res = await fetch('/dev-secret');
       if (res.ok) {
@@ -228,7 +235,15 @@ export interface OptimizationConfig {
   minTraceCount?: number;
 }
 
-export async function startOptimization(config: OptimizationConfig = {}): Promise<any> {
+export interface OptimizationRun {
+  id?: string;
+  status?: string;
+  config?: OptimizationConfig;
+  results?: Record<string, unknown>[];
+  [key: string]: unknown;
+}
+
+export async function startOptimization(config: OptimizationConfig = {}): Promise<OptimizationRun | null> {
   const { API_BASE_URL } = await import('./config');
   try {
     const secret = await getSecret();
@@ -258,7 +273,7 @@ export async function cancelOptimization(runId: string): Promise<boolean> {
   }
 }
 
-export async function getOptimizationRun(runId: string): Promise<any | null> {
+export async function getOptimizationRun(runId: string): Promise<OptimizationRun | null> {
   const { API_BASE_URL } = await import('./config');
   try {
     const secret = await getSecret();
@@ -272,7 +287,7 @@ export async function getOptimizationRun(runId: string): Promise<any | null> {
   }
 }
 
-export async function listOptimizationRuns(): Promise<any[]> {
+export async function listOptimizationRuns(): Promise<OptimizationRun[]> {
   const { API_BASE_URL } = await import('./config');
   try {
     const secret = await getSecret();
@@ -286,7 +301,7 @@ export async function listOptimizationRuns(): Promise<any[]> {
   }
 }
 
-export function subscribeToOptimizationRun(runId: string, onUpdate: (run: any) => void): () => void {
+export function subscribeToOptimizationRun(runId: string, onUpdate: (run: OptimizationRun) => void): () => void {
   const { API_BASE_URL } = require('./config');
   const url = `${API_BASE_URL}/harness/runs/${runId}/stream`;
   const evtSource = new EventSource(url);

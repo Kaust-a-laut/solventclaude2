@@ -9,6 +9,8 @@ import { staggerContainer, staggerItem } from './shared';
 import { SETTINGS_DEFAULTS } from './settingsDefaults';
 import { CustomSelect, type SelectOption } from './CustomSelect';
 
+type OllamaModel = string | { name: string };
+
 export const ModelsTab = () => {
   const {
     globalProvider, setGlobalProvider,
@@ -33,7 +35,7 @@ export const ModelsTab = () => {
   );
 
   const [availableModels, setAvailableModels] = useState<{
-    ollama: any[]; gemini: string[]; deepseek: string[]; groq: string[]; openrouter: string[];
+    ollama: OllamaModel[]; gemini: string[]; deepseek: string[]; groq: string[]; openrouter: string[];
   }>({ ollama: [], gemini: [], deepseek: [], groq: [], openrouter: [] });
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [modeConfigsExpanded, setModeConfigsExpanded] = useState(false);
@@ -51,8 +53,9 @@ export const ModelsTab = () => {
         groq: data.groq || [],
         openrouter: data.openrouter || [],
       }));
-    } catch (err: any) {
-      console.error(`[Settings] Model fetch failed: ${err.message}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error(`[Settings] Model fetch failed: ${message}`);
     } finally {
       setIsRefreshing(false);
     }
@@ -67,7 +70,7 @@ export const ModelsTab = () => {
     if (availableModels.deepseek.includes(model)) return 'deepseek';
     if (availableModels.gemini.includes(model)) return 'gemini';
     if (availableModels.openrouter.includes(model)) return 'openrouter';
-    if (availableModels.ollama.some((opt: any) => (opt.name || opt) === model)) return 'ollama';
+    if (availableModels.ollama.some((opt: OllamaModel) => (typeof opt === 'object' ? opt.name : opt) === model)) return 'ollama';
     if (m.includes('llama') || m.includes('gemma2') || m.includes('groq/')) return 'groq';
     if (m.includes('deepseek')) return 'deepseek';
     if (m.includes('/') || m.includes(':free')) return 'openrouter';
@@ -77,7 +80,13 @@ export const ModelsTab = () => {
 
   const handleGlobalCloudModelChange = (model: string) => {
     setSelectedCloudModel(model);
-    setSelectedCloudProvider(detectProvider(model) as any);
+    const provider = detectProvider(model);
+    if (provider === 'ollama') {
+      // ollama is not a valid CloudProvider; default to gemini
+      setSelectedCloudProvider('gemini');
+    } else {
+      setSelectedCloudProvider(provider as 'gemini' | 'groq' | 'deepseek' | 'openrouter' | 'puter');
+    }
   };
 
   const handleModeModelChange = (modeId: string, model: string) => {
@@ -88,10 +97,10 @@ export const ModelsTab = () => {
   const handleResetModels = () => {
     setGlobalProvider(SETTINGS_DEFAULTS.globalProvider);
     setSelectedCloudModel(SETTINGS_DEFAULTS.selectedCloudModel);
-    setSelectedCloudProvider(SETTINGS_DEFAULTS.selectedCloudProvider as any);
+    setSelectedCloudProvider(SETTINGS_DEFAULTS.selectedCloudProvider);
     setSelectedLocalModel(SETTINGS_DEFAULTS.selectedLocalModel);
     setSelectedOpenRouterModel(SETTINGS_DEFAULTS.selectedOpenRouterModel);
-    setImageProvider(SETTINGS_DEFAULTS.imageProvider as any);
+    setImageProvider(SETTINGS_DEFAULTS.imageProvider);
     setLocalImageUrl(SETTINGS_DEFAULTS.localImageUrl);
   };
 
@@ -107,9 +116,9 @@ export const ModelsTab = () => {
     if (availableModels.ollama.length === 0) {
       return [{ value: selectedLocalModel, label: selectedLocalModel }];
     }
-    return availableModels.ollama.map((m: any) => ({
-      value: m.name || m,
-      label: m.name || m,
+    return availableModels.ollama.map((m: OllamaModel) => ({
+      value: typeof m === 'object' ? m.name : m,
+      label: typeof m === 'object' ? m.name : m,
     }));
   }, [availableModels.ollama, selectedLocalModel]);
 
@@ -123,7 +132,7 @@ export const ModelsTab = () => {
     ...availableModels.gemini.map(m => ({ value: m, label: m, group: 'Gemini' })),
     ...availableModels.groq.map(m => ({ value: m, label: m, group: 'Groq' })),
     ...availableModels.deepseek.map(m => ({ value: m, label: m, group: 'DeepSeek' })),
-    ...availableModels.ollama.map((m: any) => ({ value: m.name || m, label: m.name || m, group: 'Ollama (Local)' })),
+    ...availableModels.ollama.map((m: OllamaModel) => ({ value: typeof m === 'object' ? m.name : m, label: typeof m === 'object' ? m.name : m, group: 'Ollama (Local)' })),
   ], [availableModels]);
 
   return (
@@ -145,7 +154,7 @@ export const ModelsTab = () => {
           ].map(p => (
             <button
               key={p.id}
-              onClick={() => setGlobalProvider(p.id as any)}
+              onClick={() => setGlobalProvider(p.id as 'cloud' | 'local' | 'auto')}
               className={cn(
                 "p-6 rounded-3xl border text-left transition-all relative overflow-hidden group",
                 globalProvider === p.id
@@ -237,7 +246,7 @@ export const ModelsTab = () => {
           ].map(p => (
             <button
               key={p.id}
-              onClick={() => setImageProvider(p.id as any)}
+              onClick={() => setImageProvider(p.id as 'gemini' | 'huggingface' | 'local' | 'pollinations')}
               className={cn(
                 "p-5 rounded-3xl border text-left transition-all relative overflow-hidden group",
                 imageProvider === p.id

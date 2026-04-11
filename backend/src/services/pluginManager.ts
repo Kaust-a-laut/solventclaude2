@@ -142,28 +142,30 @@ export class PluginManager {
     }
   }
 
-  private isValidProviderPlugin(plugin: any): plugin is IProviderPlugin {
+  private isValidProviderPlugin(plugin: unknown): plugin is IProviderPlugin {
+    if (!plugin || typeof plugin !== 'object') return false;
+    const p = plugin as Record<string, unknown>;
     return (
-      plugin &&
-      typeof plugin.id === 'string' &&
-      typeof plugin.name === 'string' &&
-      typeof plugin.description === 'string' &&
-      typeof plugin.version === 'string' &&
-      typeof plugin.complete === 'function' &&
-      typeof plugin.isReady === 'function'
+      typeof p.id === 'string' &&
+      typeof p.name === 'string' &&
+      typeof p.description === 'string' &&
+      typeof p.version === 'string' &&
+      typeof p.complete === 'function' &&
+      typeof p.isReady === 'function'
     );
   }
 
-  private isValidToolPlugin(plugin: any): plugin is IToolPlugin {
+  private isValidToolPlugin(plugin: unknown): plugin is IToolPlugin {
+    if (!plugin || typeof plugin !== 'object') return false;
+    const p = plugin as Record<string, unknown>;
     return (
-      plugin &&
-      typeof plugin.id === 'string' &&
-      typeof plugin.name === 'string' &&
-      typeof plugin.description === 'string' &&
-      typeof plugin.version === 'string' &&
-      typeof plugin.execute === 'function' &&
-      typeof plugin.schema === 'object' &&
-      typeof plugin.isReady === 'function'
+      typeof p.id === 'string' &&
+      typeof p.name === 'string' &&
+      typeof p.description === 'string' &&
+      typeof p.version === 'string' &&
+      typeof p.execute === 'function' &&
+      typeof p.schema === 'object' &&
+      typeof p.isReady === 'function'
     );
   }
 
@@ -251,7 +253,7 @@ export class PluginManager {
       if (!caps) return false; // If provider has no capabilities, it can't meet requirements
 
       for (const [key, value] of Object.entries(requiredCapabilities)) {
-        const capValue = (caps as any)[key as keyof ProviderCapabilities];
+        const capValue = caps[key as keyof ProviderCapabilities];
         if (value === true && !capValue) {
           return false;
         }

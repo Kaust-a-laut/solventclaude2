@@ -515,7 +515,7 @@ export const HomeArea = () => {
                    setSettingsInitialTab('memory');
                    setSettingsOpen(true);
                  } else {
-                   setCurrentMode(feature.id as any);
+                   setCurrentMode(feature.id as 'chat' | 'coding' | 'browse' | 'image' | 'waterfall' | 'debate' | 'compare' | 'collaborate' | 'solvent-see' | 'playground');
                  }
                }}
                delay={idx * 0.1}

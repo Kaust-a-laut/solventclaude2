@@ -14,18 +14,44 @@ interface ParetoPoint {
   rationale: string;
 }
 
+interface LocalProposal {
+  id: string;
+  iteration?: number;
+  deltas?: Record<string, number>;
+  rationale?: string;
+}
+
+interface LocalEvaluation {
+  proposalId: string;
+  isParetoOptimal: boolean;
+  acceptanceRate: number;
+  avgPromptTokens: number;
+}
+
+interface LocalOptimizationRun {
+  id: string;
+  status: string;
+  iterations: number;
+  config?: { maxIterations?: number };
+  proposals?: LocalProposal[];
+  evaluations?: LocalEvaluation[];
+  paretoFrontier?: unknown[];
+  ts?: string | number;
+  [key: string]: unknown;
+}
+
 export const HarnessOptimizerPanel: React.FC = () => {
-  const [runs, setRuns] = useState<any[]>([]);
-  const [activeRun, setActiveRun] = useState<any | null>(null);
+  const [runs, setRuns] = useState<LocalOptimizationRun[]>([]);
+  const [activeRun, setActiveRun] = useState<LocalOptimizationRun | null>(null);
   const [loading, setLoading] = useState(false);
   const [maxIterations, setMaxIterations] = useState(10);
 
   const refreshRuns = useCallback(async () => {
-    const results = await listOptimizationRuns();
+    const results = await listOptimizationRuns() as unknown as LocalOptimizationRun[];
     setRuns(results);
-    const running = results.find((r: any) => r.status === 'running');
+    const running = results.find((r: LocalOptimizationRun) => r.status === 'running');
     if (running) setActiveRun(running);
-    else if (!activeRun || activeRun.status !== 'running') setActiveRun(running);
+    else if (!activeRun || activeRun.status !== 'running') setActiveRun(null);
   }, []);
 
   useEffect(() => { refreshRuns(); }, [refreshRuns]);
@@ -34,7 +60,7 @@ export const HarnessOptimizerPanel: React.FC = () => {
   useEffect(() => {
     if (!activeRun || activeRun.status !== 'running') return;
     const interval = setInterval(async () => {
-      const updated = await getOptimizationRun(activeRun.id);
+      const updated = await getOptimizationRun(activeRun.id) as unknown as LocalOptimizationRun | null;
       if (updated) {
         setActiveRun(updated);
         setRuns(prev => prev.map(r => r.id === updated.id ? updated : r));
@@ -45,7 +71,7 @@ export const HarnessOptimizerPanel: React.FC = () => {
 
   const handleStart = async () => {
     setLoading(true);
-    const run = await startOptimization({ maxIterations });
+    const run = await startOptimization({ maxIterations }) as unknown as LocalOptimizationRun | null;
     if (run) {
       setActiveRun(run);
       setRuns(prev => [run, ...prev]);
@@ -56,7 +82,7 @@ export const HarnessOptimizerPanel: React.FC = () => {
   const handleCancel = async () => {
     if (!activeRun) return;
     await cancelOptimization(activeRun.id);
-    setActiveRun((prev: any) => prev ? { ...prev, status: 'cancelled' } : null);
+    setActiveRun((prev) => prev ? { ...prev, status: 'cancelled' } : null);
   };
 
   const statusIcon = (status: string) => {
@@ -71,9 +97,9 @@ export const HarnessOptimizerPanel: React.FC = () => {
 
   // Compute Pareto frontier points
   const paretoPoints: ParetoPoint[] = activeRun?.evaluations
-    ?.filter((e: any) => e.isParetoOptimal)
-    ?.map((e: any) => {
-      const proposal = activeRun.proposals?.find((p: any) => p.id === e.proposalId);
+    ?.filter((e: LocalEvaluation) => e.isParetoOptimal)
+    ?.map((e: LocalEvaluation) => {
+      const proposal = activeRun.proposals?.find((p: LocalProposal) => p.id === e.proposalId);
       return {
         proposalId: e.proposalId,
         acceptanceRate: e.acceptanceRate,
@@ -190,14 +216,14 @@ export const HarnessOptimizerPanel: React.FC = () => {
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
               Past Runs
             </div>
-            {runs.filter((r: any) => r.id !== activeRun?.id).slice(0, 10).map((run: any) => (
+            {runs.filter((r: LocalOptimizationRun) => r.id !== activeRun?.id).slice(0, 10).map((run: LocalOptimizationRun) => (
               <button
                 key={run.id}
                 onClick={() => setActiveRun(run)}
                 className="w-full flex items-center gap-2 p-1.5 rounded text-[10px] text-slate-300 hover:text-slate-300 hover:bg-white/5 transition-colors text-left"
               >
                 {statusIcon(run.status)}
-                <span>{new Date(run.ts).toLocaleDateString()}</span>
+                <span>{run.ts ? new Date(run.ts).toLocaleDateString() : 'Unknown'}</span>
                 <span className="text-slate-400">·</span>
                 <span>{run.iterations} iter</span>
                 <span className="text-slate-400">·</span>

@@ -90,7 +90,7 @@ export const ProviderQuickSwitch: React.FC<ProviderQuickSwitchProps> = ({ compac
                     <button
                       key={provider.id}
                       onClick={() => {
-                        setSelectedCloudProvider(provider.id as any);
+                        setSelectedCloudProvider(provider.id as 'groq' | 'gemini' | 'openrouter' | 'deepseek' | 'puter');
                         setIsOpen(false);
                       }}
                       className={cn(

@@ -41,7 +41,7 @@ export class TestRunnerPlugin implements IToolPlugin {
     this.syntheticTestDir = path.join(this.rootDir, 'backend/tests/synthetic');
   }
 
-  async initialize(options: Record<string, any>): Promise<void> {
+  async initialize(options: Record<string, unknown>): Promise<void> {
     await fs.mkdir(this.syntheticTestDir, { recursive: true });
   }
 
@@ -49,8 +49,9 @@ export class TestRunnerPlugin implements IToolPlugin {
     return true;
   }
 
-  async execute(args: Record<string, any>): Promise<any> {
-    const { operation, testName } = args;
+  async execute(args: Record<string, unknown>): Promise<unknown> {
+    const operation = args.operation as string | undefined;
+    const testName = args.testName as string | undefined;
 
     switch (operation) {
       case 'execute':
@@ -81,13 +82,14 @@ export class TestRunnerPlugin implements IToolPlugin {
         stdout,
         stderr
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
       logger.error(`[TestRunner] Test execution failed`, error);
       return {
         status: 'failure',
-        error: error.message,
-        stdout: error.stdout,
-        stderr: error.stderr
+        error: err.message,
+        stdout: (error as { stdout?: string })?.stdout,
+        stderr: (error as { stderr?: string })?.stderr
       };
     }
   }
@@ -99,8 +101,9 @@ export class TestRunnerPlugin implements IToolPlugin {
         status: 'success',
         tests: files.filter(f => f.endsWith('.test.ts') || f.endsWith('.spec.ts'))
       };
-    } catch (error: any) {
-      return { status: 'failure', error: error.message };
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      return { status: 'failure', error: err.message };
     }
   }
 }

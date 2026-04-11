@@ -63,7 +63,7 @@ export const SupervisorHistory = () => {
 
   // Listen for DECISION_PENDING socket events
   useEffect(() => {
-    const socket = (window as any).socket;
+    const socket = (window as unknown as { socket?: unknown }).socket;
     if (!socket) return;
 
     const handleDecisionPending = (decision: PendingDecision) => {
@@ -79,7 +79,7 @@ export const SupervisorHistory = () => {
 
   const loadPendingDecisions = async () => {
     try {
-      const response = await api.get('/overseer/pending', { retries: 0 } as any);
+      const response = await api.get('/overseer/pending', { retries: 0 } as unknown as RequestInit);
       setPendingDecisions(response.data.decisions);
       response.data.decisions.forEach((d: PendingDecision) => {
         setTimeRemaining(prev => ({ ...prev, [d.id]: d.expiresAt }));

@@ -15,7 +15,7 @@ const turndown = new TurndownService({
 turndown.addRule('images', {
   filter: 'img',
   replacement: (_content, node) => {
-    const alt = (node as any).getAttribute?.('alt') || '';
+    const alt = (node as { attribs?: Record<string, string> })?.attribs?.['alt'] || '';
     return alt ? `*[${alt}]*` : '';
   },
 });
@@ -131,7 +131,11 @@ class BrowseService {
           // Wayback also failed — return restricted result
           console.log(`[BrowseService] Wayback fallback also failed for ${url}`);
           const hostname = new URL(url).hostname.replace(/^www\./, '');
-          const restrictedError: any = new Error('restricted');
+          interface RestrictedError extends Error {
+            restricted: boolean;
+            restrictedResult: PageContent;
+          }
+          const restrictedError = new Error('restricted') as RestrictedError;
           restrictedError.restricted = true;
           restrictedError.restrictedResult = {
             title: `${hostname} — Login Required`,
@@ -139,7 +143,7 @@ class BrowseService {
             excerpt: `This page on ${hostname} requires authentication or blocks automated access. Open it directly in your browser to view.`,
             url,
             restricted: true,
-          } as PageContent;
+          };
           throw restrictedError;
         }
       }

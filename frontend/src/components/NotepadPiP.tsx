@@ -35,7 +35,7 @@ interface LocalActiveMission {
   missionType: string;
   status: 'queued' | 'active' | 'complete' | 'failed';
   progress: number;
-  result?: any;
+  result?: unknown;
   error?: string;
 }
 
@@ -174,13 +174,13 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
 
   // Socket listeners — wired directly since PiP has its own socket
   useEffect(() => {
-    const handleOverseerDecision = (d: any) => {
+    const handleOverseerDecision = (d: Record<string, unknown>) => {
       const decision: LocalOverseerDecision = {
-        id: d.id || `od_${Date.now()}`,
-        decision: d.decision || d.message || JSON.stringify(d),
-        intervention: d.intervention,
-        timestamp: d.timestamp || Date.now(),
-        trigger: d.trigger,
+        id: (d.id as string) || `od_${Date.now()}`,
+        decision: (d.decision as string) || (d.message as string) || JSON.stringify(d),
+        intervention: d.intervention as LocalOverseerDecision['intervention'],
+        timestamp: (d.timestamp as number) || Date.now(),
+        trigger: d.trigger as string | undefined,
       };
       setOverseerDecisions(prev => [decision, ...prev].slice(0, 20));
       if (view !== 'overseer') setUnreadCount(c => c + 1);
@@ -196,7 +196,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
       ));
     };
 
-    const handleMissionComplete = ({ jobId, result }: { jobId: string; result: any }) => {
+    const handleMissionComplete = ({ jobId, result }: { jobId: string; result: unknown }) => {
       setActiveMissions(prev => prev.map(m =>
         m.jobId === jobId ? { ...m, status: 'complete', progress: 100, result } : m
       ));
@@ -282,12 +282,18 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
   const openLocalView = (v: typeof view) => setView(v);
 
   // Launch a tool in the main app without changing PiP view
-  const launchInMainApp = (mode: string) => setCurrentMode(mode as any);
+  const launchInMainApp = (mode: string) => setCurrentMode(mode);
 
   const isSocketConnected = socket.connected;
   const activeMissionCount = activeMissions.filter(m => m.status === 'queued' || m.status === 'active').length;
 
-  const ActionButton = ({ icon: Icon, label, onClick, color, desc }: any) => (
+  const ActionButton = ({ icon: Icon, label, onClick, color, desc }: {
+    icon: React.ElementType;
+    label: string;
+    onClick: () => void;
+    color: string;
+    desc: string;
+  }) => (
     <button
       onClick={onClick}
       className="group relative p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all text-left overflow-hidden h-full flex flex-col justify-between"
@@ -316,7 +322,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
     )}>
       {/* Header */}
       <div
-        style={{ WebkitAppRegion: 'drag' } as any}
+        style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
         className="drag-handle flex items-center justify-between px-3 py-2 bg-[#0a0a0f] border-b border-white/5 cursor-move"
       >
         <div className="flex items-center gap-2">
@@ -329,7 +335,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
           )}
         </div>
 
-        <div className="flex items-center gap-1" style={{ WebkitAppRegion: 'no-drag' } as any}>
+        <div className="flex items-center gap-1" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
           {view !== 'dash' && (
             <button
               onClick={() => openLocalView('dash')}
@@ -583,7 +589,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                       <span className="text-[11px] font-black uppercase mt-2">Buffer Empty</span>
                     </div>
                   ) : (
-                    activities.slice(0, 15).map((act: any, i: number) => (
+                    activities.slice(0, 15).map((act, i: number) => (
                       <div key={i} className="text-[11px] leading-tight flex gap-2">
                         <span className={cn(
                           "font-black uppercase text-[6px] px-1 py-0.5 rounded-sm shrink-0 h-fit mt-0.5",
@@ -593,7 +599,7 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                           act.type === 'command' ? "bg-jb-orange/20 text-jb-orange" : "bg-white/10 text-white/50"
                         )}>{act.type === 'waterfall' ? 'flow' : String(act.type || '').replace('_', ' ').slice(0, 10)}</span>
                         <span className="text-slate-400/80 line-clamp-2 font-mono">
-                          {act.content || act.detail || act.path || act.message || JSON.stringify(act)}
+                          {act.content || (act.detail as string) || (act.path as string) || act.message || JSON.stringify(act)}
                         </span>
                       </div>
                     ))
@@ -1070,14 +1076,16 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                         </div>
 
                         {/* Expanded result */}
-                        {expandedMission === m.jobId && m.result && (
+                        {expandedMission === m.jobId && typeof m.result === 'object' && m.result !== null && 'expertOpinions' in m.result && (() => {
+                          const resultData = m.result as { expertOpinions?: { role?: string; content?: string; name?: string; opinion?: string }[]; synthesis?: string };
+                          return (
                           <div className="border-t border-white/5 p-3 space-y-3">
-                            {m.result.expertOpinions && (
+                            {resultData.expertOpinions && (
                               <div className="space-y-2">
                                 <span className="text-[11px] font-black uppercase tracking-widest text-slate-400 block">
                                   Expert Analysis
                                 </span>
-                                {m.result.expertOpinions.map((op: any, i: number) => {
+                                {resultData.expertOpinions.map((op, i: number) => {
                                   const agentBorders = ['border-jb-purple', 'border-jb-accent', 'border-jb-orange'];
                                   const agentText    = ['text-jb-purple',   'text-jb-accent',   'text-jb-orange'];
                                   return (
@@ -1091,16 +1099,17 @@ export const NotepadPiP = ({ onClose, onDetach }: { onClose?: () => void; onDeta
                                 })}
                               </div>
                             )}
-                            {m.result.synthesis && (
+                            {resultData.synthesis && (
                               <div className="glass-panel rounded-xl p-3">
                                 <h4 className="text-[11px] font-black mb-1.5">
                                   <span className="text-vibrant">Synthesis</span>
                                 </h4>
-                                <p className="text-[11px] text-slate-400 leading-relaxed">{m.result.synthesis}</p>
+                                <p className="text-[11px] text-slate-400 leading-relaxed">{resultData.synthesis}</p>
                               </div>
                             )}
                           </div>
-                        )}
+                          );
+                        })()}
 
                         {expandedMission === m.jobId && m.error && (
                           <div className="border-t border-white/5 p-3">

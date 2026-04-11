@@ -1,7 +1,7 @@
 import { Server } from 'socket.io';
 
 export class SocketBatcher {
-  private pending: Map<string, any[]> = new Map();
+  private pending: Map<string, unknown[]> = new Map();
   private timer: ReturnType<typeof setTimeout> | null = null;
   private io: Server;
   private batchWindowMs: number;
@@ -11,7 +11,7 @@ export class SocketBatcher {
     this.batchWindowMs = batchWindowMs;
   }
 
-  emit(event: string, data: any) {
+  emit(event: string, data: unknown) {
     const queue = this.pending.get(event) || [];
     queue.push(data);
     this.pending.set(event, queue);
@@ -37,7 +37,7 @@ export class SocketBatcher {
     this.pending.clear();
   }
 
-  emitImmediate(event: string, data: any) {
+  emitImmediate(event: string, data: unknown) {
     this.io.emit(event, data);
   }
 

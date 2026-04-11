@@ -67,8 +67,9 @@ async function summarizeMessages(messages: ChatMessage[]): Promise<string> {
     summaryCache.set(cacheKey, { summary, timestamp: Date.now() });
 
     return summary;
-  } catch (err: any) {
-    logger.warn(`[ConversationWindow] Summarization failed, falling back to truncation: ${err.message}`);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.warn(`[ConversationWindow] Summarization failed, falling back to truncation: ${message}`);
     // Fallback: take first and last message of the block
     const first = messages[0]?.content?.slice(0, 200) || '';
     const last = messages[messages.length - 1]?.content?.slice(0, 200) || '';

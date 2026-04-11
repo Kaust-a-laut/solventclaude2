@@ -58,7 +58,7 @@ export const MissionDashboard: React.FC = () => {
 
   // Listen for MISSION_PROGRESS socket events
   useEffect(() => {
-    const socket = (window as any).socket;
+    const socket = (window as unknown as { socket?: unknown }).socket;
     if (!socket) return;
 
     const handleMissionProgress = (data: MissionProgress) => {

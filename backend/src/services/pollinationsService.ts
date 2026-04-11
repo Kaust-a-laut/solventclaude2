@@ -38,8 +38,9 @@ export class PollinationsService {
         mimeType: contentType
       };
 
-    } catch (error: any) {
-      logger.error(`[Pollinations] Error generating image: ${error.message}`);
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error(`[Pollinations] Error generating image: ${err.message}`);
       throw error;
     }
   }

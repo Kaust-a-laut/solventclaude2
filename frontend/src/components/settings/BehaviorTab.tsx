@@ -7,6 +7,7 @@ import { cn } from '../../lib/utils';
 import { InlineToggle, SectionCard, staggerContainer, staggerItem } from './shared';
 import { SETTINGS_DEFAULTS } from './settingsDefaults';
 import { CustomSlider } from './CustomSlider';
+import type { PerformanceMode } from '../../lib/performanceTier';
 
 export const BehaviorTab = () => {
   const {
@@ -38,7 +39,7 @@ export const BehaviorTab = () => {
     setThinkingModeEnabled(SETTINGS_DEFAULTS.thinkingModeEnabled);
     setShowCodingChat(SETTINGS_DEFAULTS.showCodingChat);
     setPerformanceMode(SETTINGS_DEFAULTS.performanceMode);
-    setAuraMode(SETTINGS_DEFAULTS.auraMode as any);
+    setAuraMode(SETTINGS_DEFAULTS.auraMode);
   };
 
   return (
@@ -160,7 +161,7 @@ export const BehaviorTab = () => {
           ].map(mode => (
             <button
               key={mode.id}
-              onClick={() => setAuraMode(mode.id as any)}
+              onClick={() => setAuraMode(mode.id as 'off' | 'static' | 'organic')}
               className={cn(
                 "flex-1 p-5 rounded-2xl border text-left transition-all relative overflow-hidden group",
                 auraMode === mode.id

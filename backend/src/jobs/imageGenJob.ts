@@ -7,7 +7,7 @@ export interface ImageGenJobData {
   model?: string;
 }
 
-export async function imageGenJob(job: Job<ImageGenJobData>): Promise<any> {
+export async function imageGenJob(job: Job<ImageGenJobData>): Promise<unknown> {
   const { prompt, model } = job.data;
   
   logger.info(`[ImageGenJob] Starting image generation for prompt: ${prompt.substring(0, 50)}...`);
@@ -31,10 +31,11 @@ export async function imageGenJob(job: Job<ImageGenJobData>): Promise<any> {
       info: result.info,
       generatedAt: new Date().toISOString()
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
     logger.error(`[ImageGenJob] Failed image generation for prompt: ${prompt.substring(0, 50)}...`, error);
-    
+
     // Throw error to mark job as failed
-    throw new Error(`Image generation failed: ${error.message}`);
+    throw new Error(`Image generation failed: ${err.message}`);
   }
 }

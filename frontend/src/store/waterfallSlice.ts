@@ -20,7 +20,7 @@ interface WaterfallStepBase { message?: string; score?: number; issues?: { sever
 interface PlannerData extends WaterfallStepBase { plan: string }
 interface ExecutorData extends WaterfallStepBase { code: string }
 interface ReviewerData extends WaterfallStepBase { review: string }
-type WaterfallStepPayload = PlannerData | ExecutorData | ReviewerData | WaterfallStepBase;
+export type WaterfallStepPayload = PlannerData | ExecutorData | ReviewerData | WaterfallStepBase;
 
 export interface WaterfallStepData {
   status: 'idle' | 'processing' | 'completed' | 'error' | 'paused';
@@ -48,7 +48,7 @@ export interface WaterfallSlice {
   setWaterfallCustomStage: (stage: keyof WaterfallModelSelection, override: { model: string; provider: string }) => void;
   runFullWaterfall: (prompt: string, forceProceed?: boolean) => Promise<void>;
   proceedWithWaterfall: () => void;
-  runWaterfallStep: (step: 'planner' | 'executor' | 'reviewer', input: any) => Promise<void>;
+  runWaterfallStep: (step: 'planner' | 'executor' | 'reviewer', input: unknown) => Promise<void>;
   cancelWaterfall: () => void;
   resetWaterfall: () => void;
   editPlanDraft: string | null;

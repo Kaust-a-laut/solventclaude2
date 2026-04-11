@@ -38,7 +38,7 @@ export class FileToolPlugin implements IToolPlugin {
     this.rootDir = path.resolve(__dirname, '../../../../'); // Go up to project root
   }
 
-  async initialize(options: Record<string, any>): Promise<void> {
+  async initialize(options: Record<string, unknown>): Promise<void> {
     // Initialize any required resources
   }
 
@@ -46,20 +46,21 @@ export class FileToolPlugin implements IToolPlugin {
     return true; // Always ready since it just uses fs
   }
 
-  validate(args: Record<string, any>): { isValid: boolean; errors?: string[] } {
+  validate(args: Record<string, unknown>): { isValid: boolean; errors?: string[] } {
     const errors: string[] = [];
-    
-    if (!args.operation) {
+    const operation = args.operation as string | undefined;
+
+    if (!operation) {
       errors.push('Operation is required');
-    } else if (!['read', 'write', 'list'].includes(args.operation)) {
+    } else if (!['read', 'write', 'list'].includes(operation)) {
       errors.push('Operation must be one of: read, write, list');
     }
-    
+
     if (!args.path) {
       errors.push('Path is required');
     }
-    
-    if (args.operation === 'write' && args.content === undefined) {
+
+    if (operation === 'write' && args.content === undefined) {
       errors.push('Content is required for write operation');
     }
     
@@ -69,14 +70,16 @@ export class FileToolPlugin implements IToolPlugin {
     };
   }
 
-  async execute(args: Record<string, any>): Promise<any> {
-    const { operation, path: filePath, content } = args;
-    
+  async execute(args: Record<string, unknown>): Promise<unknown> {
+    const operation = args.operation as string;
+    const filePath = args.path as string;
+    const content = args.content as string | undefined;
+
     switch (operation) {
       case 'read':
         return await this.readFile(filePath);
       case 'write':
-        return await this.writeFile(filePath, content);
+        return await this.writeFile(filePath, content ?? '');
       case 'list':
         return await this.listFiles(filePath);
       default:

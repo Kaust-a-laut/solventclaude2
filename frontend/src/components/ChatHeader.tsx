@@ -51,21 +51,22 @@ export const ChatHeader = ({ compact }: ChatHeaderProps) => {
     setDropAlign(rect.left + 640 > window.innerWidth ? 'right' : 'left');
   }, [showModelDrop]);
 
+  type CloudProvider = 'groq' | 'gemini' | 'deepseek' | 'openrouter' | 'puter';
   // Resolve active provider and model for display
   const config = modeConfigs[currentMode] || { provider: 'auto', model: selectedCloudModel };
-  let displayProvider = selectedCloudProvider;
+  let displayProvider: string = selectedCloudProvider;
   let displayModel = selectedCloudModel;
 
   if (currentMode === 'vision') {
-    displayProvider = imageProvider as any;
+    displayProvider = imageProvider as string;
     displayModel = imageProvider === 'huggingface' ? 'Stable Diffusion' :
                    imageProvider === 'local' ? 'Juggernaut XL' :
                    imageProvider === 'pollinations' ? 'Flux (Free)' : 'Imagen 3';
   } else if (globalProvider === 'local') {
-    displayProvider = 'ollama' as any;
+    displayProvider = 'ollama';
     displayModel = selectedLocalModel;
   } else if (config.provider !== 'auto' && config.provider !== 'cloud') {
-    displayProvider = config.provider as any;
+    displayProvider = config.provider as string;
     displayModel = config.model;
   } else {
     displayProvider = selectedCloudProvider;
@@ -76,7 +77,7 @@ export const ChatHeader = ({ compact }: ChatHeaderProps) => {
 
   const handleSelectCloudModel = (value: string, provider: string) => {
     setSelectedCloudModel(value);
-    setSelectedCloudProvider(provider as any);
+    setSelectedCloudProvider(provider as CloudProvider);
     setShowModelDrop(false);
   };
 
@@ -177,7 +178,7 @@ export const ChatHeader = ({ compact }: ChatHeaderProps) => {
                           {PROVIDER_GROUPS.map(g => (
                             <button
                               key={g.id}
-                              onClick={() => setCloudProvider(g.id as any)}
+                              onClick={() => setCloudProvider(g.id as 'groq' | 'gemini' | 'openrouter')}
                               className={cn(
                                 "flex-1 py-1 rounded-md text-[11px] font-black uppercase tracking-wider transition-all",
                                 cloudProvider === g.id

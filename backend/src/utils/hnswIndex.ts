@@ -42,8 +42,9 @@ export class HNSWIndex {
         this.maxElements = newMax;
       }
       this.index.addPoint(vector, label);
-    } catch (e: any) {
-      logger.error(`[HNSWIndex] Failed to add point ${id}. Vector length: ${vector.length}. Max elements: ${this.maxElements}. Error: ${e.message}`, e);
+    } catch (e: unknown) {
+      const err = e instanceof Error ? e : new Error(String(e));
+      logger.error(`[HNSWIndex] Failed to add point ${id}. Vector length: ${vector.length}. Max elements: ${this.maxElements}. Error: ${err.message}`, e);
     }
   }
 

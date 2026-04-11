@@ -1,4 +1,4 @@
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
 import { logger } from '../utils/logger';
 
@@ -13,7 +13,7 @@ interface TelemetryEvent {
   tokensOut?: number;
   status: 'success' | 'error';
   error?: string;
-  meta?: any;
+  meta?: Record<string, unknown>;
 }
 
 class TelemetryService {
@@ -23,7 +23,7 @@ class TelemetryService {
     this.logPath = path.resolve(__dirname, '../../../.solvent_telemetry.jsonl');
   }
 
-  logTransaction(event: Omit<TelemetryEvent, 'timestamp'>) {
+  async logTransaction(event: Omit<TelemetryEvent, 'timestamp'>) {
     const entry: TelemetryEvent = {
       ...event,
       timestamp: new Date().toISOString()
@@ -34,11 +34,12 @@ class TelemetryService {
     console.log(`[TELEMETRY] ${JSON.stringify(entry)}`);
 
     // 2. Persistent Append-Only Log (JSONL)
-    // Non-blocking write
     const line = JSON.stringify(entry) + '\n';
-    fs.appendFile(this.logPath, line, (err) => {
-      if (err) console.error('Failed to write telemetry:', err);
-    });
+    try {
+      await fs.appendFile(this.logPath, line);
+    } catch (err) {
+      logger.error('Failed to write telemetry:', err);
+    }
   }
 
   // Optional: Simple analytics

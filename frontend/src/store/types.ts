@@ -116,8 +116,8 @@ export interface PageContent {
 }
 
 export interface SearchResultSet {
-  results: any[];
-  answerBox?: any;
+  results: unknown[];
+  answerBox?: unknown;
   relatedSearches?: { query: string }[];
   error?: string;
   synthesis?: {

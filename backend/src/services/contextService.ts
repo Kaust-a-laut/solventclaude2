@@ -1,4 +1,4 @@
-import { ChatRequestData } from '../types/ai';
+import { ChatRequestData, ChatMessage } from '../types/ai';
 import { vectorService } from './vectorService';
 import { getModelContextLimit } from '../constants/models';
 import { memoryMetrics } from '../utils/memoryMetrics';
@@ -401,7 +401,7 @@ function computeVectorSignature(vector: number[], buckets: number = 16): string 
  * Only performs exact cosine similarity check against entries with matching signatures.
  */
 function deduplicateEntries(
-  scoredEntries: Array<{ vector: number[]; id: string; score: number; metadata: any; finalScore: number }>,
+  scoredEntries: Array<{ vector: number[]; id: string; score: number; metadata: Record<string, unknown>; finalScore: number }>,
   suppressedItems: ProvenanceItem[]
 ): Array<typeof scoredEntries[0]> {
   const dedupedEntries: typeof scoredEntries = [];
@@ -428,8 +428,8 @@ function deduplicateEntries(
         // Add to suppressed with reason
         suppressedItems.push({
           id: entry.id,
-          text: entry.metadata?.text ? entry.metadata.text.substring(0, 150) + '...' : '',
-          type: entry.metadata?.type?.toUpperCase() || 'UNKNOWN',
+          text: typeof entry.metadata?.text === 'string' ? entry.metadata.text.substring(0, 150) + '...' : '',
+          type: typeof entry.metadata?.type === 'string' ? entry.metadata.type.toUpperCase() : 'UNKNOWN',
           source: entry.metadata?.isUniversal ? 'GLOBAL' : 'LOCAL',
           score: entry.finalScore,
           status: 'suppressed',
@@ -527,7 +527,7 @@ function getBrowserContextBlock(browserContext?: ChatRequestData['browserContext
 // --- ContextService Class ---
 
 export class ContextService {
-  async enrichContext(data: ChatRequestData): Promise<{ messages: any[], provenance: ContextProvenance }> {
+  async enrichContext(data: ChatRequestData): Promise<{ messages: ChatMessage[], provenance: ContextProvenance }> {
     const lastMessage = data.messages[data.messages.length - 1]?.content || "";
     const modelLimit = getModelContextLimit(data.model);
 
@@ -679,11 +679,12 @@ export class ContextService {
     let memoryTokensUsed = 0;
 
     for (const entry of dedupedEntries) {
+      const meta = entry.metadata;
       const item: ProvenanceItem = {
         id: entry.id,
-        text: entry.metadata?.text ? entry.metadata.text.substring(0, 150) + '...' : '',
-        type: entry.metadata?.isUniversal ? 'UNIVERSAL PATTERN' : (entry.metadata?.type?.toUpperCase() ?? 'UNKNOWN'),
-        source: entry.metadata.isUniversal ? 'GLOBAL' : 'LOCAL',
+        text: typeof meta?.text === 'string' ? meta.text.substring(0, 150) + '...' : '',
+        type: meta?.isUniversal ? 'UNIVERSAL PATTERN' : (typeof meta?.type === 'string' ? meta.type.toUpperCase() : 'UNKNOWN'),
+        source: meta?.isUniversal ? 'GLOBAL' : 'LOCAL',
         score: entry.finalScore,
         status: 'active'
       };
@@ -717,7 +718,7 @@ export class ContextService {
         suppressedItems.push(item);
       } else {
         // Token budget check (primary) + entry count check (secondary safety cap)
-        const entryTokenCost = estimateTokens(entry.metadata?.text || '');
+        const entryTokenCost = estimateTokens(typeof meta?.text === 'string' ? meta.text : '');
         if (memoryTokensUsed + entryTokenCost <= budget.memory && activeItems.length < maxRetrievalCount) {
           activeItems.push(item);
           memoryTokensUsed += entryTokenCost;

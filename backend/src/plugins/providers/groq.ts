@@ -30,7 +30,7 @@ export class GroqProviderPlugin implements IProviderPlugin {
       });
       return response.ok;
     } catch (error) {
-      console.error(`[Groq] Health check failed:`, error);
+      logger.error(`[Groq] Health check failed:`, error);
       return false;
     }
   }
@@ -54,8 +54,8 @@ export class GroqProviderPlugin implements IProviderPlugin {
   private isInitialized = false;
   private apiKey: string | null = null;
 
-  async initialize(options: Record<string, any>): Promise<void> {
-    this.apiKey = options.apiKey || config.GROQ_API_KEY || null;
+  async initialize(options: Record<string, unknown>): Promise<void> {
+    this.apiKey = (options.apiKey as string) || config.GROQ_API_KEY || null;
     this.isInitialized = true;
     logger.info(`[Groq] Provider initialized (API key present: ${!!this.apiKey})`);
   }
@@ -134,16 +134,17 @@ export class GroqProviderPlugin implements IProviderPlugin {
       }
 
       return response.data.choices[0].message.content;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Axios errors have response property
-      if (error.response) {
-        logger.error(`[Groq] HTTP ${error.response.status}: ${JSON.stringify(error.response.data)}`);
-        throw new Error(`Groq API error (${error.response.status}): ${error.response.data?.error?.message || 'Unknown error'}`);
-      } else if (error.request) {
-        logger.error(`[Groq] No response received: ${error.message}`);
+      const err = error as { response?: { status: number; data: unknown }; request?: unknown; message?: string };
+      if (err.response) {
+        logger.error(`[Groq] HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`);
+        throw new Error(`Groq API error (${err.response.status}): ${(err.response.data as { error?: { message?: string } })?.error?.message || 'Unknown error'}`);
+      } else if (err.request) {
+        logger.error(`[Groq] No response received: ${err.message}`);
         throw new Error('Groq API did not respond - check network/API key');
       } else {
-        logger.error(`[Groq] Request error: ${error.message}`);
+        logger.error(`[Groq] Request error: ${err.message}`);
         throw error;
       }
     }
@@ -235,15 +236,16 @@ export class GroqProviderPlugin implements IProviderPlugin {
           }
         }
       }
-    } catch (error: any) {
-      if (error.response) {
-        logger.error(`[Groq] Stream HTTP ${error.response.status}: ${JSON.stringify(error.response.data)}`);
-        throw new Error(`Groq API error (${error.response.status}): ${error.response.data?.error?.message || 'Unknown error'}`);
-      } else if (error.request) {
-        logger.error(`[Groq] Stream no response: ${error.message}`);
+    } catch (error: unknown) {
+      const err = error as { response?: { status: number; data: unknown }; request?: unknown; message?: string };
+      if (err.response) {
+        logger.error(`[Groq] Stream HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`);
+        throw new Error(`Groq API error (${err.response.status}): ${(err.response.data as { error?: { message?: string } })?.error?.message || 'Unknown error'}`);
+      } else if (err.request) {
+        logger.error(`[Groq] Stream no response: ${err.message}`);
         throw new Error('Groq API did not respond - check network/API key');
       } else {
-        logger.error(`[Groq] Stream error: ${error.message}`);
+        logger.error(`[Groq] Stream error: ${err.message}`);
         throw error;
       }
     }

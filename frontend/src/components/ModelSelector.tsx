@@ -44,11 +44,10 @@ export const AGENT_MODEL_OPTIONS: ModelOption[] = [
   { provider: 'groq',       model: 'compound-beta',                                        displayName: 'Groq Compound',      sublabel: 'Agentic · Auto-routed',  color: 'text-amber-400',   bgColor: 'bg-amber-500/10',   icon: Bot   },
   { provider: 'groq',       model: 'moonshotai/kimi-k2-instruct-0905',                     displayName: 'Kimi K2',            sublabel: 'Groq · Ultra-fast',      color: 'text-rose-400',    bgColor: 'bg-rose-500/10',    icon: Flame },
   { provider: 'deepseek',   model: 'deepseek-chat',                                        displayName: 'DeepSeek V3',        sublabel: 'Direct · Strong Coder',  color: 'text-emerald-400', bgColor: 'bg-emerald-500/10', icon: Brain },
+  { provider: 'dashscope',  model: 'qwen3-coder-flash',                                    displayName: 'Qwen3 Coder Flash',  sublabel: 'DashScope · Fast Code',  color: 'text-sky-400',     bgColor: 'bg-sky-500/10',     icon: Zap   },
 
   // ── Efficient Boilerplate — fast, reliable, standard code ─────────────────────────────
-  { provider: 'fireworks',  model: 'accounts/fireworks/models/deepseek-v3',                 displayName: 'DeepSeek V3',        sublabel: 'Fireworks · Ultra-fast', color: 'text-emerald-400', bgColor: 'bg-emerald-500/10', icon: Brain },
   { provider: 'groq',       model: 'openai/gpt-oss-120b',                                  displayName: 'GPT-OSS 120B',       sublabel: 'Groq · Ultra-fast',      color: 'text-green-400',   bgColor: 'bg-green-500/10',   icon: Brain },
-  { provider: 'fireworks',  model: 'accounts/fireworks/models/qwen3p6-plus',               displayName: 'Qwen3 6 Plus',       sublabel: 'Fireworks · Efficient',   color: 'text-sky-400',     bgColor: 'bg-sky-500/10',     icon: Brain },
   { provider: 'fireworks',  model: 'accounts/fireworks/models/llama4-maverick-instruct-basic', displayName: 'Llama 4 Maverick',  sublabel: 'Meta · Fireworks',      color: 'text-orange-400',  bgColor: 'bg-orange-500/10',  icon: Zap   },
   { provider: 'fireworks',  model: 'accounts/fireworks/models/minimax-m2',                  displayName: 'MiniMax M2',         sublabel: 'Fireworks · Fast',      color: 'text-purple-400',  bgColor: 'bg-purple-500/10',  icon: Zap   },
   { provider: 'groq',       model: 'qwen/qwen3-32b',                                       displayName: 'Qwen3 32B',          sublabel: 'Groq · Strong Coder',    color: 'text-sky-400',     bgColor: 'bg-sky-500/10',     icon: Brain },

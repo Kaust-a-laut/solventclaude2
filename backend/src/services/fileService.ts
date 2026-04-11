@@ -29,7 +29,7 @@ export class FileService {
       if (mimeType === 'application/pdf' || ext === '.pdf') {
         const dataBuffer = await fs.readFile(filePath);
         const { default: pdf } = await import('pdf-parse');
-        const data = await (pdf as any)(dataBuffer);
+        const data = await (pdf as { (buffer: Buffer): Promise<{ text: string }> })(dataBuffer);
         return { text: data.text, supported: true };
       } 
       

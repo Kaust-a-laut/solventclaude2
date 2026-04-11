@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { getTraces, updateTraceOutcome, TraceFilter } from '../lib/api-client';
 import { cn } from '../lib/utils';
 import { GitCompare, ChevronDown, ChevronRight } from 'lucide-react';
+import type { ProvenanceItem } from '../store/types';
 
 interface TraceRow {
   id: string;
@@ -10,8 +11,8 @@ interface TraceRow {
   provider: string;
   model: string;
   query: string;
-  active: any[];
-  suppressed: any[];
+  active: ProvenanceItem[];
+  suppressed: ProvenanceItem[];
   promptTokens: {
     memory: number; rules: number; workspace: number;
     conversationHistory: number; systemPrompt: number; total: number; budget: number;
@@ -167,11 +168,11 @@ export const TraceList: React.FC = () => {
               <div key={t.id}>
                 <div className="text-slate-300 mb-1">{formatTime(t.ts)} · {t.mode} · {t.query.slice(0, 50)}</div>
                 <div className="text-emerald-400 font-black mb-0.5">ACTIVE ({t.active.length})</div>
-                {t.active.map((a: any) => (
+                {t.active.map((a: ProvenanceItem) => (
                   <div key={a.id} className="text-slate-400 truncate">· {a.text?.slice(0, 60)}</div>
                 ))}
                 <div className="text-rose-400 font-black mt-1 mb-0.5">SUPPRESSED ({t.suppressed.length})</div>
-                {t.suppressed.slice(0, 3).map((s: any) => (
+                {t.suppressed.slice(0, 3).map((s: ProvenanceItem) => (
                   <div key={s.id} className="text-slate-300 truncate">· {s.text?.slice(0, 60)}</div>
                 ))}
               </div>
@@ -252,7 +253,7 @@ export const TraceList: React.FC = () => {
                     <div className="text-[10px] font-black text-emerald-400 uppercase mt-2 mb-1">
                       Active ({trace.active.length})
                     </div>
-                    {trace.active.map((a: any) => (
+                    {trace.active.map((a: ProvenanceItem) => (
                       <div key={a.id} className="text-[10px] text-slate-400 border-l border-emerald-500/30 pl-2 mb-1.5">
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-emerald-400">{a.score?.toFixed(2)}</span>
@@ -270,11 +271,11 @@ export const TraceList: React.FC = () => {
                       <div className="text-[10px] font-black text-rose-400 uppercase mb-1">
                         Suppressed ({trace.suppressed.length})
                       </div>
-                      {trace.suppressed.map((s: any) => (
+                      {trace.suppressed.map((s: ProvenanceItem) => (
                         <div key={s.id} className="text-[10px] text-slate-300 border-l border-rose-500/20 pl-2 mb-1.5">
                           <div className="flex items-center gap-2">
                             <span className="font-mono text-slate-400">{s.score?.toFixed(2)}</span>
-                            <span className={cn("text-[9px] px-1 rounded", REASON_COLORS[s.reason] || 'text-slate-300 bg-white/5')}>
+                            <span className={cn("text-[9px] px-1 rounded", s.reason ? (REASON_COLORS[s.reason] || 'text-slate-300 bg-white/5') : 'text-slate-300 bg-white/5')}>
                               {s.reason}
                             </span>
                           </div>

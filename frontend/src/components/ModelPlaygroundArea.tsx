@@ -103,7 +103,7 @@ export const ModelPlaygroundArea = () => {
              <BentoCard
                key={feature.id}
                {...feature}
-               onClick={() => setCurrentMode(feature.id as any)}
+               onClick={() => setCurrentMode(feature.id as 'playground')}
                delay={idx * 0.1}
              />
            ))}

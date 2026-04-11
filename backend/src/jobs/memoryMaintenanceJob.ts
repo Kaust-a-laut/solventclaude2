@@ -4,25 +4,28 @@ import { logger } from '../utils/logger';
 
 export interface MemoryMaintenanceJobData {
   type?: string;
-  data?: any;
+  data?: unknown;
 }
 
-export async function memoryMaintenanceJob(job: Job<MemoryMaintenanceJobData>): Promise<any> {
+export async function memoryMaintenanceJob(job: Job<MemoryMaintenanceJobData>): Promise<unknown> {
   const jobType = job.data?.type || job.name;
 
   // Route to the appropriate handler based on job type
   switch (jobType) {
     case 'memory-consolidation': {
-      const { mode, messages } = job.data?.data || {};
+      const payload = job.data?.data as Record<string, unknown> | undefined;
+      const mode = payload?.mode as string | undefined;
+      const messages = (payload?.messages ?? []) as import('../types/ai').ChatMessage[];
       logger.info(`[MemoryMaintenanceJob] Running consolidation for mode: ${mode}`);
-      await memoryConsolidationService.consolidateSession(mode, messages);
+      await memoryConsolidationService.consolidateSession(mode ?? 'default', messages);
       return { success: true, type: 'consolidation', completedAt: new Date().toISOString() };
     }
 
     case 'memory-extraction': {
-      const { content } = job.data?.data || {};
+      const payload = job.data?.data as Record<string, unknown> | undefined;
+      const content = payload?.content as string | undefined;
       logger.info('[MemoryMaintenanceJob] Running knowledge extraction');
-      await memoryConsolidationService.extractKnowledge(content);
+      await memoryConsolidationService.extractKnowledge(content ?? '');
       return { success: true, type: 'extraction', completedAt: new Date().toISOString() };
     }
 
@@ -43,9 +46,10 @@ export async function memoryMaintenanceJob(job: Job<MemoryMaintenanceJobData>): 
           message: 'Memory maintenance completed successfully',
           completedAt: new Date().toISOString()
         };
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
         logger.error('[MemoryMaintenanceJob] Failed memory maintenance', error);
-        throw new Error(`Memory maintenance failed: ${error.message}`);
+        throw new Error(`Memory maintenance failed: ${err.message}`);
       }
     }
   }

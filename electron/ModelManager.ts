@@ -50,7 +50,9 @@ const API = {
         try {
             const errBody = await response.json();
             if (errBody.error) error.message = errBody.error;
-        } catch (e) {}
+        } catch (e) {
+            // Body not parseable — continue with default error message
+        }
         throw error;
     }
 

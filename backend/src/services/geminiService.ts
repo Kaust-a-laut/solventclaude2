@@ -66,7 +66,7 @@ export class GeminiService implements AIProvider {
 
       // Handle Tool Calls (Recursive)
       while (call && call.functionCall) {
-        const toolResult = await toolService.executeTool(call.functionCall.name, call.functionCall.args);
+        const toolResult = await toolService.executeTool(call.functionCall.name, call.functionCall.args as Record<string, unknown>);
 
         const fnResponse = {
           functionResponse: {

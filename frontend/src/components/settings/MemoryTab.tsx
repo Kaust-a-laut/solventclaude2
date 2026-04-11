@@ -10,10 +10,21 @@ import { cn } from '../../lib/utils';
 import { fetchWithRetry } from '../../lib/api-client';
 import { staggerContainer, staggerItem } from './shared';
 
+interface MemoryEntry {
+  id: string;
+  tier?: string;
+  type?: string;
+  content: string;
+  confidence?: number | string;
+  importance?: number;
+  timestamp?: string;
+  tags?: string[];
+}
+
 export const MemoryTab = () => {
   const [memoryStatus, setMemoryStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [memoryStats, setMemoryStats] = useState<{ total: number; byTier: Record<string, number>; byType: Record<string, number> } | null>(null);
-  const [memoryEntries, setMemoryEntries] = useState<any[]>([]);
+  const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
   const [memorySearch, setMemorySearch] = useState('');
   const [memoryLoading, setMemoryLoading] = useState(false);
   const [memoryTierFilter, setMemoryTierFilter] = useState<string | null>(null);
@@ -31,11 +42,11 @@ export const MemoryTab = () => {
       if (memoryTierFilter) params.set('tier', memoryTierFilter);
       if (memoryTypeFilter) params.set('type', memoryTypeFilter);
       const [statsData, entriesData] = await Promise.all([
-        fetchWithRetry(`${API_BASE_URL}/memory/stats`) as Promise<any>,
-        fetchWithRetry(`${API_BASE_URL}/memory/entries?${params}`) as Promise<any>,
+        fetchWithRetry(`${API_BASE_URL}/memory/stats`) as Promise<{ total: number; byTier: Record<string, number>; byType: Record<string, number> }>,
+        fetchWithRetry(`${API_BASE_URL}/memory/entries?${params}`) as Promise<{ entries: MemoryEntry[] }>,
       ]);
       setMemoryStats(statsData);
-      setMemoryEntries((entriesData as any).entries || []);
+      setMemoryEntries(entriesData.entries || []);
     } catch {
       // silently fail — backend may not be running
     } finally {
@@ -57,7 +68,7 @@ export const MemoryTab = () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query: memorySearch, limit: 20 }),
-        }) as any;
+        }) as Promise<{ entries: MemoryEntry[] }>;
         setMemoryEntries(result.entries || []);
       } catch {
         // silently fail

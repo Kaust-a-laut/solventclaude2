@@ -28,7 +28,7 @@ export class OllamaProviderPlugin implements IProviderPlugin {
       const response = await this.client.ps();
       return !!response;
     } catch (error) {
-      console.error(`[Ollama] Health check failed:`, error);
+      logger.error(`[Ollama] Health check failed:`, error);
       return false;
     }
   }
@@ -53,9 +53,9 @@ export class OllamaProviderPlugin implements IProviderPlugin {
   private isInitialized = false;
   private apiKey: string | null = null;
 
-  async initialize(options: Record<string, any>): Promise<void> {
-    const host = options.host || config.OLLAMA_HOST || 'http://127.0.0.1:11434';
-    this.apiKey = options.apiKey || config.OLLAMA_API_KEY || null;
+  async initialize(options: Record<string, unknown>): Promise<void> {
+    const host = (options.host as string) || config.OLLAMA_HOST || 'http://127.0.0.1:11434';
+    this.apiKey = (options.apiKey as string) || config.OLLAMA_API_KEY || null;
     this.client = new Ollama({
       host,
       ...(this.apiKey ? { headers: { 'Authorization': `Bearer ${this.apiKey}` } } : {}),

@@ -1,6 +1,6 @@
 import { StateCreator } from 'zustand';
-import { AppState, Message } from './types';
-import { ChatService } from '../services/ChatService';
+import { AppState, Message, GraphNode } from './types';
+import { ChatService, SearchResult } from '../services/ChatService';
 import { fetchWithRetry } from '../lib/api-client';
 import { API_BASE_URL } from '../lib/config';
 
@@ -67,7 +67,7 @@ export const createActionSlice: StateCreator<AppState, [], [], ActionSlice> = (s
         openFiles: state.openFiles,
         browserContext: {
           history: state.browserHistory,
-          lastSearchResults: state.lastSearchResults
+          lastSearchResults: state.lastSearchResults?.results as SearchResult[] | undefined
         },
         apiKeys: state.apiKeys,
         thinkingModeEnabled: state.thinkingModeEnabled,
@@ -116,7 +116,7 @@ export const createActionSlice: StateCreator<AppState, [], [], ActionSlice> = (s
 
       if (result.newGraphData && result.newGraphData.nodes) {
         const mergedNodes = [...state.graphNodes];
-        result.newGraphData.nodes.forEach((newNode: any) => {
+        (result.newGraphData.nodes as GraphNode[]).forEach((newNode) => {
           if (!mergedNodes.find(n => n.id === newNode.id)) {
             mergedNodes.push(newNode);
           }

@@ -12,7 +12,7 @@ export interface OrchestrationJobData {
   modelOverride?: string;
 }
 
-export async function orchestrationJob(job: Job<OrchestrationJobData>): Promise<any> {
+export async function orchestrationJob(job: Job<OrchestrationJobData>): Promise<unknown> {
   const { templateId, goal, template, providerOverride, modelOverride } = job.data;
 
   logger.info(`[OrchestrationJob] Starting mission: ${templateId} for goal: ${goal.substring(0, 50)}...`);
@@ -93,8 +93,9 @@ export async function orchestrationJob(job: Job<OrchestrationJobData>): Promise<
       synthesis,
       completedAt: new Date().toISOString()
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
     logger.error(`[OrchestrationJob] Failed mission: ${templateId}`, error);
-    throw new Error(`Orchestration mission failed: ${error.message}`);
+    throw new Error(`Orchestration mission failed: ${err.message}`);
   }
 }

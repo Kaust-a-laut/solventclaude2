@@ -150,7 +150,7 @@ export class ProposerAgent {
     return patterns;
   }
 
-  private generateDeltas(pattern: TracePattern, traces: any[]): HarnessProposal['deltas'] | null {
+  private generateDeltas(pattern: TracePattern, traces: unknown[]): HarnessProposal['deltas'] | null {
     const snapshot = getHarnessSnapshot();
 
     switch (pattern.type) {

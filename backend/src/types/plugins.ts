@@ -14,7 +14,7 @@ export interface IPlugin {
   version: string;
   
   /** Initialize the plugin with configuration */
-  initialize?(config: Record<string, any>): Promise<void>;
+  initialize?(config: Record<string, unknown>): Promise<void>;
   
   /** Check if the plugin is ready to be used */
   isReady(): boolean;

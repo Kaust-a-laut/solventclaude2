@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface ToolControlProps {
   activeTool: string;
-  onAction: (action: string, data?: any) => void;
+  onAction: (action: string, data?: unknown) => void;
   isProcessing: boolean;
 }
 

@@ -37,7 +37,7 @@ export class ProviderSelector {
     })[0]!;
   }
 
-  private meetsRequirements(p: IProviderPlugin, reqs: any): boolean {
+  private meetsRequirements(p: IProviderPlugin, reqs: { supportsVision?: boolean; minContext?: number }): boolean {
     if (!p.capabilities) return false;
     if (reqs.supportsVision && !p.capabilities.supportsVision) return false;
     if (reqs.minContext && p.capabilities.contextWindow < reqs.minContext) return false;

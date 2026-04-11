@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import { AppState, DeviceInfo, BrowserTab, IntelPanelContent, IntelQAEntry } from './types';
+import { AppState, DeviceInfo, BrowserTab, IntelPanelContent, IntelQAEntry, SearchResultSet } from './types';
 import { APP_CONFIG } from '../lib/config';
 
 export interface ProviderConfig {
@@ -48,7 +48,7 @@ export interface SettingsSlice {
   isCommandCenterOpen: boolean;
   commandCenterPiPOpen: boolean;
   browserHistory: string[];
-  lastSearchResults: any | null;
+  lastSearchResults: SearchResultSet | null;
   browserTabs: BrowserTab[];
   activeBrowserTabId: string;
   browserPiPOpen: boolean;
@@ -61,7 +61,7 @@ export interface SettingsSlice {
   availableProviders: ProviderInfo[];
   providerConfigs: Record<string, ProviderConfig>;
 
-  setBackend: (backend: any) => void;
+  setBackend: (backend: 'gemini' | 'ollama' | 'deepseek' | 'openrouter' | 'groq') => void;
   setCurrentMode: (mode: string) => void;
   setSmartRouterEnabled: (enabled: boolean) => void;
   setSelectedLocalModel: (model: string) => void;
@@ -71,13 +71,13 @@ export interface SettingsSlice {
   setTemperature: (temp: number) => void;
   setMaxTokens: (tokens: number) => void;
   setSettingsOpen: (open: boolean) => void;
-  setAuraMode: (mode: any) => void;
+  setAuraMode: (mode: 'off' | 'static' | 'organic') => void;
   setThinkingModeEnabled: (enabled: boolean) => void;
   setImageProvider: (provider: 'gemini' | 'pollinations' | 'local' | 'huggingface' | 'fal' | 'openai' | 'replicate') => void;
   setLocalImageUrl: (url: string) => void;
   setShowCodingChat: (show: boolean) => void;
-  setGlobalProvider: (provider: any) => void;
-  setModeConfig: (mode: string, config: any) => void;
+  setGlobalProvider: (provider: 'cloud' | 'local' | 'auto') => void;
+  setModeConfig: (mode: string, config: { provider: string, model: string }) => void;
   setDeviceInfo: (info: DeviceInfo) => void;
   setNotepadContent: (content: string) => void;
   setOpenFiles: (files: { path: string; content: string }[]) => void;
@@ -87,7 +87,7 @@ export interface SettingsSlice {
   toggleCommandCenter: () => void;
   setCommandCenterPiPOpen: (open: boolean) => void;
   setBrowserHistory: (history: string[]) => void;
-  setLastSearchResults: (results: any) => void;
+  setLastSearchResults: (results: SearchResultSet | null) => void;
   addBrowserTab: (tab: BrowserTab) => void;
   closeBrowserTab: (tabId: string) => void;
   updateBrowserTab: (tabId: string, updates: Partial<BrowserTab>) => void;
@@ -156,7 +156,7 @@ export const createSettingsSlice: StateCreator<AppState, [], [], SettingsSlice> 
   providerConfigs: {},
 
   setBackend: (backend) => set({ backend }),
-  setCurrentMode: (currentMode) => set((state: any) => ({
+  setCurrentMode: (currentMode) => set((state) => ({
     currentMode,
     messages: state.sessions[currentMode] || []
   })),

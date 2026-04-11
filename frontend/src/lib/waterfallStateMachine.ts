@@ -1,6 +1,11 @@
 export type WaterfallPhase = 'planner' | 'executor' | 'reviewer';
 export type StepStatus = 'idle' | 'processing' | 'completed' | 'error';
 
+export interface WaterfallState {
+  currentStep: WaterfallPhase | null;
+  steps: Record<WaterfallPhase, { status: StepStatus; data?: unknown; error?: string | null }>;
+}
+
 const VALID_TRANSITIONS: Record<WaterfallPhase, WaterfallPhase[]> = {
   planner: ['executor'],
   executor: ['reviewer'],
@@ -18,10 +23,10 @@ export const waterfallStateMachine = {
    * Validates and returns the new full state object if valid, throws otherwise.
    */
   transition(
-    currentState: any,
+    currentState: WaterfallState,
     phase: string,
-    payload: any
-  ): any {
+    payload: Record<string, unknown>
+  ): WaterfallState {
     const nextStep = this.mapPhaseToStep(phase);
 
     // Allow 'retrying' as a special pseudo-phase that maps to Executor but implies a loop
@@ -34,7 +39,7 @@ export const waterfallStateMachine = {
          currentStep: 'executor',
          steps: {
            ...currentState.steps,
-           reviewer: { status: 'error', error: payload.message }, // Mark review as failed
+           reviewer: { status: 'error', error: payload.message as string | undefined }, // Mark review as failed
            executor: { status: 'processing', data: { message: 'Refining code based on feedback...' }, error: null }
          }
        };

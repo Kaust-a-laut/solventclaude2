@@ -24,7 +24,7 @@ export async function connectSocket(): Promise<void> {
 
 // Expose on window so components (e.g. SupervisorHistory) can listen for events
 if (typeof window !== 'undefined') {
-  (window as any).socket = socket;
+  (window as unknown as Record<string, unknown>).socket = socket;
 }
 
 connectSocket();

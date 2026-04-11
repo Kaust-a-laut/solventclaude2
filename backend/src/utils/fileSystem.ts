@@ -20,14 +20,14 @@ export class AtomicFileSystem {
    * Writes data to a file atomically by first writing to a temp file
    * and then renaming it. This prevents data corruption on crashes.
    */
-  static async writeJson(filePath: string, data: any) {
+  static async writeJson(filePath: string, data: unknown) {
     const tempPath = `${filePath}.tmp.${Date.now()}`;
     try {
       await fs.writeFile(tempPath, JSON.stringify(data, null, 2));
       await fs.rename(tempPath, filePath);
     } catch (error) {
       logger.error(`[AtomicFS] Failed to write JSON to ${filePath}`, error);
-      try { await fs.unlink(tempPath); } catch (e) {} // Cleanup
+      try { await fs.unlink(tempPath); } catch (e) { logger.debug('[AtomicFS] Temp file cleanup failed', { path: tempPath }); }
       throw error;
     }
   }
@@ -39,7 +39,7 @@ export class AtomicFileSystem {
       await fs.rename(tempPath, filePath);
     } catch (error) {
       logger.error(`[AtomicFS] Failed to write file to ${filePath}`, error);
-      try { await fs.unlink(tempPath); } catch (e) {} // Cleanup
+      try { await fs.unlink(tempPath); } catch (e) { logger.debug('[AtomicFS] Temp file cleanup failed', { path: tempPath }); }
       throw error;
     }
   }

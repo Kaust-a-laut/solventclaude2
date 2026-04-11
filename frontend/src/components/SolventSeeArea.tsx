@@ -224,7 +224,7 @@ export const SolventSeeArea = () => {
     setInstruction('');
   };
 
-  const handleToolAction = async (action: string, data?: any) => {
+  const handleToolAction = async (action: string, data?: unknown) => {
     if (!selectedImage && action !== 'Gen-Fill') return;
     let prompt = '';
     switch (action) {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
+import type { WaterfallStepPayload } from '../../store/waterfallSlice';
 import {
   Brain, GitBranch, Code2, ShieldCheck,
   ChevronDown, ChevronUp, AlertCircle,
@@ -28,7 +29,7 @@ export interface StageConfig {
 export interface WaterfallStageCardProps {
   config: StageConfig;
   status: StageStatus;
-  data: any;
+  data: WaterfallStepPayload | null;
   error: string | null;
   retryCount?: number;
   isExpanded: boolean;
@@ -96,10 +97,10 @@ const StatusIndicator = ({ status, textColor }: { status: StageStatus; textColor
   return null;
 };
 
-const GateContent = ({ data }: { data: any }) => {
-  const estimate = data?.estimate;
+const GateContent = ({ data }: { data: WaterfallStepPayload | null }) => {
+  const estimate = (data as Record<string, unknown>)?.estimate as Record<string, unknown> | undefined;
   if (!estimate) return null;
-  const complexity = (estimate.complexity || estimate.riskLevel || 'medium').toLowerCase();
+  const complexity = (String(estimate.complexity ?? estimate.riskLevel ?? 'medium')).toLowerCase();
   const complexityColors: Record<string, string> = {
     low: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
     medium: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
@@ -119,13 +120,13 @@ const GateContent = ({ data }: { data: any }) => {
         </span>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        {estimate.estimatedTokens && (
+        {estimate.estimatedTokens != null && (
           <div>
             <div className="text-[11px] text-slate-400 uppercase font-black mb-0.5">Est. Tokens</div>
-            <div className="text-[13px] font-black text-white font-mono">{estimate.estimatedTokens.toLocaleString()}</div>
+            <div className="text-[13px] font-black text-white font-mono">{Number(estimate.estimatedTokens).toLocaleString()}</div>
           </div>
         )}
-        {estimate.estimatedCost && (
+        {estimate.estimatedCost != null && (
           <div>
             <div className="text-[11px] text-slate-400 uppercase font-black mb-0.5">Est. Cost</div>
             <div className="text-[13px] font-black text-white font-mono">${Number(estimate.estimatedCost).toFixed(4)}</div>
@@ -136,66 +137,70 @@ const GateContent = ({ data }: { data: any }) => {
   );
 };
 
-const StageOutput = ({ stageKey, data, textColor }: { stageKey: StageKey; data: any; textColor: string }) => {
+const StageOutput = ({ stageKey, data, textColor }: { stageKey: StageKey; data: WaterfallStepPayload | null; textColor: string }) => {
   if (!data) return null;
+  const d = data as Record<string, unknown>;
 
   if (stageKey === 'reviewer') {
     return (
       <div className="mt-4 space-y-3">
-        {data.summary && <p className="text-sm text-slate-300 leading-relaxed">{data.summary}</p>}
-        {data.issues?.length > 0 && (
+        {d.summary != null && <p className="text-sm text-slate-300 leading-relaxed">{String(d.summary)}</p>}
+        {Array.isArray(d.issues) && d.issues.length > 0 && (
           <ul className="space-y-1.5">
-            {data.issues.map((issue: string, i: number) => (
+            {d.issues.map((issue: unknown, i: number) => (
               <li key={i} className="flex items-start gap-2 text-xs text-slate-400">
                 <span className="w-1 h-1 rounded-full bg-rose-500/60 mt-2 shrink-0" />
-                {issue}
+                {String(issue)}
               </li>
             ))}
           </ul>
         )}
-        {data.crystallizable_insight && (
+        {d.crystallizable_insight != null && (
           <div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/15 text-xs text-emerald-300/80 leading-relaxed">
             <span className="text-[11px] font-black text-emerald-400 uppercase tracking-widest block mb-1">Crystallized Insight</span>
-            {data.crystallizable_insight}
+            {String(d.crystallizable_insight)}
           </div>
         )}
       </div>
     );
   }
 
-  if (data?.plan || data?.steps) {
+  if (d.plan || d.steps) {
     return (
       <div className="mt-4 space-y-3">
-        {data.plan && <p className="text-sm text-slate-300 leading-relaxed">{data.plan}</p>}
-        {data.logic && <p className="text-sm text-slate-300 leading-relaxed">{data.logic}</p>}
-        {data.steps?.length > 0 && (
+        {d.plan != null && <p className="text-sm text-slate-300 leading-relaxed">{String(d.plan)}</p>}
+        {d.logic != null && <p className="text-sm text-slate-300 leading-relaxed">{String(d.logic)}</p>}
+        {Array.isArray(d.steps) && d.steps.length > 0 && (
           <ul className="space-y-2">
-            {data.steps.map((s: any, i: number) => (
-              <li key={i} className={cn('text-xs flex gap-2', textColor)}>
-                <span className="font-black shrink-0 mt-0.5">{i + 1}.</span>
-                <span className="text-slate-400">
-                  {s.title && <strong className="text-slate-300">{s.title}: </strong>}
-                  {s.description || s}
-                </span>
-              </li>
-            ))}
+            {d.steps.map((s: unknown, i: number) => {
+              const step = typeof s === 'object' && s !== null ? s as Record<string, unknown> : null;
+              return (
+                <li key={i} className={cn('text-xs flex gap-2', textColor)}>
+                  <span className="font-black shrink-0 mt-0.5">{i + 1}.</span>
+                  <span className="text-slate-400">
+                    {step?.title != null && <strong className="text-slate-300">{String(step.title)}: </strong>}
+                    {step?.description != null ? String(step.description) : typeof s === 'string' ? s : JSON.stringify(s)}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         )}
-        {data.assumptions && (
-          <p className="text-xs text-slate-300 italic">{data.assumptions}</p>
+        {d.assumptions != null && (
+          <p className="text-xs text-slate-300 italic">{String(d.assumptions)}</p>
         )}
       </div>
     );
   }
 
-  if (data?.code) {
+  if (d.code) {
     return (
       <div className="mt-4 space-y-2">
-        {data.explanation && <p className="text-xs text-slate-400 leading-relaxed">{data.explanation}</p>}
-        {data.files?.length > 0 && (
+        {d.explanation != null && <p className="text-xs text-slate-400 leading-relaxed">{String(d.explanation)}</p>}
+        {Array.isArray(d.files) && d.files.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-2">
-            {data.files.map((f: string, i: number) => (
-              <span key={i} className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-mono text-slate-400">{f}</span>
+            {d.files.map((f: unknown, i: number) => (
+              <span key={i} className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-mono text-slate-400">{String(f)}</span>
             ))}
           </div>
         )}
@@ -204,7 +209,7 @@ const StageOutput = ({ stageKey, data, textColor }: { stageKey: StageKey; data: 
             <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Generated Code</span>
           </div>
           <pre className="p-4 font-mono text-xs text-slate-300 max-h-48 overflow-y-auto scrollbar-thin leading-relaxed">
-            {data.code}
+            {String(d.code)}
           </pre>
         </div>
       </div>
@@ -366,9 +371,9 @@ export const WaterfallStageCard = ({
                   className={cn('w-1.5 h-1.5 rounded-full', `bg-${config.color}`)}
                 />
               ))}
-              {data?.message && (
+              {(data as Record<string, unknown>)?.message != null && (
                 <span className="text-[11px] text-slate-400 font-mono ml-1 animate-pulse">
-                  {data.message}
+                  {String((data as Record<string, unknown>).message)}
                 </span>
               )}
             </motion.div>

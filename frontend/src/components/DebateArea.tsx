@@ -16,6 +16,11 @@ interface DebateState {
   synthesis: string | null;
 }
 
+interface DebateRound {
+  role: string;
+  content?: string;
+}
+
 const EMPTY_DEBATE: DebateState = { proponent: null, critic: null, synthesis: null };
 
 // ─── Panel config ───────────────────────────────────────────────────────────────
@@ -166,17 +171,17 @@ export const DebateArea = () => {
 
       const result      = await response.json();
       const rounds      = result.rounds ?? [];
-      const proponent   = rounds.find((r: any) => r.role === 'proponent');
-      const critic      = rounds.find((r: any) => r.role === 'critic');
-      const synthesizer = rounds.find((r: any) => r.role === 'synthesizer');
+      const proponent   = rounds.find((r: DebateRound) => r.role === 'proponent');
+      const critic      = rounds.find((r: DebateRound) => r.role === 'critic');
+      const synthesizer = rounds.find((r: DebateRound) => r.role === 'synthesizer');
 
       setDebate({
         proponent: proponent?.content   ?? null,
         critic:    critic?.content      ?? null,
         synthesis: synthesizer?.content ?? null,
       });
-    } catch (e: any) {
-      setError(e.message || 'An error occurred.');
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'An error occurred.');
     } finally {
       setIsDebating(false);
     }

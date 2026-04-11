@@ -7,6 +7,7 @@ import { CodeBlock } from './CodeBlock';
 import { cn } from '../lib/utils';
 import { ChatService } from '../services/ChatService';
 import { updateTraceOutcome } from '../lib/api-client';
+import type { Message, ProvenanceItem } from '../store/types';
 
 const ScoreChip = ({ score, signals }: { score: number; signals?: string[] }) => (
   <span className="flex items-center gap-1 flex-wrap mt-0.5">
@@ -25,7 +26,7 @@ const ScoreChip = ({ score, signals }: { score: number; signals?: string[] }) =>
 );
 
 interface MessageItemProps {
-  message: any;
+  message: Message;
   isUser: boolean;
   modelName?: string;
   time: string;
@@ -55,7 +56,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   const content = typeof message.content === 'string' ? message.content : '';
   // Extract <thinking> blocks
   const thinkingMatch = content.match(/<thinking>([\s\S]*?)<\/thinking>/);
-  const thinkingContent = thinkingMatch ? thinkingMatch[1].trim() : null;
+  const thinkingContent = thinkingMatch ? thinkingMatch[1]?.trim() : null;
   const displayContent = content.replace(/<thinking>[\s\S]*?<\/thinking>/, '').trim();
 
   // Determine Provider Type for Badge
@@ -75,7 +76,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     : { className: rootClassName };
 
   return (
-    <Root {...rootProps as any}>
+    <Root {...rootProps}>
       {!isUser && (
         <div className="absolute left-0 top-0 w-full h-full pointer-events-none overflow-hidden">
            <div className="absolute -left-20 top-0 w-48 h-48 bg-jb-accent/5 rounded-full blur-[100px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
@@ -247,7 +248,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                           <div className="bg-black/90 border border-jb-accent/30 rounded-lg p-3 backdrop-blur-xl shadow-2xl">
                              <div className="text-[11px] font-black text-jb-accent uppercase tracking-tighter mb-2 border-b border-jb-accent/20 pb-1">Crystallized Memories</div>
                              <div className="space-y-2">
-                                 {message.provenance.active.filter((p: any) => p.source === 'LOCAL').map((p: any, i: number) => (
+                                 {message.provenance.active.filter((p: ProvenanceItem) => p.source === 'LOCAL').map((p: ProvenanceItem, i: number) => (
                                     <div key={i} className={cn(
                                        "text-[11px] text-slate-300 leading-relaxed border-l border-jb-accent/30 pl-2 group/item relative",
                                        deprecatedIds.has(p.id) && "opacity-40 line-through"
@@ -275,7 +276,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                  )}
 
                  {/* Global Patterns Badge & HUD */}
-                 {(message.provenance.counts.global > 0 || message.provenance.suppressed.some((p: any) => p.source === 'GLOBAL')) && (
+                 {(message.provenance.counts.global > 0 || message.provenance.suppressed.some((p: ProvenanceItem) => p.source === 'GLOBAL')) && (
                     <div className="group/hud relative">
                        <div className={cn(
                           "flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-bold cursor-help border",
@@ -292,7 +293,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                              
                              <div className="space-y-3">
                                  {/* Active Patterns */}
-                                 {message.provenance.active.filter((p: any) => p.source === 'GLOBAL').map((p: any, i: number) => (
+                                 {message.provenance.active.filter((p: ProvenanceItem) => p.source === 'GLOBAL').map((p: ProvenanceItem, i: number) => (
                                     <div key={i} className={cn(
                                        "text-[11px] text-slate-200 leading-relaxed border-l-2 border-emerald-500 pl-2 group/item relative",
                                        deprecatedIds.has(p.id) && "opacity-40 line-through"
@@ -318,7 +319,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                                  ))}
 
                                 {/* Suppressed Conflicts */}
-                                {message.provenance.suppressed.filter((p: any) => p.source === 'GLOBAL').map((p: any, i: number) => (
+                                {message.provenance.suppressed.filter((p: ProvenanceItem) => p.source === 'GLOBAL').map((p: ProvenanceItem, i: number) => (
                                    <div key={i} className="text-[11px] text-slate-300 leading-relaxed border-l-2 border-rose-500/50 pl-2 opacity-80">
                                       <span className="text-rose-400 font-black uppercase text-[11px] flex items-center gap-1">
                                          <div className="w-1 h-1 rounded-full bg-rose-400" />
@@ -347,7 +348,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                                  Active Rules
                               </div>
                               <div className="space-y-2">
-                                 {message.provenance.active.filter((p: any) => p.type === 'permanent_rule').map((p: any, i: number) => (
+                                 {message.provenance.active.filter((p: ProvenanceItem) => p.type === 'permanent_rule').map((p: ProvenanceItem, i: number) => (
                                     <div key={i} className="text-[11px] text-slate-300 border-l-2 border-amber-500/50 pl-2">
                                        {p.text}
                                     </div>

@@ -3,6 +3,16 @@ import { useAppStore } from '../store/useAppStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Network, Expand, Sparkles } from 'lucide-react';
 import { cn } from '../lib/utils';
+import type { GraphNode } from '../store/types';
+
+interface MiniGraphNode extends GraphNode {
+  type?: string;
+}
+
+interface MiniGraphEdge {
+  source?: { id: string } | string;
+  target?: { id: string } | string;
+}
 
 export const KnowledgeMapMini = () => {
   const { graphNodes, graphEdges, showKnowledgeMap, setShowKnowledgeMap } = useAppStore();
@@ -14,7 +24,7 @@ export const KnowledgeMapMini = () => {
   if (graphNodes.length === 0) return null;
 
   // Get node type colors for visualization
-  const getNodeColor = (node: any) => {
+  const getNodeColor = (node: MiniGraphNode) => {
     if (node.type === 'permanent_rule') return '#F59E0B';
     if (node.type === 'solution_pattern') return '#06B6D4';
     if (node.type === 'architectural_decision') return '#9D5BD2';
@@ -45,9 +55,9 @@ export const KnowledgeMapMini = () => {
           {/* Mini force-directed visualization */}
           <svg className="w-full h-full p-2" viewBox="0 0 64 64">
             {/* Draw edges first */}
-            {graphEdges.slice(0, 15).map((edge: any, i: number) => {
-              const sourceNode = graphNodes.find((n: any) => n.id === (edge.source?.id || edge.source));
-              const targetNode = graphNodes.find((n: any) => n.id === (edge.target?.id || edge.target));
+            {graphEdges.slice(0, 15).map((edge: MiniGraphEdge, i: number) => {
+              const sourceNode = graphNodes.find((n: MiniGraphNode) => n.id === (edge.source && typeof edge.source === 'object' ? edge.source.id : edge.source));
+              const targetNode = graphNodes.find((n: MiniGraphNode) => n.id === (edge.target && typeof edge.target === 'object' ? edge.target.id : edge.target));
               if (!sourceNode || !targetNode) return null;
 
               const sourceIndex = graphNodes.indexOf(sourceNode);
@@ -72,7 +82,7 @@ export const KnowledgeMapMini = () => {
             })}
 
             {/* Draw nodes */}
-            {graphNodes.slice(0, 20).map((node: any, i: number) => {
+            {graphNodes.slice(0, 20).map((node: MiniGraphNode, i: number) => {
               const x = 8 + (i % 5) * 11;
               const y = 8 + Math.floor(i / 5) * 11;
               return (

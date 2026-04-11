@@ -657,7 +657,7 @@ After </thinking>, deliver the answer cleanly without restating the reasoning.`
 
   async checkHealth() {
     const providers = await AIProviderFactory.getAllProviders();
-    const health: Record<string, any> = {};
+    const health: Record<string, string> = {};
 
     for (const provider of providers) {
       health[provider.id] = provider.isReady() ? 'connected' : 'disconnected';

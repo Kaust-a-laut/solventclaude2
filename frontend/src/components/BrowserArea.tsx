@@ -80,16 +80,19 @@ const BrowserPiP = () => {
         />
       </div>
       <div className="flex-1 overflow-y-auto p-4">
-        {activeTab?.searchResults?.results?.map((result: any, idx: number) => (
-          <a key={idx} href={result.link} target="_blank" rel="noopener noreferrer"
+        {activeTab?.searchResults?.results?.map((result: unknown, idx: number) => {
+          const r = result as { link: string; title: string; snippet: string; relevanceScore?: number };
+          return (
+          <a key={idx} href={r.link} target="_blank" rel="noopener noreferrer"
             className="block mb-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:border-jb-accent/20 transition-all">
             <div className="text-[11px] text-jb-accent font-bold uppercase tracking-widest mb-1">
-              {(() => { try { return new URL(result.link).hostname; } catch { return ''; } })()}
+              {(() => { try { return new URL(r.link).hostname; } catch { return ''; } })()}
             </div>
-            <div className="text-[13px] font-bold text-white mb-1">{result.title}</div>
-            <div className="text-[11px] text-slate-300 line-clamp-2">{result.snippet}</div>
+            <div className="text-[13px] font-bold text-white mb-1">{r.title}</div>
+            <div className="text-[11px] text-slate-300 line-clamp-2">{r.snippet}</div>
           </a>
-        ))}
+          );
+        })}
         {activeTab?.pageContent && (
           <div className="space-y-3">
             <h2 className="text-xl font-black text-white">{activeTab.pageContent.title}</h2>
@@ -160,7 +163,8 @@ export const BrowserArea = () => {
         // Sync legacy store
         setLastSearchResults(null);
         setPipelineStage('idle');
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
         updateBrowserTab(tabId, {
           type: 'reader',
           url: newUrl,
@@ -214,13 +218,14 @@ export const BrowserArea = () => {
         });
         setLastSearchResults(searchData);
         setPipelineStage('complete');
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
         updateBrowserTab(tabId, {
           type: 'search',
-          searchResults: { results: [], error: error.message || 'Network bridge failure' },
+          searchResults: { results: [], error: err.message || 'Network bridge failure' },
           isLoading: false,
         });
-        setLastSearchResults({ results: [], error: error.message });
+        setLastSearchResults({ results: [], error: err.message });
         setPipelineStage('idle');
       }
     }
@@ -327,7 +332,7 @@ export const BrowserArea = () => {
     if (!('documentPictureInPicture' in window)) return;
 
     try {
-      const pipWin: Window = await (window as any).documentPictureInPicture.requestWindow({
+      const pipWin: Window = await (window as unknown as { documentPictureInPicture?: { requestWindow: (opts: unknown) => Promise<Window> } }).documentPictureInPicture!.requestWindow({
         width: 480, height: 700,
       });
       pipWindowRef.current = pipWin;
@@ -732,7 +737,9 @@ export const BrowserArea = () => {
 
             {/* Result Cards */}
             <div className="flex flex-col gap-4">
-              {searchResults.results?.map((result: any, idx: number) => (
+              {searchResults.results?.map((result: unknown, idx: number) => {
+                const r = result as { link: string; title: string; snippet: string; relevanceScore?: number };
+                return (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -815,7 +822,7 @@ export const BrowserArea = () => {
               <div className="space-y-4 pt-4 border-t border-white/5">
                 <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] block">Related Searches</span>
                 <div className="flex flex-wrap gap-2">
-                  {searchResults.relatedSearches.map((rs: any, i: number) => (
+                  {searchResults.relatedSearches.map((rs: { query: string }, i: number) => (
                     <button
                       key={i}
                       onClick={() => { setInputUrl(rs.query); handleNavigate(rs.query); }}

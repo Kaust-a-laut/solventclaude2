@@ -42,7 +42,7 @@ export const FloatingNotepad = () => {
     }
 
     try {
-      const pipWin: Window = await (window as any).documentPictureInPicture.requestWindow({
+      const pipWin: Window = await (window as unknown as { documentPictureInPicture?: { requestWindow: (opts: unknown) => Promise<Window> } }).documentPictureInPicture!.requestWindow({
         width: 420,
         height: 650,
       });

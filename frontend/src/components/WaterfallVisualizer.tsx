@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { WaterfallStepPayload } from '../store/waterfallSlice';
 import {
   Compass, Brain, Code, Eye, ChevronRight, ChevronDown,
   CheckCircle2, Loader2, AlertCircle, Circle, Pause,
@@ -67,30 +68,31 @@ const scoreColor = (score: number) => {
 
 // ─── Compact output preview ────────────────────────────────────────────────
 
-const StagePreview = ({ id, data }: { id: StageId; data: any }) => {
-  if (!data || data.phase) return null; // skip processing markers
+const StagePreview = ({ id, data }: { id: StageId; data: WaterfallStepPayload | null }) => {
+  if (!data || (data as Record<string, unknown>).phase) return null; // skip processing markers
+  const d = data as Record<string, unknown>;
 
   if (id === 'planner') {
     return (
       <div className="space-y-1.5">
-        {data.plan && <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-3">{data.plan}</p>}
-        {data.complexity && (
+        {d.plan != null && <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-3">{String(d.plan)}</p>}
+        {d.complexity != null && (
           <span className={cn(
             'inline-block px-1.5 py-0.5 rounded text-[11px] font-black uppercase border',
-            data.complexity === 'low' ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' :
-            data.complexity === 'high' ? 'text-rose-400 bg-rose-500/10 border-rose-500/20' :
+            d.complexity === 'low' ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' :
+            d.complexity === 'high' ? 'text-rose-400 bg-rose-500/10 border-rose-500/20' :
             'text-amber-400 bg-amber-500/10 border-amber-500/20',
           )}>
-            {data.complexity}
+            {String(d.complexity)}
           </span>
         )}
-        {data.steps?.length > 0 && (
-          <span className="text-[11px] text-slate-400 font-mono">{data.steps.length} steps planned</span>
+        {Array.isArray(d.steps) && d.steps.length > 0 && (
+          <span className="text-[11px] text-slate-400 font-mono">{d.steps.length} steps planned</span>
         )}
-        {data.techStack?.length > 0 && (
+        {Array.isArray(d.techStack) && d.techStack.length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {data.techStack.slice(0, 5).map((t: string, i: number) => (
-              <span key={i} className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[11px] font-mono text-slate-300">{t}</span>
+            {d.techStack.slice(0, 5).map((t: unknown, i: number) => (
+              <span key={i} className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[11px] font-mono text-slate-300">{String(t)}</span>
             ))}
           </div>
         )}
@@ -101,11 +103,11 @@ const StagePreview = ({ id, data }: { id: StageId; data: any }) => {
   if (id === 'executor') {
     return (
       <div className="space-y-1.5">
-        {data.explanation && <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{data.explanation}</p>}
-        {data.files?.length > 0 && (
+        {d.explanation != null && <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{String(d.explanation)}</p>}
+        {Array.isArray(d.files) && d.files.length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {data.files.slice(0, 4).map((f: string, i: number) => (
-              <span key={i} className="px-1.5 py-0.5 rounded bg-jb-orange/10 border border-jb-orange/20 text-[11px] font-mono text-jb-orange/70">{f}</span>
+            {d.files.slice(0, 4).map((f: unknown, i: number) => (
+              <span key={i} className="px-1.5 py-0.5 rounded bg-jb-orange/10 border border-jb-orange/20 text-[11px] font-mono text-jb-orange/70">{String(f)}</span>
             ))}
           </div>
         )}
@@ -116,15 +118,15 @@ const StagePreview = ({ id, data }: { id: StageId; data: any }) => {
   if (id === 'reviewer') {
     return (
       <div className="space-y-1.5">
-        {data.score != null && (
+        {d.score != null && (
           <div className="flex items-center gap-2">
-            <span className={cn('text-lg font-black tabular-nums', scoreColor(data.score))}>{data.score}</span>
+            <span className={cn('text-lg font-black tabular-nums', scoreColor(Number(d.score)))}>{Number(d.score)}</span>
             <span className="text-[11px] text-slate-400 font-black uppercase">/100</span>
           </div>
         )}
-        {data.summary && <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{data.summary}</p>}
-        {data.issues?.length > 0 && (
-          <span className="text-[11px] text-rose-400/60 font-mono">{data.issues.length} issue{data.issues.length !== 1 ? 's' : ''} found</span>
+        {d.summary != null && <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{String(d.summary)}</p>}
+        {Array.isArray(d.issues) && d.issues.length > 0 && (
+          <span className="text-[11px] text-rose-400/60 font-mono">{d.issues.length} issue{d.issues.length !== 1 ? 's' : ''} found</span>
         )}
       </div>
     );
@@ -282,7 +284,7 @@ export const WaterfallVisualizer = () => {
 
         {/* Link to full view */}
         <button
-          onClick={() => setCurrentMode('waterfall' as any)}
+          onClick={() => setCurrentMode('waterfall' as 'waterfall')}
           className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/5 text-slate-400 text-[11px] font-black uppercase tracking-wider hover:bg-white/[0.06] hover:text-slate-400 transition-all"
         >
           <ExternalLink size={9} />
@@ -396,7 +398,7 @@ export const WaterfallVisualizer = () => {
 
       {/* Open in main app */}
       <button
-        onClick={() => setCurrentMode('waterfall' as any)}
+        onClick={() => setCurrentMode('waterfall' as 'waterfall')}
         className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/5 text-slate-300 text-[11px] font-black uppercase tracking-wider hover:bg-white/[0.06] hover:text-white transition-all"
       >
         <ExternalLink size={9} />

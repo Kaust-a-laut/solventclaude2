@@ -6,7 +6,7 @@ export interface IndexProjectJobData {
   projectPath: string;
 }
 
-export async function indexProjectJob(job: Job<IndexProjectJobData>): Promise<any> {
+export async function indexProjectJob(job: Job<IndexProjectJobData>): Promise<unknown> {
   const { projectPath } = job.data;
   
   logger.info(`[IndexProjectJob] Starting indexing for project: ${projectPath}`);
@@ -28,10 +28,11 @@ export async function indexProjectJob(job: Job<IndexProjectJobData>): Promise<an
       message: `Successfully indexed project: ${projectPath}`,
       indexedAt: new Date().toISOString()
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
     logger.error(`[IndexProjectJob] Failed to index project: ${projectPath}`, error);
-    
+
     // Throw error to mark job as failed
-    throw new Error(`Indexing failed: ${error.message}`);
+    throw new Error(`Indexing failed: ${err.message}`);
   }
 }

@@ -32,21 +32,30 @@ export class LocalImageService {
    * @param prompt The prompt to generate the image from.
    * @param options Optional overrides for the local generator.
    */
-  async generateImage(prompt: string, options: any = {}): Promise<{ base64: string, mimeType: string }> {
+  async generateImage(prompt: string, options: Record<string, unknown> = {}): Promise<{ base64: string, mimeType: string }> {
     try {
-      const url = options.localUrl || this.defaultUrl;
-      const isXL = prompt.toLowerCase().includes('xl') || options.model?.toLowerCase().includes('xl') || options.model?.toLowerCase().includes('juggernaut');
-      
+      const url = (options.localUrl as string) || this.defaultUrl;
+      const isXL = prompt.toLowerCase().includes('xl') || (options.model as string)?.toLowerCase().includes('xl') || (options.model as string)?.toLowerCase().includes('juggernaut');
+
       logger.info(`[LocalImage] Generating image at ${url} for prompt: "${prompt.substring(0, 50)}..."`);
-      
-      const payload: any = {
+
+      const payload: {
+        prompt: string;
+        negative_prompt: string;
+        steps: number;
+        cfg_scale: number;
+        width: number;
+        height: number;
+        sampler_name: string;
+        override_settings: Record<string, string>;
+      } = {
         prompt: prompt,
-        negative_prompt: options.negativePrompt || "easynegative, low quality, bad anatomy, blurry, watermark",
-        steps: options.steps || 30,
-        cfg_scale: options.cfgScale || 7.0,
-        width: options.width || (isXL ? 1024 : 1024), // Default XL to 1024
-        height: options.height || (isXL ? 1024 : 1024),
-        sampler_name: options.sampler || "DPM++ 2M Karras",
+        negative_prompt: (options.negativePrompt as string) || "easynegative, low quality, bad anatomy, blurry, watermark",
+        steps: (options.steps as number) || 30,
+        cfg_scale: (options.cfgScale as number) || 7.0,
+        width: (options.width as number) || (isXL ? 1024 : 1024),
+        height: (options.height as number) || (isXL ? 1024 : 1024),
+        sampler_name: (options.sampler as string) || "DPM++ 2M Karras",
         override_settings: {}
       };
 
@@ -75,8 +84,9 @@ export class LocalImageService {
         mimeType: 'image/png'
       };
 
-    } catch (error: any) {
-      logger.error(`[LocalImage] Error generating image: ${error.message}`);
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error(`[LocalImage] Error generating image: ${err.message}`);
       throw error;
     }
   }
