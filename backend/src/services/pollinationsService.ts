@@ -10,7 +10,7 @@ export class PollinationsService {
    * @param prompt The prompt to generate the image from.
    * @param model Optional model specifier (though Pollinations auto-selects or uses query params, we'll append to prompt if needed or pass as query param).
    */
-  async generateImage(prompt: string, model?: string): Promise<{ base64: string, mimeType: string }> {
+  async generateImage(prompt: string, _model?: string): Promise<{ base64: string, mimeType: string }> {
     try {
       logger.info(`[Pollinations] Generating image for prompt: "${prompt}"`);
       

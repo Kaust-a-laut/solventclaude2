@@ -22,7 +22,7 @@ function parseOffset(value: string | undefined): number {
 }
 
 // GET /api/v1/memory/stats
-router.get('/memory/stats', (req: Request, res: Response) => {
+router.get('/memory/stats', (_req: Request, res: Response) => {
   const allEntries = vectorService.getRecentEntries(MAX_MEMORY_LOAD);
   const active = allEntries.filter(e => !e.metadata?.deprecated);
 
@@ -122,14 +122,14 @@ router.delete('/memory/entries/:id', async (req: Request, res: Response) => {
 });
 
 // DELETE /api/v1/memory — soft-delete all entries (clear)
-router.delete('/memory', async (req: Request, res: Response) => {
+router.delete('/memory', async (_req: Request, res: Response) => {
   const active = vectorService.getRecentEntries(MAX_MEMORY_LOAD).filter(e => !e.metadata?.deprecated);
   await Promise.all(active.map(e => vectorService.deprecateEntry(e.id, 'Cleared by user')));
   res.json({ success: true, cleared: active.length });
 });
 
 // POST /api/v1/index — trigger project re-index (was missing, called by frontend)
-router.post('/index', (req: Request, res: Response) => {
+router.post('/index', (_req: Request, res: Response) => {
   const projectRoot = path.join(__dirname, '../../..');
   // Fire-and-forget: indexProject can take minutes on large repos
   vectorService.indexProject(projectRoot).catch((err: Error) => {

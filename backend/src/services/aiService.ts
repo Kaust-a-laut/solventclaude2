@@ -429,7 +429,7 @@ After </thinking>, deliver the answer cleanly without restating the reasoning.`
     apiKeys: Record<string, string> | undefined,
     fallbackModel: string | undefined,
     mode: string | undefined,
-    data: ChatRequestData
+    _data: ChatRequestData
   ): Promise<CompletionResponse> {
     try {
       const selectedProvider = await AIProviderFactory.getProvider(provider);
@@ -514,7 +514,7 @@ After </thinking>, deliver the answer cleanly without restating the reasoning.`
     }
   }
 
-  private async handleFallbacks(messages: ChatMessage[], mode: string = 'chat', fallbackModel: string = '', temp: number = 0.7, maxTokens: number = 2048, originalError: Error = new Error('Unknown'), apiKeys?: Record<string, string>, failedProvider?: string) {
+  private async handleFallbacks(messages: ChatMessage[], _mode: string = 'chat', _fallbackModel: string = '', temp: number = 0.7, maxTokens: number = 2048, _originalError: Error = new Error('Unknown'), apiKeys?: Record<string, string>, failedProvider?: string) {
     // Normalize messages to ensure compatible roles across providers
     const normalizedMessages = messages.map(m => ({
       ...m,
@@ -551,7 +551,7 @@ After </thinking>, deliver the answer cleanly without restating the reasoning.`
     }
   }
 
-  async generateImage(prompt: string, model?: string, apiKey?: string, provider: string = 'auto', options: { apiKeys?: Record<string, string>; [key: string]: unknown } = {}) {
+  async generateImage(prompt: string, model?: string, _apiKey?: string, provider: string = 'auto', options: { apiKeys?: Record<string, string>; [key: string]: unknown } = {}) {
     let targetProvider = provider;
     if (provider === 'auto') {
       targetProvider = (config.HUGGINGFACE_API_KEY || options.apiKeys?.huggingface) ? 'huggingface' : 'pollinations';

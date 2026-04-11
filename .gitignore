@@ -43,3 +43,7 @@ VIBE.md
 .solvent_telemetry.jsonl
 .solvent_notes.md
 backend/generated_images/
+
+# Solvent temp files
+.solvent_memory.json.tmp.*
+backend/03-31-backendlog

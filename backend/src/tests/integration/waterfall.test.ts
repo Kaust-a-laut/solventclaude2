@@ -30,7 +30,7 @@ describe('WaterfallService Integration (Mocked AI)', () => {
 
     // Create a mock provider that handles JSON responses
     mockProvider = {
-      complete: vi.fn().mockImplementation(async (messages, options) => {
+      complete: vi.fn().mockImplementation(async (messages, _options) => {
         // Route based on the 3-stage pipeline prompt content
         const content = messages[0].content || "";
 

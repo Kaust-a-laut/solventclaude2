@@ -41,7 +41,7 @@ export class TestRunnerPlugin implements IToolPlugin {
     this.syntheticTestDir = path.join(this.rootDir, 'backend/tests/synthetic');
   }
 
-  async initialize(options: Record<string, unknown>): Promise<void> {
+  async initialize(_options: Record<string, unknown>): Promise<void> {
     await fs.mkdir(this.syntheticTestDir, { recursive: true });
   }
 

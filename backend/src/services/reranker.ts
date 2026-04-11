@@ -24,7 +24,7 @@ export class Reranker {
     try {
       const provider = await AIProviderFactory.getProvider('groq');
 
-      const docs = candidates.map((c, i) => {
+      const docs = candidates.map((c) => {
         const text = (c.metadata.text || '').substring(0, MAX_DOC_CHARS);
         return `[${c.id}] ${text}`;
       }).join('\n\n');

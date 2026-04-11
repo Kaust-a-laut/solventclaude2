@@ -20,10 +20,10 @@ const permittedRoots: string[] = [
 // Multer configuration
 const uploadDir = path.resolve(__dirname, '../../uploads');
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (_req, _file, cb) => {
     cb(null, uploadDir);
   },
-  filename: (req, file, cb) => {
+  filename: (_req, file, cb) => {
     // Strip directory components from the original name to prevent path traversal
     const safeName = path.basename(file.originalname);
     const uniqueName = `${Date.now()}-${safeName}`;
@@ -107,7 +107,7 @@ async function getFileTree(dir: string, base: string = ''): Promise<Array<{ name
   }
 }
 
-router.get('/list', async (req, res) => {
+router.get('/list', async (_req, res) => {
   try {
     // Use the primary permitted root (project root)
     const root = permittedRoots[0];

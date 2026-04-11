@@ -48,7 +48,7 @@ export class HarnessController {
     res.json(run);
   }
 
-  static async listRuns(req: Request, res: Response) {
+  static async listRuns(_req: Request, res: Response) {
     res.json(harnessOptimizer.listRuns());
   }
 

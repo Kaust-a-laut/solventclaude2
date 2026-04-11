@@ -157,7 +157,7 @@ router.post('/overseer/trigger', async (req, res) => {
 });
 
 // Plugin Discovery Endpoint
-router.get('/plugins', async (req, res) => {
+router.get('/plugins', async (_req, res) => {
   try {
     const { pluginManager } = await import('../services/pluginManager');
     await pluginManager.initialize(); // Ensure plugins are loaded
@@ -288,7 +288,7 @@ router.delete('/sessions/:id', async (req, res) => {
 });
 
 // ── Overseer Decision Review ────────────────────────────────────────────────
-router.get('/overseer/pending', async (req, res) => {
+router.get('/overseer/pending', async (_req, res) => {
   try {
     const pending = supervisorService.getPendingDecisions();
     res.json({ decisions: pending });
@@ -380,7 +380,7 @@ router.post('/codebase/index', async (req, res) => {
   }
 });
 
-router.get('/codebase/status', async (req, res) => {
+router.get('/codebase/status', async (_req, res) => {
   try {
     const { codebaseIndexer } = await import('../services/codebaseIndexer');
     const status = codebaseIndexer.getStatus();

@@ -4,12 +4,12 @@ import { vectorService } from '../services/vectorService';
 
 const router = Router();
 
-router.get('/memory-stats', (req, res) => {
+router.get('/memory-stats', (_req, res) => {
   const stats = memoryMetrics.getStats();
   res.json(stats);
 });
 
-router.get('/metrics', (req, res) => {
+router.get('/metrics', (_req, res) => {
   res.set('Content-Type', 'text/plain');
   res.send(memoryMetrics.toPrometheus());
 });
@@ -28,7 +28,7 @@ router.get('/memory-sample', (req, res) => {
   res.json(sanitized);
 });
 
-router.post('/reset-metrics', (req, res) => {
+router.post('/reset-metrics', (_req, res) => {
   memoryMetrics.reset();
   res.json({ success: true, message: 'Metrics reset' });
 });

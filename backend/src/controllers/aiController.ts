@@ -245,7 +245,7 @@ export class AIController {
     }
   }
 
-  static async indexProject(req: Request, res: Response) {
+  static async indexProject(_req: Request, res: Response) {
     try {
       // Use the task service to dispatch the indexing job asynchronously
       const jobId = await taskService.dispatchIndexingJob(process.cwd());
@@ -260,7 +260,7 @@ export class AIController {
     }
   }
 
-  static async listModels(req: Request, res: Response) {
+  static async listModels(_req: Request, res: Response) {
     try {
       const result = await aiService.listAvailableModels();
       res.json(result);
@@ -270,7 +270,7 @@ export class AIController {
     }
   }
 
-  static async checkLocalImageStatus(req: Request, res: Response) {
+  static async checkLocalImageStatus(_req: Request, res: Response) {
     try {
       const result = await aiService.checkLocalImageStatus();
       res.json(result);
@@ -280,7 +280,7 @@ export class AIController {
     }
   }
 
-  static async checkHealth(req: Request, res: Response) {
+  static async checkHealth(_req: Request, res: Response) {
     try {
       const result = await aiService.checkHealth();
       res.json(result);
@@ -339,7 +339,7 @@ export class AIController {
     }
   }
 
-  static async synthesizeMemory(req: Request, res: Response) {
+  static async synthesizeMemory(_req: Request, res: Response) {
     try {
       const summary = await metaMemoryService.synthesizeStateOfTheUnion();
       res.json({ status: 'success', summary });

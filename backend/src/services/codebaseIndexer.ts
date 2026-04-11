@@ -98,7 +98,7 @@ export class CodebaseIndexer {
   /**
    * Handle file add/change events
    */
-  private async handleFileChange(filePath: string, event: 'add' | 'change') {
+  private async handleFileChange(filePath: string, _event: 'add' | 'change') {
     if (!this.config || !this.shouldIndexFile(filePath)) return;
 
     try {

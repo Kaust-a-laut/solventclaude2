@@ -38,7 +38,7 @@ export class FileToolPlugin implements IToolPlugin {
     this.rootDir = path.resolve(__dirname, '../../../../'); // Go up to project root
   }
 
-  async initialize(options: Record<string, unknown>): Promise<void> {
+  async initialize(_options: Record<string, unknown>): Promise<void> {
     // Initialize any required resources
   }
 

@@ -63,12 +63,12 @@ router.get('/health', async (req: Request, res: Response) => {
   res.status(result.status === 'ok' ? 200 : 503).json(result);
 });
 
-router.get('/ready', (req: Request, res: Response) => {
+router.get('/ready', (_req: Request, res: Response) => {
   res.status(200).json({ status: 'ready', timestamp: new Date().toISOString() });
 });
 
 // Model availability for waterfall presets — scanned on startup
-router.get('/health/models', (req: Request, res: Response) => {
+router.get('/health/models', (_req: Request, res: Response) => {
   const scan = modelAvailabilityService.getLastScan();
   if (!scan) {
     return res.json({ status: 'pending', message: 'Scan not yet completed' });

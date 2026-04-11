@@ -441,7 +441,7 @@ Example step: {"title": "Rate limiter module", "description": "FILE: src/rateLim
     }
   }
 
-  private async runExecutorWithContext(planData: PlannerOutput | Record<string, unknown> | string, sessionContext: WaterfallSessionContext, plannerHandoff: StageHandoff, feedback?: string, signal?: AbortSignal, modelSelection: WaterfallModelSelection = WATERFALL_DEFAULT_SELECTION, apiKeys?: Record<string, string>): Promise<ExecutorOutput> {
+  private async runExecutorWithContext(planData: PlannerOutput | Record<string, unknown> | string, _sessionContext: WaterfallSessionContext, plannerHandoff: StageHandoff, feedback?: string, signal?: AbortSignal, modelSelection: WaterfallModelSelection = WATERFALL_DEFAULT_SELECTION, apiKeys?: Record<string, string>): Promise<ExecutorOutput> {
     const phase = this.resolvePhase(WATERFALL_CONFIG.PHASE_2_EXECUTOR!, modelSelection.executor);
     const planStr = typeof planData === 'string' ? planData : JSON.stringify(planData);
 

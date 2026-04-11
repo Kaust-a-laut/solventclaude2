@@ -302,7 +302,7 @@ interface HttpError extends Error {
   status?: number;
 }
 
-app.use((err: HttpError, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: HttpError, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   logger.error('[Global Error Handler]', err);
   const status = err.status || 500;
   const message = err.message || 'Internal Server Error';
@@ -345,7 +345,7 @@ async function startCodebaseIndexing(): Promise<void> {
 }
 
 // Health check that reflects plugin state
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   const healthStatus = {
     status: pluginsDegraded ? 'degraded' : 'ok',
     plugins: pluginsInitialized ? 'ready' : pluginsDegraded ? 'failed' : 'initializing',

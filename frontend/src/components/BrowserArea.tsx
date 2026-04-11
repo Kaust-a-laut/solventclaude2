@@ -397,10 +397,25 @@ export const BrowserArea = () => {
       <div className="h-20 border-b border-white/5 flex items-center px-8 bg-black/40 backdrop-blur-xl relative z-30 gap-6">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/5">
-            <button onClick={() => { /* TODO: wire to in-app browserHistory state */ }} className="p-2 hover:bg-white/5 rounded-lg disabled:opacity-10 transition-all" disabled>
+            <button
+              onClick={() => {
+                if (browserHistory.length <= 1) return;
+                const prev = browserHistory.slice(0, -1);
+                const targetUrl = prev[prev.length - 1];
+                if (!targetUrl) return;
+                setBrowserHistory(prev);
+                handleNavigate(targetUrl);
+              }}
+              className="p-2 hover:bg-white/5 rounded-lg transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+              disabled={browserHistory.length <= 1}
+            >
               <ArrowLeft size={16} className="text-white" />
             </button>
-            <button onClick={() => { /* TODO: wire to in-app browserHistory state */ }} className="p-2 hover:bg-white/5 rounded-lg disabled:opacity-10 transition-all" disabled>
+            <button
+              onClick={() => { /* TODO: implement forward/redo history */ }}
+              className="p-2 hover:bg-white/5 rounded-lg transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+              disabled
+            >
               <ArrowRight size={16} className="text-white" />
             </button>
             <button onClick={() => handleNavigate(inputUrl)} className="p-2 hover:bg-white/5 rounded-lg transition-all">
@@ -685,7 +700,7 @@ export const BrowserArea = () => {
             {/* AI Synthesis Card */}
             {(pipelineStage === 'synthesizing' || pipelineStage === 'complete') && searchResults?.synthesis && (
               <SearchSynthesisCard
-                synthesis={searchResults.synthesis}
+                synthesis={searchResults.synthesis as { answer: string; sources: string[] }}
                 isLoading={pipelineStage === 'synthesizing'}
                 onSourceClick={(url) => {
                   const el = document.querySelector(`[data-result-url="${CSS.escape(url)}"]`);
@@ -712,7 +727,10 @@ export const BrowserArea = () => {
             </div>
 
             {/* Answer Box */}
-            {searchResults.answerBox && (
+            {(() => {
+              const ab = searchResults.answerBox as { title?: string; answer?: string; snippet?: string } | undefined;
+              if (!ab?.title) return null;
+              return (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -724,16 +742,17 @@ export const BrowserArea = () => {
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-[11px] font-black text-jb-accent uppercase tracking-[0.3em]">Direct Answer</span>
                   <button
-                    onClick={() => sendToChat(`Direct Answer: ${searchResults.answerBox.title}\n\n${searchResults.answerBox.answer || searchResults.answerBox.snippet}`)}
+                    onClick={() => sendToChat(`Direct Answer: ${ab.title}\n\n${ab.answer || ab.snippet}`)}
                     className="flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/10 text-slate-400 text-[11px] font-black uppercase tracking-widest rounded-lg hover:bg-white/10 transition-all"
                   >
                     <Send size={10} /> Chat
                   </button>
                 </div>
-                <h3 className="text-2xl font-black text-white mb-4 tracking-tight">{searchResults.answerBox.title}</h3>
-                <p className="text-slate-400 leading-relaxed text-[19px] font-medium">{stripHtml(searchResults.answerBox.answer || searchResults.answerBox.snippet)}</p>
+                <h3 className="text-2xl font-black text-white mb-4 tracking-tight">{ab.title}</h3>
+                <p className="text-slate-400 leading-relaxed text-[19px] font-medium">{stripHtml(ab.answer || ab.snippet || '')}</p>
               </motion.div>
-            )}
+              );
+            })()}
 
             {/* Result Cards */}
             <div className="flex flex-col gap-4">
@@ -745,15 +764,15 @@ export const BrowserArea = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.02 }}
                   key={idx}
-                  data-result-url={result.link}
+                  data-result-url={r.link}
                   className="group relative rounded-2xl bg-white/[0.02] border border-white/5 hover:border-jb-accent/20 hover:bg-white/[0.04] transition-all overflow-hidden"
                 >
-                  {result.relevanceScore >= 60 && (
+                  {r.relevanceScore != null && r.relevanceScore >= 60 && (
                     <div
                       className="absolute left-0 top-0 w-0.5 rounded-r"
                       style={{
-                        height: `${Math.min(100, result.relevanceScore)}%`,
-                        background: result.relevanceScore >= 85
+                        height: `${Math.min(100, r.relevanceScore)}%`,
+                        background: r.relevanceScore >= 85
                           ? 'linear-gradient(to bottom, #10b981, #10b981)'
                           : 'linear-gradient(to bottom, #fb923c, #fb923c)',
                       }}
@@ -765,32 +784,32 @@ export const BrowserArea = () => {
                       <div className="w-px flex-1 min-h-[24px] bg-white/5 group-hover:bg-jb-accent/20 transition-colors" />
                     </div>
 
-                    <div className="flex-1 min-w-0 space-y-2 cursor-pointer" onClick={() => { setInputUrl(result.link); handleNavigate(result.link); }}>
+                    <div className="flex-1 min-w-0 space-y-2 cursor-pointer" onClick={() => { setInputUrl(r.link); handleNavigate(r.link); }}>
                       <div className="flex items-center gap-2 min-w-0">
                         <Network size={10} className="text-jb-accent/70 flex-shrink-0" />
                         <span className="text-[14px] font-black text-jb-accent uppercase tracking-widest flex-shrink-0">
-                          {(() => { try { return new URL(result.link).hostname; } catch { return ''; } })()}
+                          {(() => { try { return new URL(r.link).hostname; } catch { return ''; } })()}
                         </span>
-                        {result.relevanceScore > 0 && <RelevanceBadge score={result.relevanceScore} />}
-                        <span className="text-[14px] text-slate-400 truncate min-w-0">· {result.link}</span>
+                        {r.relevanceScore != null && r.relevanceScore > 0 && <RelevanceBadge score={r.relevanceScore} />}
+                        <span className="text-[14px] text-slate-400 truncate min-w-0">· {r.link}</span>
                       </div>
                       <h3 className="text-[18px] font-black text-white group-hover:text-jb-accent/90 transition-colors tracking-tight leading-snug">
-                        {stripHtml(result.title)}
+                        {stripHtml(r.title)}
                       </h3>
                       <p className="text-[16px] text-slate-300 font-medium leading-relaxed line-clamp-4 group-hover:text-slate-400 transition-colors">
-                        {stripHtml(result.snippet)}
+                        {stripHtml(r.snippet)}
                       </p>
                     </div>
 
                     <div className="flex-shrink-0 flex flex-col gap-2 pt-1">
                       <button
-                        onClick={(e) => { e.stopPropagation(); sendToChat(`${result.title}\n${result.link}\n${result.snippet || ''}`); }}
+                        onClick={(e) => { e.stopPropagation(); sendToChat(`${r.title}\n${r.link}\n${r.snippet || ''}`); }}
                         className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-white/5 rounded-lg"
                         title="Send to Chat"
                       >
                         <Send size={12} className="text-slate-300 hover:text-jb-accent" />
                       </button>
-                      <a href={result.link} target="_blank" rel="noopener noreferrer"
+                      <a href={r.link} target="_blank" rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
                         className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-white/5 rounded-lg"
                         title="Open in new tab"
@@ -800,7 +819,8 @@ export const BrowserArea = () => {
                     </div>
                   </div>
                 </motion.div>
-              ))}
+              );
+            })}
             </div>
 
             {/* Load More (Pagination) */}

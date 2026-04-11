@@ -5,7 +5,7 @@ import { handleRouteError } from '../utils/routeErrors';
 const router = Router();
 
 // Get all settings
-router.get('/', async (req, res) => {
+router.get('/', async (_req, res) => {
   try {
     const settings = await settingsService.getSettings();
     res.json(settings);
@@ -50,7 +50,7 @@ router.post('/providers/:providerId', async (req, res) => {
 });
 
 // Get all available providers
-router.get('/providers', async (req, res) => {
+router.get('/providers', async (_req, res) => {
   try {
     const providers = await settingsService.getAvailableProviders();
     res.json(providers.map(p => ({

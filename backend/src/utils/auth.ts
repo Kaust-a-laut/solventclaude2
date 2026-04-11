@@ -34,7 +34,7 @@ export function requireAuth(req: AuthenticatedRequest, res: Response, next: Next
   next();
 }
 
-export function optionalAuth(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
+export function optionalAuth(req: AuthenticatedRequest, _res: Response, next: NextFunction): void {
   const clientSecret = req.headers['x-solvent-secret'];
   
   if (clientSecret && typeof clientSecret === 'string' && safeCompare(clientSecret, API_SECRET)) {

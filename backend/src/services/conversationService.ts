@@ -44,7 +44,7 @@ const interjectionQueues = new Map<string, string[]>();
 function determineNextSpeaker(
   agents: MissionAgent[],
   transcript: ConversationMessage[],
-  currentRound: number
+  _currentRound: number
 ): MissionAgent {
   const lastMsg = transcript[transcript.length - 1];
 
@@ -118,7 +118,7 @@ function detectAddressing(content: string, agents: MissionAgent[]): string | und
 
 function classifyMessageType(
   content: string,
-  transcript: ConversationMessage[]
+  _transcript: ConversationMessage[]
 ): ConversationMessage['type'] {
   const lower = content.toLowerCase();
   // Agreement — require explicit agreement phrases, not just hedging words
