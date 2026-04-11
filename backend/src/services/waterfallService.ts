@@ -64,10 +64,17 @@ export class WaterfallService {
 
   /** Check if an error is a 429 rate-limit response. */
   private is429(error: unknown): boolean {
-    const err = error as Record<string, any>;
+    const err = error as { response?: { status?: number }; status?: number; message?: string };
     return err?.response?.status === 429
       || err?.status === 429
       || /status code 429|rate.?limit/i.test(err?.message ?? '');
+  }
+
+  /** Exponential backoff with jitter. Returns delay in milliseconds, capped at 30s. */
+  private exponentialBackoff(attempt: number, baseDelay: number = 1000): number {
+    const delay = Math.min(baseDelay * Math.pow(2, attempt), 30000); // max 30s
+    const jitter = Math.random() * 0.3 * delay; // 0-30% jitter
+    return delay + jitter;
   }
 
   /** Call provider.complete with retry-on-429. Parses Retry-After / "try again in Xs" from error. */
@@ -75,21 +82,26 @@ export class WaterfallService {
     provider: unknown,
     prompt: string | Array<{ role: 'user' | 'assistant' | 'system'; content: string }>,
     options: Record<string, unknown>,
-    { maxRetries = 3, baseDelay = 15_000, label = 'unknown', signal }: { maxRetries?: number; baseDelay?: number; label?: string; signal?: AbortSignal } = {},
+    { maxRetries = 3, baseDelay = 1000, label = 'unknown', signal }: { maxRetries?: number; baseDelay?: number; label?: string; signal?: AbortSignal } = {},
   ): Promise<string> {
+    type CompleteFn = (
+      p: typeof prompt,
+      o: Record<string, unknown> & { signal?: AbortSignal }
+    ) => Promise<string>;
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        return await (provider as any).complete(prompt, { ...options, signal });
+        return await (provider as { complete: CompleteFn }).complete(prompt, { ...options, signal });
       } catch (error: unknown) {
         if (signal?.aborted) throw error;
         if (!this.is429(error) || attempt === maxRetries) throw error;
 
         // Try to extract wait time from error message (e.g. "try again in 29.8575s")
-        const retryMatch = (error?.response?.data?.error?.message ?? error?.message ?? '')
+        const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
+        const retryMatch = (err?.response?.data?.error?.message ?? err?.message ?? '')
           .match(/try again in ([\d.]+)s/i);
-        const delay = retryMatch
+        const delay = retryMatch && retryMatch[1]
           ? Math.ceil(parseFloat(retryMatch[1]) * 1000) + 2000  // parsed + 2s buffer
-          : baseDelay * (attempt + 1);
+          : this.exponentialBackoff(attempt, baseDelay);
 
         logger.info(`[Waterfall:${label}] 429 rate-limited, retrying`, { delay: (delay / 1000).toFixed(1), attempt: attempt + 1, maxRetries });
         await new Promise(r => setTimeout(r, delay));
@@ -304,7 +316,7 @@ ${fullPrompt}`;
       };
     }
 
-    yield { phase: 'completed', score: reviewer.score, data: { reviewer, attempts: attempts + 1, handoffChain: [plannerHandoff, reviewerHandoff] } };
+    yield { phase: 'completed', score: reviewer.score, data: { reviewer, attempt: attempts + 1, handoffChain: [plannerHandoff, reviewerHandoff] } };
 
     return {
       planner,
@@ -335,14 +347,15 @@ ${fullPrompt}`;
   private extractPlannerDecisions(planner: PlannerOutput | Record<string, unknown> | null): string {
     if (!planner) return 'No structured decisions extracted.';
 
-    let data = planner;
-    if (planner.raw && typeof planner.raw === 'string') {
+    let data: PlannerOutput = planner as PlannerOutput;
+    const raw = (planner as PlannerOutput).raw;
+    if (raw && typeof raw === 'string') {
       try {
-        data = JSON.parse(planner.raw);
+        data = JSON.parse(raw) as PlannerOutput;
       } catch {
-        return planner.raw.substring(0, 800);
+        return raw.substring(0, 800);
       }
-    } else if (planner.raw === null || planner.raw === undefined) {
+    } else if (raw === null) {
       return 'No structured decisions extracted.';
     }
 
@@ -356,7 +369,7 @@ ${fullPrompt}`;
     return parts.length > 0 ? parts.join('\n') : JSON.stringify(data).substring(0, 500);
   }
 
-  private async runPlannerWithContext(userPrompt: string, globalProvider: string, signal?: AbortSignal, modelSelection: WaterfallModelSelection = WATERFALL_DEFAULT_SELECTION, apiKeys?: Record<string, string>) {
+  private async runPlannerWithContext(userPrompt: string, globalProvider: string, signal?: AbortSignal, modelSelection: WaterfallModelSelection = WATERFALL_DEFAULT_SELECTION, apiKeys?: Record<string, string>): Promise<PlannerOutput> {
     const phase = this.resolvePhase(WATERFALL_CONFIG.PHASE_1_PLANNER!, modelSelection.planner);
     const providerName = globalProvider === 'local' ? 'ollama' : phase.primary.provider;
     const provider = await AIProviderFactory.getProvider(providerName);
@@ -412,23 +425,23 @@ Example step: {"title": "Rate limiter module", "description": "FILE: src/rateLim
         maxTokens: capMaxTokens(phase.primary.model, inputTokens, plannerMaxTokens),
         apiKey: apiKeys?.[phase.primary.provider],
       }, { label: 'Planner', signal });
-      return this.parseJSONResponse(response);
+      return this.parseJSONResponse(response) as PlannerOutput;
     } catch (error: unknown) {
       if (signal?.aborted) throw error;
       const fbProvider = await AIProviderFactory.getProvider(phase.fallback.provider);
       try {
         const res = await this.completeWithRetry(fbProvider, prompt, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, plannerMaxTokens), apiKey: apiKeys?.[phase.fallback.provider] }, { label: 'Planner-FB', signal });
-        return this.parseJSONResponse(res);
+        return this.parseJSONResponse(res) as PlannerOutput;
       } catch (e: unknown) {
         if (signal?.aborted) throw e;
         const localProvider = await AIProviderFactory.getProvider('ollama');
         const res = await localProvider.complete(prompt, { model: phase.local, jsonMode: true, maxTokens: capMaxTokens(phase.local, inputTokens, plannerMaxTokens), signal, apiKey: apiKeys?.ollama });
-        return this.parseJSONResponse(res);
+        return this.parseJSONResponse(res) as PlannerOutput;
       }
     }
   }
 
-  private async runExecutorWithContext(planData: ExecutorOutput | Record<string, unknown>, sessionContext: WaterfallSessionContext, plannerHandoff: StageHandoff, feedback?: string, signal?: AbortSignal, modelSelection: WaterfallModelSelection = WATERFALL_DEFAULT_SELECTION, apiKeys?: Record<string, string>) {
+  private async runExecutorWithContext(planData: PlannerOutput | Record<string, unknown> | string, sessionContext: WaterfallSessionContext, plannerHandoff: StageHandoff, feedback?: string, signal?: AbortSignal, modelSelection: WaterfallModelSelection = WATERFALL_DEFAULT_SELECTION, apiKeys?: Record<string, string>): Promise<ExecutorOutput> {
     const phase = this.resolvePhase(WATERFALL_CONFIG.PHASE_2_EXECUTOR!, modelSelection.executor);
     const planStr = typeof planData === 'string' ? planData : JSON.stringify(planData);
 
@@ -483,28 +496,31 @@ Output JSON:
     try {
       const primaryProvider = await AIProviderFactory.getProvider(phase.primary.provider);
       const response = await this.completeWithRetry(primaryProvider, messages, { model: phase.primary.model, jsonMode: true, maxTokens: capMaxTokens(phase.primary.model, inputTokens, executorMaxTokens), apiKey: apiKeys?.[phase.primary.provider] }, { label: 'Executor', signal });
-      return this.parseJSONResponse(response);
+      return this.parseJSONResponse(response) as ExecutorOutput;
     } catch (error: unknown) {
       if (signal?.aborted) throw error;
       const fbProvider = await AIProviderFactory.getProvider(phase.fallback.provider);
       try {
         const res = await this.completeWithRetry(fbProvider, messages, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, executorMaxTokens), apiKey: apiKeys?.[phase.fallback.provider] }, { label: 'Executor-FB', signal });
-        return this.parseJSONResponse(res);
+        return this.parseJSONResponse(res) as ExecutorOutput;
       } catch (err: unknown) {
         if (signal?.aborted) throw err;
         const localProvider = await AIProviderFactory.getProvider('ollama');
         const res = await localProvider.complete(messages, { model: phase.local, jsonMode: true, maxTokens: capMaxTokens(phase.local, inputTokens, executorMaxTokens), signal, apiKey: apiKeys?.ollama });
-        return this.parseJSONResponse(res);
+        return this.parseJSONResponse(res) as ExecutorOutput;
       }
     }
   }
 
-  private async runReviewWithContext(plan: PlannerOutput | Record<string, unknown>, executorData: ExecutorOutput | Record<string, unknown>, sessionContext: WaterfallSessionContext, signal?: AbortSignal, modelSelection: WaterfallModelSelection = WATERFALL_DEFAULT_SELECTION, apiKeys?: Record<string, string>) {
+  private async runReviewWithContext(plan: PlannerOutput | Record<string, unknown> | string, executorData: ExecutorOutput | Record<string, unknown> | string, sessionContext: WaterfallSessionContext, signal?: AbortSignal, modelSelection: WaterfallModelSelection = WATERFALL_DEFAULT_SELECTION, apiKeys?: Record<string, string>): Promise<ReviewerOutput> {
     const phase = this.resolvePhase(WATERFALL_CONFIG.PHASE_3_REVIEWER!, modelSelection.reviewer);
+    // Narrow plan/executorData from union-with-string to structured form
+    const planObj = typeof plan === 'string' ? { plan } as PlannerOutput : (plan as PlannerOutput);
+    const execObj = typeof executorData === 'string' ? { code: executorData } as ExecutorOutput : (executorData as ExecutorOutput);
 
     let compilationStatus = 'Not tested';
     let compilationPassed = true;
-    if (executorData.code) {
+    if (execObj.code) {
       if (signal?.aborted) throw new SolventError('Waterfall cancelled by user.', SolventErrorCode.OPERATION_CANCELLED);
 
       // Split multi-file code blocks into separate temp files so cross-file
@@ -513,7 +529,7 @@ Output JSON:
 
       try {
         await fs.mkdir(tempDir, { recursive: true });
-        const fileBlocks = this.splitCodeBlocks(executorData.code);
+        const fileBlocks = this.splitCodeBlocks(execObj.code);
 
         for (const block of fileBlocks) {
           const filePath = path.join(tempDir, block.filename);
@@ -554,8 +570,8 @@ Output JSON:
         }
       } catch (e: unknown) {
         // tsc exits with code 1 on type errors — extract stderr and filter
-        const err = e as Record<string, unknown>;
-        const errOutput = err.stderr || err.stdout || (err as Error).message || '';
+        const err = e as { stderr?: string; stdout?: string; message?: string };
+        const errOutput: string = err.stderr || err.stdout || err.message || '';
         logger.debug('[Waterfall:TSC] Caught error, filtering', { errOutput: errOutput.substring(0, 500) });
         const lines = errOutput.split('\n');
         const realErrors = lines.filter((l: string) =>
@@ -581,12 +597,12 @@ Output JSON:
     }
 
     // Extract only the code and files list from executor — skip redundant explanation/decisions
-    const executorCode = executorData.code || '';
-    const executorFiles = Array.isArray(executorData.files) ? executorData.files.join(', ') : '';
+    const executorCode = execObj.code || '';
+    const executorFiles = Array.isArray(execObj.files) ? execObj.files.join(', ') : '';
 
     // Extract key decisions from planner for compliance checking
-    const keyDecisions = Array.isArray(plan.keyDecisions)
-      ? plan.keyDecisions.map((d: string, i: number) => `  ${i + 1}. ${d}`).join('\n')
+    const keyDecisions = Array.isArray(planObj.keyDecisions)
+      ? planObj.keyDecisions.map((d: string, i: number) => `  ${i + 1}. ${d}`).join('\n')
       : sessionContext.plannerDecisions;
 
     const prompt = [{
@@ -639,10 +655,10 @@ Output JSON:
     try {
       const primaryProvider = await AIProviderFactory.getProvider(phase.primary.provider);
       const response = await this.completeWithRetry(primaryProvider, prompt, { model: phase.primary.model, jsonMode: true, maxTokens: capMaxTokens(phase.primary.model, inputTokens, reviewerMaxTokens), apiKey: apiKeys?.[phase.primary.provider] }, { label: 'Reviewer', signal });
-      const parsed = this.parseJSONResponse(response);
+      const parsed = this.parseJSONResponse(response) as ReviewerOutput;
       parsed._compilationPassed = compilationPassed;
 
-      if (parsed.score > 90 && parsed.crystallizable_insight) {
+      if (typeof parsed.score === 'number' && parsed.score > 90 && parsed.crystallizable_insight) {
         try {
           await toolService.executeTool('crystallize_memory', {
             content: parsed.crystallizable_insight,
@@ -663,7 +679,7 @@ Output JSON:
       const fbProvider = await AIProviderFactory.getProvider(phase.fallback.provider);
       try {
         const res = await this.completeWithRetry(fbProvider, prompt, { model: phase.fallback.model, jsonMode: true, maxTokens: capMaxTokens(phase.fallback.model, inputTokens, reviewerMaxTokens), apiKey: apiKeys?.[phase.fallback.provider] }, { label: 'Reviewer-FB', signal });
-        const parsed = this.parseJSONResponse(res);
+        const parsed = this.parseJSONResponse(res) as ReviewerOutput;
         parsed._compilationPassed = compilationPassed;
         return parsed;
       } catch (e: unknown) {
@@ -672,7 +688,7 @@ Output JSON:
         if (signal?.aborted) throw e;
         const localProvider = await AIProviderFactory.getProvider('ollama');
         const res = await localProvider.complete(prompt, { model: phase.local, jsonMode: true, maxTokens: capMaxTokens(phase.local, inputTokens, reviewerMaxTokens), signal, apiKey: apiKeys?.ollama });
-        const parsed = this.parseJSONResponse(res);
+        const parsed = this.parseJSONResponse(res) as ReviewerOutput;
         parsed._compilationPassed = compilationPassed;
         return parsed;
       }
@@ -685,13 +701,13 @@ Output JSON:
     return this.runPlannerWithContext(userPrompt, globalProvider, signal);
   }
 
-  private async runExecutor(planData: ExecutorOutput | Record<string, unknown>, feedback?: string, signal?: AbortSignal) {
+  private async runExecutor(planData: PlannerOutput | Record<string, unknown> | string, feedback?: string, signal?: AbortSignal) {
     const sessionContext: WaterfallSessionContext = { originalRequirement: '', plannerDecisions: '' };
     const defaultHandoff: StageHandoff = { stage: 'planner', confidence: 0.75, keyDecisions: [], constraints: [], openQuestions: [], tokenCount: 0 };
     return this.runExecutorWithContext(planData, sessionContext, defaultHandoff, feedback, signal);
   }
 
-  private async runReview(plan: PlannerOutput | Record<string, unknown>, executorData: ExecutorOutput | Record<string, unknown>, signal?: AbortSignal) {
+  private async runReview(plan: PlannerOutput | Record<string, unknown> | string, executorData: ExecutorOutput | Record<string, unknown> | string, signal?: AbortSignal) {
     const sessionContext: WaterfallSessionContext = { originalRequirement: '', plannerDecisions: '' };
     return this.runReviewWithContext(plan, executorData, sessionContext, signal);
   }

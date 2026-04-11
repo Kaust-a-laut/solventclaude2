@@ -133,6 +133,11 @@ export interface WaterfallProgressData {
   majorCount?: number;
   compilationPassed?: boolean;
   reviewer?: Record<string, unknown>;
+  /** Fields passed through by onProgress wrapper in runAgenticWaterfall */
+  message?: string;
+  estimate?: import('../utils/resourceEstimator').ResourceEstimate;
+  score?: number;
+  handoffChain?: import('./memory').StageHandoff[];
 }
 
 export interface WaterfallResult {
