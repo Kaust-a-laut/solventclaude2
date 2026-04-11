@@ -15,7 +15,10 @@ export interface IPlugin {
   
   /** Initialize the plugin with configuration */
   initialize?(config: Record<string, unknown>): Promise<void>;
-  
+
+  /** Release resources held by the plugin (connections, timers, file handles) */
+  dispose?(): Promise<void>;
+
   /** Check if the plugin is ready to be used */
   isReady(): boolean;
 }

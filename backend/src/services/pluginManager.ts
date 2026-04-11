@@ -207,6 +207,36 @@ export class PluginManager {
     logger.info(`[PluginManager] Tool registered: ${tool.id}`);
   }
 
+  async unloadProvider(id: string): Promise<boolean> {
+    const provider = this.registry.providers.get(id);
+    if (!provider) return false;
+    if (provider.dispose) {
+      try {
+        await provider.dispose();
+      } catch (error) {
+        logger.error(`[PluginManager] Error disposing provider ${id}`, error);
+      }
+    }
+    this.registry.providers.delete(id);
+    logger.info(`[PluginManager] Provider unloaded: ${id}`);
+    return true;
+  }
+
+  async unloadTool(id: string): Promise<boolean> {
+    const tool = this.registry.tools.get(id);
+    if (!tool) return false;
+    if (tool.dispose) {
+      try {
+        await tool.dispose();
+      } catch (error) {
+        logger.error(`[PluginManager] Error disposing tool ${id}`, error);
+      }
+    }
+    this.registry.tools.delete(id);
+    logger.info(`[PluginManager] Tool unloaded: ${id}`);
+    return true;
+  }
+
   getProvider(id: string): IProviderPlugin | undefined {
     return this.registry.providers.get(id);
   }

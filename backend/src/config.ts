@@ -41,6 +41,18 @@ const envSchema = z.object({
     .transform(Number)
     .pipe(z.number().min(10).max(50000))
     .default('1500'),
+  WATERFALL_MAX_RETRIES: z.string()
+    .transform(Number)
+    .pipe(z.number().min(0).max(10))
+    .default('2'),
+  WATERFALL_SCORE_THRESHOLD: z.string()
+    .transform(Number)
+    .pipe(z.number().min(0).max(100))
+    .default('80'),
+  WATERFALL_MAX_STEPS: z.string()
+    .transform(Number)
+    .pipe(z.number().min(1).max(50))
+    .default('10'),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
@@ -69,9 +81,9 @@ if (config.BACKEND_INTERNAL_SECRET.length < 32) {
 
 export const APP_CONSTANTS = {
   WATERFALL: {
-    MAX_RETRIES: 2,
-    SCORE_THRESHOLD: 80,
-    MAX_STEPS: 10
+    MAX_RETRIES: config.WATERFALL_MAX_RETRIES,
+    SCORE_THRESHOLD: config.WATERFALL_SCORE_THRESHOLD,
+    MAX_STEPS: config.WATERFALL_MAX_STEPS,
   },
   MODELS: {
     VISION_DEFAULT: 'gemini-1.5-flash',
