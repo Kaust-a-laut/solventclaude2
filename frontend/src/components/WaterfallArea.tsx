@@ -1,111 +1,20 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { API_BASE_URL } from '../lib/config';
 import { toast } from 'sonner';
-import { Sparkles, X, RotateCcw, FlaskConical, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { WaterfallStageCard, STAGE_CONFIGS } from './waterfall/WaterfallStageCard';
 import type { StageKey } from './waterfall/WaterfallStageCard';
 import { WaterfallConnector } from './waterfall/WaterfallConnector';
 import { WaterfallScore } from './waterfall/WaterfallScore';
-import { WaterfallPresetPicker, CUSTOM_MODELS } from './waterfall/WaterfallPresetPicker';
+import { WaterfallPresetPicker } from './waterfall/WaterfallPresetPicker';
 import { WaterfallFlowPreview } from './waterfall/WaterfallFlowPreview';
 import { WaterfallDetailPanel } from './waterfall/WaterfallDetailPanel';
-
-// ─── Constants ─────────────────────────────────────────────────────────────────
-
-const STAGE_ORDER: StageKey[] = ['planner', 'executor', 'reviewer'];
-
-const IDLE_DOTS = [
-  { color: 'bg-jb-purple',   glow: 'rgba(157,91,210,0.5)',  delay: 0    },
-  { color: 'bg-jb-orange',   glow: 'rgba(251,146,60,0.5)',  delay: 0.5  },
-  { color: 'bg-emerald-500', glow: 'rgba(16,185,129,0.5)',  delay: 1.0  },
-] as const;
-
-const INIT_DOTS = [
-  { color: 'bg-jb-purple', glow: 'rgba(157,91,210,0.6)', delay: 0    },
-  { color: 'bg-jb-accent', glow: 'rgba(60,113,247,0.6)', delay: 0.25 },
-  { color: 'bg-jb-orange', glow: 'rgba(251,146,60,0.6)', delay: 0.5  },
-] as const;
-
-// ─── Model label lookup ──────────────────────────────────────────────────────
-
-const modelLabelLookup = new Map(CUSTOM_MODELS.map(m => [`${m.provider}:${m.value}`, m.label]));
-
-const PROVIDER_LABELS: Record<string, string> = {
-  groq: 'Groq', fireworks: 'Fireworks', openrouter: 'OpenRouter',
-  dashscope: 'DashScope', cerebras: 'Cerebras', ollama: 'Ollama',
-  gemini: 'Gemini', deepseek: 'DeepSeek',
-};
-
-function getStageModelLabel(choice: string | { model: string; provider: string }): string | undefined {
-  if (typeof choice !== 'object') return undefined;
-  const name = modelLabelLookup.get(`${choice.provider}:${choice.model}`) ?? choice.model;
-  const provider = PROVIDER_LABELS[choice.provider] ?? choice.provider;
-  return `${name} · ${provider}`;
-}
-
-// ─── Model upgrade types & helpers ────────────────────────────────────────────
-
-interface UpgradeSuggestion {
-  current: { model: string; provider: string };
-  successor: { model: string; provider: string };
-  note: string;
-  usedInPresets: string[];
-}
-
-interface UnavailableModel {
-  model: string;
-  provider: string;
-  available: boolean;
-  usedInPresets: string[];
-}
-
-interface ModelScanResult {
-  scannedAt: string;
-  unavailable: UnavailableModel[];
-  upgrades: UpgradeSuggestion[];
-  scanErrors: string[];
-}
-
-const DISMISS_KEY = 'solvent:dismissed-upgrades';
-
-function getDismissedUpgrades(): Set<string> {
-  try {
-    const raw = localStorage.getItem(DISMISS_KEY);
-    return new Set(raw ? JSON.parse(raw) : []);
-  } catch { return new Set(); }
-}
-
-function dismissUpgrade(key: string) {
-  const dismissed = getDismissedUpgrades();
-  dismissed.add(key);
-  localStorage.setItem(DISMISS_KEY, JSON.stringify([...dismissed]));
-}
-
-function upgradeKey(u: UpgradeSuggestion): string {
-  return `${u.current.provider}:${u.current.model}→${u.successor.model}`;
-}
-
-function useModelAvailability() {
-  const [unavailableModels, setUnavailableModels] = useState<UnavailableModel[]>([]);
-  const [upgradeSuggestions, setUpgradeSuggestions] = useState<UpgradeSuggestion[]>([]);
-
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/health/models`)
-      .then(res => res.ok ? res.json() : null)
-      .then((data: ModelScanResult | null) => {
-        if (data?.unavailable) setUnavailableModels(data.unavailable);
-        if (data?.upgrades) setUpgradeSuggestions(data.upgrades);
-      })
-      .catch(() => {});
-  }, []);
-
-  return { unavailableModels, upgradeSuggestions };
-}
-
-// ─── Component ─────────────────────────────────────────────────────────────────
+import { STAGE_ORDER, IDLE_DOTS, INIT_DOTS, getStageModelLabel, getDismissedUpgrades, dismissUpgrade, upgradeKey } from './waterfall/waterfallConstants';
+import { useModelAvailability } from './waterfall/useModelAvailability';
+import { useStageTimings } from './waterfall/useStageTimings';
+import { WaterfallHeader } from './waterfall/WaterfallHeader';
+import { MissionDirectiveInput } from './waterfall/MissionDirectiveInput';
 
 export const WaterfallArea = () => {
   const {
@@ -127,7 +36,6 @@ export const WaterfallArea = () => {
   const [input, setInput] = useState('');
   const [selectedStage, setSelectedStage] = useState<StageKey | null>(null);
 
-  // ── Model upgrade state (shared between PresetPicker and FlowPreview) ───
   const { unavailableModels, upgradeSuggestions } = useModelAvailability();
   const [dismissedKeys, setDismissedKeys] = useState<Set<string>>(() => getDismissedUpgrades());
 
@@ -145,7 +53,7 @@ export const WaterfallArea = () => {
     if (upgradeSuggestions.length === 0) return;
     const dismissed = getDismissedUpgrades();
     const toShow = upgradeSuggestions
-      .filter(u => !dismissed.has(upgradeKey(u)))
+      .filter((u) => !dismissed.has(upgradeKey(u)))
       .slice(0, 3);
 
     const timer = setTimeout(() => {
@@ -165,32 +73,7 @@ export const WaterfallArea = () => {
     return () => clearTimeout(timer);
   }, [upgradeSuggestions]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Stage timing tracking ──────────────────────────────────────────────────
-  const stageStartTimes = useRef<Record<StageKey, number | null>>({
-    planner:  null,
-    executor: null,
-    reviewer: null,
-  });
-  const [stageTimings, setStageTimings] = useState<Partial<Record<StageKey, number>>>({});
-
-  useEffect(() => {
-    STAGE_ORDER.forEach((stage) => {
-      const status = waterfall.steps[stage].status;
-      if (status === 'processing' && stageStartTimes.current[stage] === null) {
-        stageStartTimes.current[stage] = Date.now();
-      } else if (status === 'completed' && stageStartTimes.current[stage] !== null) {
-        setStageTimings((prev) => ({
-          ...prev,
-          [stage]: Date.now() - (stageStartTimes.current[stage] as number),
-        }));
-        stageStartTimes.current[stage] = null;
-      }
-    });
-  }, [
-    waterfall.steps.planner.status,
-    waterfall.steps.executor.status,
-    waterfall.steps.reviewer.status,
-  ]);
+  const stageTimings = useStageTimings(waterfall.steps);
 
   // ── Auto-select the most relevant stage ────────────────────────────────────
   useEffect(() => {
@@ -257,65 +140,15 @@ export const WaterfallArea = () => {
     <div className="flex flex-col h-full bg-black/20 backdrop-blur-3xl overflow-hidden">
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className={cn(
-        'flex items-center justify-between border-b border-white/5 bg-black/40 shrink-0 transition-all duration-500',
-        deviceInfo.isMobile ? 'px-6 pt-28 pb-8 h-auto' : 'px-12 h-28',
-      )}>
-        {/* Left: identity */}
-        <div className="flex items-center gap-6">
-          <div className="relative w-14 h-14 bg-jb-purple/10 rounded-[1.75rem] flex items-center justify-center border border-jb-purple/20 shadow-2xl shrink-0">
-            <div className="absolute inset-0 bg-jb-purple/10 rounded-[1.75rem] blur-xl opacity-70" />
-            <FlaskConical className="text-jb-purple relative z-10" size={26} />
-            <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-jb-purple shadow-[0_0_10px_rgba(157,91,210,0.9)] animate-pulse" />
-          </div>
-          <div>
-            <span className="text-[11px] font-black text-slate-300 uppercase tracking-[0.45em] block mb-1.5">
-              Tiered Orchestration Pipeline
-            </span>
-            <h2 className="text-2xl md:text-3xl font-black tracking-tighter leading-none">
-              Logic <span className="text-vibrant">Waterfall</span>
-            </h2>
-          </div>
-        </div>
-
-        {/* Right: Cancel / Reset */}
-        <AnimatePresence>
-          {(isActive || isStreaming) && (
-            <motion.div
-              initial={{ opacity: 0, x: 16 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 16 }}
-              className="flex items-center gap-2"
-            >
-              {isStreaming && (
-                <button
-                  onClick={cancelWaterfall}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] font-black uppercase tracking-widest hover:bg-rose-500/20 transition-all"
-                >
-                  <X size={12} />
-                  Cancel
-                </button>
-              )}
-              {allCompleted && !isStreaming && (
-                <button
-                  onClick={handleExportAll}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-jb-purple/10 border border-jb-purple/20 text-jb-purple text-[11px] font-black uppercase tracking-widest hover:bg-jb-purple/20 transition-all"
-                >
-                  <Download size={11} />
-                  Export All
-                </button>
-              )}
-              <button
-                onClick={() => { resetWaterfall(); setSelectedStage(null); }}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-slate-400 text-[11px] font-black uppercase tracking-widest hover:bg-white/[0.08] transition-all"
-              >
-                <RotateCcw size={11} />
-                Reset
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      <WaterfallHeader
+        isMobile={deviceInfo.isMobile}
+        isActive={isActive}
+        isStreaming={isStreaming}
+        allCompleted={allCompleted}
+        onCancel={cancelWaterfall}
+        onExportAll={handleExportAll}
+        onReset={() => { resetWaterfall(); setSelectedStage(null); }}
+      />
 
       {/* ── Workspace ──────────────────────────────────────────────────────── */}
       <div className="flex-1 relative min-h-0">
@@ -336,40 +169,13 @@ export const WaterfallArea = () => {
                 {/* Left: directive + preset picker + idle hint */}
                 <div className="flex flex-col gap-6">
                   {/* Mission Directive textarea */}
-                  <div className="rounded-[2rem]">
-                    <div className="glass-panel rounded-[2rem] overflow-hidden">
-                      <div className="flex flex-col gap-4 p-5">
-                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                          Mission Directive
-                        </span>
-                        <textarea
-                          value={input}
-                          onChange={(e) => setInput(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && e.metaKey) {
-                              e.preventDefault();
-                              handleSubmit();
-                            }
-                          }}
-                          placeholder="Describe the complex task for the pipeline to orchestrate..."
-                          rows={3}
-                          disabled={isStreaming}
-                          className="w-full bg-transparent text-[14px] font-medium text-white placeholder:text-slate-800 resize-none outline-none leading-relaxed input-focus-ring disabled:opacity-50 transition-opacity"
-                        />
-                        <div className="flex items-center justify-between pt-1 border-t border-white/[0.04]">
-                          <span className="text-[11px] text-slate-400 font-mono">⌘↩ to submit</span>
-                          <button
-                            onClick={handleSubmit}
-                            disabled={!input.trim() || isStreaming}
-                            className="flex items-center gap-2 px-5 py-2 rounded-full bg-jb-purple/15 border border-jb-purple/25 text-jb-purple text-[11px] font-black uppercase tracking-widest hover:bg-jb-purple/25 disabled:opacity-30 transition-all shadow-lg"
-                          >
-                            <Sparkles size={13} />
-                            Initiate
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <MissionDirectiveInput
+                    value={input}
+                    onChange={setInput}
+                    onSubmit={handleSubmit}
+                    isStreaming={isStreaming}
+                    rows={3}
+                  />
 
                   {/* Reviewer score ring */}
                   <AnimatePresence>
@@ -447,40 +253,14 @@ export const WaterfallArea = () => {
             {(isActive || isStreaming) && (
               <>
                 {/* Mission Directive textarea (compact) */}
-                <div className={cn('rounded-[2rem]', isStreaming && 'vibrant-border')}>
-                  <div className="glass-panel rounded-[2rem] overflow-hidden">
-                    <div className="flex flex-col gap-4 p-5">
-                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                        Mission Directive
-                      </span>
-                      <textarea
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && e.metaKey) {
-                            e.preventDefault();
-                            handleSubmit();
-                          }
-                        }}
-                        placeholder="Describe the complex task for the pipeline to orchestrate..."
-                        rows={2}
-                        disabled={isStreaming}
-                        className="w-full bg-transparent text-[14px] font-medium text-white placeholder:text-slate-800 resize-none outline-none leading-relaxed input-focus-ring disabled:opacity-50 transition-opacity"
-                      />
-                      <div className="flex items-center justify-between pt-1 border-t border-white/[0.04]">
-                        <span className="text-[11px] text-slate-400 font-mono">⌘↩ to submit</span>
-                        <button
-                          onClick={handleSubmit}
-                          disabled={!input.trim() || isStreaming}
-                          className="flex items-center gap-2 px-5 py-2 rounded-full bg-jb-purple/15 border border-jb-purple/25 text-jb-purple text-[11px] font-black uppercase tracking-widest hover:bg-jb-purple/25 disabled:opacity-30 transition-all shadow-lg"
-                        >
-                          <Sparkles size={13} className={isStreaming ? 'animate-pulse' : ''} />
-                          {isStreaming ? 'Processing...' : 'Initiate'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <MissionDirectiveInput
+                  value={input}
+                  onChange={setInput}
+                  onSubmit={handleSubmit}
+                  isStreaming={isStreaming}
+                  rows={2}
+                  vibrantBorder={isStreaming}
+                />
 
                 {/* Reviewer score ring */}
                 <AnimatePresence>
