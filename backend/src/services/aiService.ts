@@ -1,7 +1,7 @@
 import { AIProviderFactory } from './aiProviderFactory';
 import { WaterfallService, WaterfallStep } from './waterfallService';
-import { WaterfallContext } from '../types/waterfall';
-import { contextService, getHarnessSnapshot } from './contextService';
+import { WaterfallContext, WaterfallResult, WaterfallPausedResult, OpenFileContext } from '../types/waterfall';
+import { contextService, getHarnessSnapshot, ContextProvenance, ProvenanceItem } from './contextService';
 import { ChatRequestData, ChatMessage, CompletionOptions } from '../types/ai';
 import { randomUUID as uuidv4 } from 'crypto';
 import { traceLogger, RetrievalTrace } from './traceLogger';
@@ -72,8 +72,8 @@ interface CompletionResponse {
   response: string;
   model: string;
   info?: string;
-  waterfall?: any;
-  provenance?: any;
+  waterfall?: WaterfallResult | WaterfallPausedResult;
+  provenance?: ContextProvenance;
   isGeneratedImage?: boolean;
   imageUrl?: string;
   traceId?: string;
@@ -81,7 +81,7 @@ interface CompletionResponse {
 
 interface EnrichedContextResult {
   messages: ChatMessage[];
-  provenance: any;
+  provenance: ContextProvenance;
 }
 
 // --- AIService Class ---
@@ -147,20 +147,20 @@ export class AIService {
         model,
         query: data.messages[data.messages.length - 1]?.content?.slice(0, 500) || '',
         harnessSnapshot: getHarnessSnapshot(),
-        active: provenance.active.map((p: any) => ({
+        active: provenance.active.map((p: ProvenanceItem) => ({
           id: p.id,
           text: p.text.slice(0, 200),
           type: p.type,
-          tier: (p as any).tier || '',
+          tier: (p as ProvenanceItem & { tier?: string }).tier || '',
           score: p.score,
           source: p.source || '',
           status: 'active' as const,
         })),
-        suppressed: provenance.suppressed.map((p: any) => ({
+        suppressed: provenance.suppressed.map((p: ProvenanceItem) => ({
           id: p.id,
           text: p.text.slice(0, 200),
           type: p.type,
-          tier: (p as any).tier || '',
+          tier: (p as ProvenanceItem & { tier?: string }).tier || '',
           score: p.score,
           reason: p.reason || 'unknown',
           status: 'suppressed' as const,
@@ -375,14 +375,14 @@ After </thinking>, deliver the answer cleanly without restating the reasoning.`
   private async executeGeminiCompletion(
     messages: ChatMessage[],
     model: string,
-    image: any,
+    image: import('../types/ai').ImageContent | null | undefined,
     mode: string | undefined,
     shouldSearch: boolean,
-    fallbackModel: any,
+    fallbackModel: string | undefined,
     temp: number | undefined,
     maxTokens: number | undefined,
     apiKeys?: Record<string, string>,
-    openFiles?: any[]
+    openFiles?: OpenFileContext[]
   ): Promise<CompletionResponse> {
     const modelChain = GEMINI_MODEL_CHAIN.includes(model)
       ? [model, ...GEMINI_MODEL_CHAIN.filter(m => m !== model)]
@@ -427,7 +427,7 @@ After </thinking>, deliver the answer cleanly without restating the reasoning.`
     temp: number | undefined,
     maxTokens: number | undefined,
     apiKeys: Record<string, string> | undefined,
-    fallbackModel: any,
+    fallbackModel: string | undefined,
     mode: string | undefined,
     data: ChatRequestData
   ): Promise<CompletionResponse> {
@@ -450,7 +450,7 @@ After </thinking>, deliver the answer cleanly without restating the reasoning.`
   /**
    * Attaches provenance information to the response.
    */
-  private attachProvenance(response: CompletionResponse, provenance: any): CompletionResponse {
+  private attachProvenance(response: CompletionResponse, provenance: ContextProvenance): CompletionResponse {
     return { ...response, provenance };
   }
 
@@ -464,18 +464,19 @@ After </thinking>, deliver the answer cleanly without restating the reasoning.`
   ): void {
     if (!mode || !response.response) return;
 
-    const allMessages = [...messages, { role: 'assistant', content: response.response }];
+    const allMessages: ChatMessage[] = [...messages, { role: 'assistant' as const, content: response.response }];
     // Use scheduled consolidation for reliable retry via BullMQ
-    memoryConsolidationService.scheduleConsolidation(mode, allMessages as any);
+    memoryConsolidationService.scheduleConsolidation(mode, allMessages);
     memoryConsolidationService.scheduleKnowledgeExtraction(response.response);
   }
 
   // --- Existing Helper Methods (unchanged) ---
 
-  private async handleVisionRequest(messages: ChatMessage[], image: string | null, model: string, temp: number = 0.7, maxTokens: number = 2048, apiKey?: string, openFiles?: Array<{ path: string; content: string }>) {
+  private async handleVisionRequest(messages: ChatMessage[], image: import('../types/ai').ImageContent | string | null | undefined, model: string, temp: number = 0.7, maxTokens: number = 2048, apiKey?: string, openFiles?: Array<{ path: string; content: string }>) {
     const gemini = await AIProviderFactory.getProvider('gemini');
     try {
-      const targetImage = image || messages.find(m => m.image)?.image;
+      const rawImage = typeof image === 'string' ? image : image?.data ? `data:${image.mimeType};base64,${image.data}` : null;
+      const targetImage = rawImage || messages.find(m => m.image)?.image;
       if (!targetImage) throw SolventError.validation('No image for vision mode.');
       const matches = targetImage.match(/^data:(.+);base64,(.+)$/);
       if (!matches) throw SolventError.validation('Invalid image format.');
@@ -550,7 +551,7 @@ After </thinking>, deliver the answer cleanly without restating the reasoning.`
     }
   }
 
-  async generateImage(prompt: string, model?: string, apiKey?: string, provider: string = 'auto', options: any = {}) {
+  async generateImage(prompt: string, model?: string, apiKey?: string, provider: string = 'auto', options: { apiKeys?: Record<string, string>; [key: string]: unknown } = {}) {
     let targetProvider = provider;
     if (provider === 'auto') {
       targetProvider = (config.HUGGINGFACE_API_KEY || options.apiKeys?.huggingface) ? 'huggingface' : 'pollinations';
@@ -608,7 +609,7 @@ After </thinking>, deliver the answer cleanly without restating the reasoning.`
     return models;
   }
 
-  async runAgenticWaterfall(prompt: string, globalProvider?: string, maxRetries: number = APP_CONSTANTS.WATERFALL.MAX_RETRIES, onProgress?: (phase: string, data?: any) => void, notepadContent?: string, openFiles?: any[], signal?: AbortSignal, forceProceed: boolean = false, resumeArchitect?: any, modelSelection?: WaterfallModelSelection, apiKeys?: Record<string, string>) {
+  async runAgenticWaterfall(prompt: string, globalProvider?: string, maxRetries: number = APP_CONSTANTS.WATERFALL.MAX_RETRIES, onProgress?: (phase: string, data?: import('../types/waterfall').WaterfallProgressData) => void, notepadContent?: string, openFiles?: OpenFileContext[], signal?: AbortSignal, forceProceed: boolean = false, resumeArchitect?: import('../types/waterfall').PlannerOutput | null, modelSelection?: WaterfallModelSelection, apiKeys?: Record<string, string>) {
     return this.waterfallService.runAgenticWaterfall(prompt, globalProvider, maxRetries, onProgress, notepadContent, openFiles, signal, forceProceed, resumeArchitect, modelSelection, apiKeys);
   }
 
