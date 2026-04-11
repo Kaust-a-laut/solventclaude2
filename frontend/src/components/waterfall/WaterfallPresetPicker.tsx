@@ -4,9 +4,9 @@ import { cn } from '../../lib/utils';
 import { useAppStore } from '../../store/useAppStore';
 import { WATERFALL_PRESET_LIST, type WaterfallPresetMeta } from '../../lib/waterfallPresets';
 import { STAGE_CONFIGS, type StageKey } from './WaterfallStageCard';
-import { Layers, ChevronDown, Zap, Clock, Trophy, SlidersHorizontal, AlertTriangle, ArrowUpCircle } from 'lucide-react';
+import { Layers, ChevronDown, Trophy, SlidersHorizontal, AlertTriangle } from 'lucide-react';
 
-const STAGE_ORDER: StageKey[] = ['architect', 'reasoner', 'executor', 'reviewer'];
+const STAGE_ORDER: StageKey[] = ['planner', 'executor', 'reviewer'];
 
 // ─── Model availability types ──────────────────────────────────────────────
 
@@ -89,152 +89,228 @@ function getPresetUpgrades(
 
 // ─── Score badge color ──────────────────────────────────────────────────────
 
-const scoreBadge = (score: number | null, tier: string) => {
-  if (tier === 'demo') return { text: 'text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/20', label: 'DEMO' };
-  if (score === null) return { text: 'text-slate-500', bg: 'bg-white/5', border: 'border-white/10', label: 'NEW' };
-  if (score >= 90) return { text: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/20', label: `${score}` };
-  if (score >= 85) return { text: 'text-sky-400', bg: 'bg-sky-500/15', border: 'border-sky-500/20', label: `${score}` };
-  return { text: 'text-slate-400', bg: 'bg-white/5', border: 'border-white/10', label: `${score}` };
+const gradeBadge = (grade: string | null, category: string) => {
+  if (category === 'demo') return { text: 'text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/20', label: 'DEMO' };
+  if (grade === null) return { text: 'text-slate-500', bg: 'bg-white/5', border: 'border-white/10', label: 'NEW' };
+  if (grade.startsWith('A')) return { text: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/20', label: grade };
+  if (grade.startsWith('B')) return { text: 'text-sky-400', bg: 'bg-sky-500/15', border: 'border-sky-500/20', label: grade };
+  if (grade.startsWith('C')) return { text: 'text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/20', label: grade };
+  return { text: 'text-red-400', bg: 'bg-red-500/15', border: 'border-red-500/20', label: grade };
 };
 
-const speedIcon = (speed: string) => {
-  if (speed === '~30s') return { icon: Zap, color: 'text-emerald-400' };
-  if (speed.includes('1-2')) return { icon: Zap, color: 'text-sky-400' };
-  return { icon: Clock, color: 'text-slate-500' };
+// ─── Provider Swap Panel ────────────────────────────────────────────────────
+
+const ProviderSwapPanel = ({ preset }: { preset: WaterfallPresetMeta }) => {
+  const { setWaterfallCustomStage } = useAppStore();
+
+  const stagesWithAlts = STAGE_ORDER.filter((stage) => {
+    const sel = preset.selection[stage];
+    if (typeof sel !== 'object') return false;
+    return getProviderAlternatives(sel.provider, sel.model) !== null;
+  });
+
+  if (stagesWithAlts.length === 0) return null;
+
+  return (
+    <motion.div
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: 'auto', opacity: 1 }}
+      exit={{ height: 0, opacity: 0 }}
+      transition={{ duration: 0.15 }}
+      className="overflow-hidden"
+    >
+      <div className="pt-2 pb-1 px-1 space-y-1.5">
+        {stagesWithAlts.map((stage) => {
+          const cfg = STAGE_CONFIGS[stage];
+          const Icon = cfg.icon;
+          const sel = preset.selection[stage] as { model: string; provider: string };
+          const alts = getProviderAlternatives(sel.provider, sel.model)!;
+
+          return (
+            <div key={stage} className="flex items-center gap-2">
+              <div className={cn('w-4 h-4 rounded flex items-center justify-center shrink-0', cfg.bgColor)}>
+                <Icon size={8} className={cfg.textColor} />
+              </div>
+              <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider w-16 shrink-0">
+                {cfg.displayName}
+              </span>
+              <div className="flex items-center gap-1">
+                {alts.group.variants.map((v) => (
+                  <button
+                    key={v.provider}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setWaterfallCustomStage(stage, { model: v.model, provider: v.provider });
+                    }}
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[8px] font-bold transition-all border',
+                      v.provider === alts.current.provider
+                        ? 'bg-jb-purple/15 border-jb-purple/30 text-jb-purple'
+                        : 'bg-white/[0.03] border-white/[0.06] text-slate-600 hover:text-slate-400 hover:border-white/15',
+                    )}
+                  >
+                    {v.providerLabel}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
 };
 
-// ─── Preset Card ────────────────────────────────────────────────────────────
+// ─── Recommended Row ────────────────────────────────────────────────────────
 
-const PresetCard = ({
+const RecommendedRow = ({
   preset,
   isSelected,
   isExpanded,
+  isDefault,
   onSelect,
   onToggleExpand,
   warnings,
-  upgradeCount,
 }: {
   preset: WaterfallPresetMeta;
   isSelected: boolean;
   isExpanded: boolean;
+  isDefault: boolean;
   onSelect: () => void;
   onToggleExpand: () => void;
   warnings: string[];
-  upgradeCount: number;
 }) => {
-  const badge = scoreBadge(preset.score, preset.tier);
-  const spd = speedIcon(preset.speed);
-  const SpdIcon = spd.icon;
+  const badge = gradeBadge(preset.grade, preset.category);
+  const isFast = preset.speed !== '~5m+';
 
   return (
-    <div
-      className={cn(
-        'rounded-2xl border transition-all duration-200 cursor-pointer select-none',
-        isSelected
-          ? 'bg-jb-purple/[0.08] border-jb-purple/30 shadow-[0_0_24px_-6px_rgba(157,91,210,0.25)]'
-          : 'bg-white/[0.02] border-white/[0.06] hover:border-white/15 hover:bg-white/[0.04]',
-      )}
-      onClick={onSelect}
-    >
-      <div className="px-4 py-3.5 flex flex-col gap-2.5">
-        {/* Top row: name + score */}
-        <div className="flex items-center justify-between gap-2">
+    <div>
+      <div
+        className={cn(
+          'rounded-lg border transition-all duration-200 cursor-pointer select-none px-3 py-2.5',
+          isSelected
+            ? 'bg-[rgba(157,91,210,0.06)] border-[rgba(157,91,210,0.2)] shadow-[0_0_16px_-4px_rgba(157,91,210,0.15)]'
+            : 'bg-[rgba(255,255,255,0.015)] border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.15)]',
+        )}
+        onClick={onSelect}
+      >
+        <div className="flex items-center gap-2.5">
+          {isDefault && (
+            <div className="w-[5px] h-[5px] rounded-full bg-jb-purple shrink-0" />
+          )}
           <span className={cn(
-            'text-[13px] font-extrabold tracking-tight',
-            isSelected ? 'text-white' : 'text-slate-300',
+            'text-[11px] font-extrabold tracking-tight shrink-0',
+            isSelected ? 'text-[#e2e8f0]' : 'text-[#cbd5e1]',
           )}>
             {preset.name}
           </span>
-          <div className={cn('px-2 py-0.5 rounded-md border text-[12px] font-black tabular-nums', badge.bg, badge.border, badge.text)}>
+          <span className="text-[9px] text-[#64748b] truncate">
+            — {preset.tagline}
+          </span>
+          <div className="flex-1" />
+          <span className={cn(
+            'text-[9px] font-mono shrink-0',
+            isFast ? 'text-[#34d399]' : 'text-[#475569]',
+          )}>
+            {preset.speed}
+          </span>
+          <div className={cn('px-1.5 py-0.5 rounded-md border text-[10px] font-black tabular-nums shrink-0', badge.bg, badge.border, badge.text)}>
             {badge.label}
           </div>
-        </div>
-
-        {/* Description + speed */}
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-[12px] text-slate-300 leading-tight line-clamp-1 flex-1">
-            {preset.description}
-          </span>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <SpdIcon size={11} className={spd.color} />
-            <span className={cn('text-[12px] font-mono', spd.color)}>{preset.speed}</span>
-          </div>
-        </div>
-
-        {/* Unavailability warning */}
-        {warnings.length > 0 && (
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
-            <AlertTriangle size={11} className="text-amber-400 shrink-0" />
-            <span className="text-[11px] text-amber-400 font-medium leading-tight">
-              {warnings.length === 1 ? `${warnings[0]} offline` : `${warnings.length} models offline`}
-            </span>
-          </div>
-        )}
-
-        {/* Upgrade indicator */}
-        {upgradeCount > 0 && (
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/[0.03] border border-white/[0.08]">
-            <ArrowUpCircle size={11} className="text-blue-400 shrink-0" />
-            <span className="text-[11px] text-slate-400 font-medium leading-tight">
-              {upgradeCount === 1 ? '1 upgrade available' : `${upgradeCount} upgrades available`}
-            </span>
-          </div>
-        )}
-
-        {/* Expand toggle */}
-        {isSelected && (
+          {warnings.length > 0 && (
+            <AlertTriangle size={10} className="text-amber-400 shrink-0" />
+          )}
           <button
             onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}
-            className="flex items-center gap-1.5 text-[12px] font-bold text-slate-600 hover:text-slate-400 transition-colors pt-0.5"
+            className="shrink-0 text-slate-700 hover:text-slate-400 transition-colors"
           >
-            <ChevronDown size={12} className={cn('transition-transform', isExpanded && 'rotate-180')} />
-            {isExpanded ? 'Hide models' : 'Show models'}
+            <ChevronDown size={10} className={cn('transition-transform', isExpanded && 'rotate-180')} />
           </button>
-        )}
+        </div>
+        <div className="mt-1.5">
+          <span className="text-[8px] text-[#334155]">
+            {preset.stageLabels.planner} → {preset.stageLabels.executor} → {preset.stageLabels.reviewer}
+          </span>
+        </div>
       </div>
-
-      {/* Expanded model breakdown */}
       <AnimatePresence>
-        {isSelected && isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 pb-3.5 pt-1.5 border-t border-white/[0.04] space-y-2">
-              {STAGE_ORDER.map((stage) => {
-                const cfg = STAGE_CONFIGS[stage];
-                const Icon = cfg.icon;
-                const label = preset.stageLabels[stage];
-                const isOffline = warnings.includes(label);
-                return (
-                  <div key={stage} className="flex items-center gap-2.5">
-                    <div className={cn('w-5 h-5 rounded flex items-center justify-center', cfg.bgColor)}>
-                      <Icon size={10} className={cfg.textColor} />
-                    </div>
-                    <span className="text-[12px] font-black text-slate-600 uppercase tracking-wider w-20">
-                      {cfg.displayName}
-                    </span>
-                    <span className={cn('text-[12px] font-medium', isOffline ? 'text-amber-400 line-through decoration-amber-500/40' : 'text-slate-400')}>
-                      {label}
-                    </span>
-                    {isOffline && <AlertTriangle size={10} className="text-amber-400" />}
-                  </div>
-                );
-              })}
-            </div>
-          </motion.div>
+        {isExpanded && (
+          <ProviderSwapPanel preset={preset} />
         )}
       </AnimatePresence>
     </div>
   );
 };
 
+// ─── Top Tier Card ──────────────────────────────────────────────────────────
+
+const TopTierCard = ({
+  preset,
+  isSelected,
+  onSelect,
+}: {
+  preset: WaterfallPresetMeta;
+  isSelected: boolean;
+  onSelect: () => void;
+}) => {
+  const badge = gradeBadge(preset.grade, preset.category);
+
+  return (
+    <div
+      className={cn(
+        'rounded-md border transition-all duration-200 cursor-pointer select-none px-2 py-1.5',
+        isSelected
+          ? 'bg-[rgba(157,91,210,0.06)] border-[rgba(157,91,210,0.2)]'
+          : 'bg-[rgba(255,255,255,0.015)] border-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.15)]',
+      )}
+      onClick={onSelect}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className={cn(
+          'text-[9px] font-bold truncate',
+          isSelected ? 'text-white' : 'text-[#94a3b8]',
+        )}>
+          {preset.name}
+        </span>
+        <div className={cn('px-1 py-0.5 rounded border text-[9px] font-black tabular-nums shrink-0', badge.bg, badge.border, badge.text)}>
+          {badge.label}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Solo Pill ──────────────────────────────────────────────────────────────
+
+const SoloPill = ({
+  preset,
+  isSelected,
+  onSelect,
+}: {
+  preset: WaterfallPresetMeta;
+  isSelected: boolean;
+  onSelect: () => void;
+}) => {
+  const displayName = preset.name.replace(/^Solo:\s*/, '');
+
+  return (
+    <button
+      onClick={onSelect}
+      className={cn(
+        'rounded-[5px] border transition-all duration-200 px-1.5 py-1 text-center',
+        isSelected
+          ? 'bg-[rgba(157,91,210,0.06)] border-[rgba(157,91,210,0.2)] text-[#94a3b8]'
+          : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.04)] text-[#64748b] hover:border-[rgba(255,255,255,0.15)]',
+      )}
+    >
+      <span className="text-[8px] font-semibold">{displayName}</span>
+    </button>
+  );
+};
+
 // ─── Custom Stage Row ───────────────────────────────────────────────────────
 
-const CUSTOM_MODELS: { label: string; value: string; provider: string; group: string }[] = [
+export const CUSTOM_MODELS: { label: string; value: string; provider: string; group: string }[] = [
   // Groq
   { label: 'GPT-OSS 120B',   value: 'openai/gpt-oss-120b',               provider: 'groq',       group: 'Groq' },
   { label: 'Qwen3 32B',      value: 'qwen/qwen3-32b',                    provider: 'groq',       group: 'Groq' },
@@ -249,16 +325,32 @@ const CUSTOM_MODELS: { label: string; value: string; provider: string; group: st
   { label: 'Healer Alpha',   value: 'deepinfra/healerdoctor-healer-alpha', provider: 'openrouter', group: 'OpenRouter' },
   { label: 'Hunter Alpha',   value: 'openrouter/hunter-alpha',            provider: 'openrouter', group: 'OpenRouter' },
   { label: 'GLM 4.5 Air',    value: 'z-ai/glm-4.5-air:free',             provider: 'openrouter', group: 'OpenRouter' },
+  { label: 'GLM-5.1',        value: 'z-ai/glm-5.1',                      provider: 'openrouter', group: 'OpenRouter' },
   // DashScope
+  { label: 'Qwen 3.6 Plus',  value: 'qwen3.6-plus',                     provider: 'dashscope',  group: 'DashScope' },
   { label: 'Qwen3 Coder+',   value: 'qwen3-coder-plus',                  provider: 'dashscope',  group: 'DashScope' },
   { label: 'Qwen3 Max',      value: 'qwen3-max',                         provider: 'dashscope',  group: 'DashScope' },
   // Cerebras
   { label: 'Qwen3 235B',     value: 'qwen-3-235b-a22b-instruct-2507',    provider: 'cerebras',   group: 'Cerebras' },
   { label: 'Llama 3.1 8B',   value: 'llama3.1-8b',                       provider: 'cerebras',   group: 'Cerebras' },
+  // Fireworks
+  { label: 'Kimi K2.5',        value: 'accounts/fireworks/models/kimi-k2p5',                     provider: 'fireworks', group: 'Fireworks' },
+  { label: 'GLM-5',            value: 'accounts/fireworks/models/glm-5',                         provider: 'fireworks', group: 'Fireworks' },
+  { label: 'GLM-4.7',          value: 'accounts/fireworks/models/glm-4p7',                       provider: 'fireworks', group: 'Fireworks' },
+  { label: 'DeepSeek V3',      value: 'accounts/fireworks/models/deepseek-v3',                   provider: 'fireworks', group: 'Fireworks' },
+  { label: 'GPT-OSS 120B',     value: 'accounts/fireworks/models/gpt-oss-120b',                  provider: 'fireworks', group: 'Fireworks' },
+  { label: 'GPT-OSS 20B',      value: 'accounts/fireworks/models/gpt-oss-20b',                   provider: 'fireworks', group: 'Fireworks' },
+  { label: 'MiniMax M2',       value: 'accounts/fireworks/models/minimax-m2',                    provider: 'fireworks', group: 'Fireworks' },
+  { label: 'Qwen 3.6 Plus',    value: 'accounts/fireworks/models/qwen3p6-plus',                  provider: 'fireworks', group: 'Fireworks' },
+  { label: 'Llama 4 Maverick', value: 'accounts/fireworks/models/llama4-maverick-instruct-basic', provider: 'fireworks', group: 'Fireworks' },
+  { label: 'Llama 3.3 70B',    value: 'accounts/fireworks/models/llama-v3p3-70b-instruct',       provider: 'fireworks', group: 'Fireworks' },
   // Ollama Cloud
   { label: 'GLM-4.7',        value: 'glm-4.7:cloud',                     provider: 'ollama',     group: 'Ollama Cloud' },
+  { label: 'GLM-5',          value: 'glm-5:cloud',                       provider: 'ollama',     group: 'Ollama Cloud' },
+  { label: 'GLM-5.1',        value: 'glm-5.1:cloud',                     provider: 'ollama',     group: 'Ollama Cloud' },
   { label: 'Kimi K2.5',      value: 'kimi-k2.5:cloud',                   provider: 'ollama',     group: 'Ollama Cloud' },
   { label: 'DeepSeek V3.2',  value: 'deepseek-v3.2:cloud',               provider: 'ollama',     group: 'Ollama Cloud' },
+  { label: 'MiniMax M2',     value: 'minimax-m2.1:cloud',                provider: 'ollama',     group: 'Ollama Cloud' },
   { label: 'Nemotron 3S',    value: 'nemotron-3-super:cloud',             provider: 'ollama',     group: 'Ollama Cloud' },
   { label: 'Kimi Thinking',  value: 'kimi-k2-thinking:cloud',            provider: 'ollama',     group: 'Ollama Cloud' },
   { label: 'Qwen 3.5',       value: 'qwen3.5:cloud',                     provider: 'ollama',     group: 'Ollama Cloud' },
@@ -266,6 +358,113 @@ const CUSTOM_MODELS: { label: string; value: string; provider: string; group: st
 ];
 
 const groups = [...new Set(CUSTOM_MODELS.map(m => m.group))];
+
+// ─── Cross-provider model mapping ──────────────────────────────────────────
+// Models available on multiple providers under different model IDs.
+// Enables one-click provider switching in the custom stage rows.
+
+interface ProviderVariant {
+  provider: string;
+  model: string;
+  providerLabel: string;
+}
+
+interface CrossProviderGroup {
+  name: string;
+  variants: ProviderVariant[];
+}
+
+const CROSS_PROVIDER_MODELS: CrossProviderGroup[] = [
+  {
+    name: 'GPT-OSS 120B',
+    variants: [
+      { provider: 'groq', model: 'openai/gpt-oss-120b', providerLabel: 'Groq' },
+      { provider: 'fireworks', model: 'accounts/fireworks/models/gpt-oss-120b', providerLabel: 'Fireworks' },
+    ],
+  },
+  {
+    name: 'Kimi K2.5',
+    variants: [
+      { provider: 'ollama', model: 'kimi-k2.5:cloud', providerLabel: 'Ollama' },
+      { provider: 'fireworks', model: 'accounts/fireworks/models/kimi-k2p5', providerLabel: 'Fireworks' },
+    ],
+  },
+  {
+    name: 'GLM-4.7',
+    variants: [
+      { provider: 'ollama', model: 'glm-4.7:cloud', providerLabel: 'Ollama' },
+      { provider: 'fireworks', model: 'accounts/fireworks/models/glm-4p7', providerLabel: 'Fireworks' },
+    ],
+  },
+  {
+    name: 'GLM-5',
+    variants: [
+      { provider: 'ollama', model: 'glm-5:cloud', providerLabel: 'Ollama' },
+      { provider: 'fireworks', model: 'accounts/fireworks/models/glm-5', providerLabel: 'Fireworks' },
+    ],
+  },
+  {
+    name: 'GLM-5.1',
+    variants: [
+      { provider: 'ollama', model: 'glm-5.1:cloud', providerLabel: 'Ollama' },
+      { provider: 'openrouter', model: 'z-ai/glm-5.1', providerLabel: 'OpenRouter' },
+    ],
+  },
+  {
+    name: 'Qwen 3.6 Plus',
+    variants: [
+      { provider: 'dashscope', model: 'qwen3.6-plus', providerLabel: 'DashScope' },
+      { provider: 'fireworks', model: 'accounts/fireworks/models/qwen3p6-plus', providerLabel: 'Fireworks' },
+      { provider: 'openrouter', model: 'qwen/qwen3.6-plus:free', providerLabel: 'OpenRouter' },
+    ],
+  },
+  {
+    name: 'DeepSeek V3',
+    variants: [
+      { provider: 'ollama', model: 'deepseek-v3.2:cloud', providerLabel: 'Ollama' },
+      { provider: 'fireworks', model: 'accounts/fireworks/models/deepseek-v3', providerLabel: 'Fireworks' },
+    ],
+  },
+  {
+    name: 'Llama 3.3 70B',
+    variants: [
+      { provider: 'groq', model: 'llama-3.3-70b-versatile', providerLabel: 'Groq' },
+      { provider: 'openrouter', model: 'meta-llama/llama-3.3-70b-instruct:free', providerLabel: 'OpenRouter' },
+      { provider: 'fireworks', model: 'accounts/fireworks/models/llama-v3p3-70b-instruct', providerLabel: 'Fireworks' },
+    ],
+  },
+  {
+    name: 'Llama 4 Maverick',
+    variants: [
+      { provider: 'groq', model: 'meta-llama/llama-4-maverick-17b-128e-instruct', providerLabel: 'Groq' },
+      { provider: 'fireworks', model: 'accounts/fireworks/models/llama4-maverick-instruct-basic', providerLabel: 'Fireworks' },
+    ],
+  },
+  {
+    name: 'MiniMax M2',
+    variants: [
+      { provider: 'ollama', model: 'minimax-m2.1:cloud', providerLabel: 'Ollama' },
+      { provider: 'fireworks', model: 'accounts/fireworks/models/minimax-m2', providerLabel: 'Fireworks' },
+    ],
+  },
+];
+
+const crossProviderLookup = new Map<string, CrossProviderGroup>();
+for (const group of CROSS_PROVIDER_MODELS) {
+  for (const v of group.variants) {
+    crossProviderLookup.set(`${v.provider}:${v.model}`, group);
+  }
+}
+
+function getProviderAlternatives(provider: string, model: string): { group: CrossProviderGroup; current: ProviderVariant } | null {
+  const group = crossProviderLookup.get(`${provider}:${model}`);
+  if (!group || group.variants.length < 2) return null;
+  const current = group.variants.find(v => v.provider === provider && v.model === model);
+  if (!current) return null;
+  return { group, current };
+}
+
+// ─── Custom Stage Row ───────────────────────────────────────────────────────
 
 const CustomStageRow = ({
   stage,
@@ -279,40 +478,63 @@ const CustomStageRow = ({
   const cfg = STAGE_CONFIGS[stage];
   const Icon = cfg.icon;
 
-  // Derive current value as provider:model key
   const currentKey = typeof currentSelection === 'object'
     ? `${currentSelection.provider}:${currentSelection.model}`
     : '';
 
+  const alternatives = typeof currentSelection === 'object'
+    ? getProviderAlternatives(currentSelection.provider, currentSelection.model)
+    : null;
+
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex items-center gap-2.5 w-28 shrink-0">
-        <div className={cn('w-6 h-6 rounded-lg flex items-center justify-center', cfg.bgColor)}>
-          <Icon size={12} className={cfg.textColor} />
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 w-28 shrink-0">
+          <div className={cn('w-6 h-6 rounded-lg flex items-center justify-center', cfg.bgColor)}>
+            <Icon size={12} className={cfg.textColor} />
+          </div>
+          <span className="text-[12px] font-black text-slate-500 uppercase tracking-wider">
+            {cfg.displayName}
+          </span>
         </div>
-        <span className="text-[12px] font-black text-slate-500 uppercase tracking-wider">
-          {cfg.displayName}
-        </span>
+        <select
+          value={currentKey}
+          onChange={(e) => {
+            const [provider = '', ...modelParts] = e.target.value.split(':');
+            const model = modelParts.join(':');
+            onChange(model, provider);
+          }}
+          className="flex-1 bg-white/[0.03] border border-white/[0.08] rounded-xl px-3.5 py-2 text-[12px] text-slate-300 font-medium outline-none focus:border-jb-purple/30 transition-colors appearance-none cursor-pointer"
+        >
+          {groups.map((group) => (
+            <optgroup key={group} label={group} className="bg-[#0a0a0f]">
+              {CUSTOM_MODELS.filter(m => m.group === group).map((m) => (
+                <option key={`${m.provider}:${m.value}`} value={`${m.provider}:${m.value}`}>
+                  {m.label}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
       </div>
-      <select
-        value={currentKey}
-        onChange={(e) => {
-          const [provider = '', ...modelParts] = e.target.value.split(':');
-          const model = modelParts.join(':');
-          onChange(model, provider);
-        }}
-        className="flex-1 bg-white/[0.03] border border-white/[0.08] rounded-xl px-3.5 py-2 text-[12px] text-slate-300 font-medium outline-none focus:border-jb-purple/30 transition-colors appearance-none cursor-pointer"
-      >
-        {groups.map((group) => (
-          <optgroup key={group} label={group} className="bg-[#0a0a0f]">
-            {CUSTOM_MODELS.filter(m => m.group === group).map((m) => (
-              <option key={`${m.provider}:${m.value}`} value={`${m.provider}:${m.value}`}>
-                {m.label}
-              </option>
-            ))}
-          </optgroup>
-        ))}
-      </select>
+      {alternatives && (
+        <div className="flex items-center gap-1.5 pl-[7.75rem]">
+          {alternatives.group.variants.map((v) => (
+            <button
+              key={v.provider}
+              onClick={() => onChange(v.model, v.provider)}
+              className={cn(
+                'px-2 py-0.5 rounded-md text-[10px] font-bold transition-all border',
+                v.provider === alternatives.current.provider
+                  ? 'bg-jb-purple/15 border-jb-purple/30 text-jb-purple'
+                  : 'bg-white/[0.03] border-white/[0.06] text-slate-600 hover:text-slate-400 hover:border-white/15',
+              )}
+            >
+              {v.providerLabel}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -342,8 +564,9 @@ export const WaterfallPresetPicker = ({
   const [expandedPreset, setExpandedPreset] = useState<string | null>(null);
   const [showCustom, setShowCustom] = useState(waterfallPresetKey === 'custom');
 
-  const topPresets = WATERFALL_PRESET_LIST.filter(p => p.tier === 'top');
-  const otherPresets = WATERFALL_PRESET_LIST.filter(p => p.tier !== 'top');
+  const recommended = WATERFALL_PRESET_LIST.filter(p => p.category === 'recommended');
+  const topTier = WATERFALL_PRESET_LIST.filter(p => p.category === 'top');
+  const solo = WATERFALL_PRESET_LIST.filter(p => p.category === 'solo');
 
   const handleSelect = (key: string) => {
     setWaterfallPreset(key);
@@ -382,49 +605,72 @@ export const WaterfallPresetPicker = ({
           </button>
         </div>
 
-        {/* Top preset cards */}
-        <div className="grid grid-cols-2 gap-2.5">
-          {topPresets.map((preset) => (
-            <PresetCard
-              key={preset.key}
-              preset={preset}
-              isSelected={waterfallPresetKey === preset.key}
-              isExpanded={expandedPreset === preset.key}
-              onSelect={() => handleSelect(preset.key)}
-              onToggleExpand={() => setExpandedPreset(expandedPreset === preset.key ? null : preset.key)}
-              warnings={getPresetWarnings(preset, unavailableModels)}
-              upgradeCount={getPresetUpgrades(preset, upgradeSuggestions, dismissedKeys).length}
-            />
-          ))}
-        </div>
+        {!showCustom && (
+          <>
+            {/* ── RECOMMENDED ── */}
+            <div className="space-y-2">
+              <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest">
+                RECOMMENDED · benchmarked across 4 prompts
+              </span>
+              <div className="space-y-1.5">
+                {recommended.map((preset) => (
+                  <RecommendedRow
+                    key={preset.key}
+                    preset={preset}
+                    isSelected={waterfallPresetKey === preset.key}
+                    isExpanded={expandedPreset === preset.key}
+                    isDefault={preset.key === 'kimi-coder'}
+                    onSelect={() => handleSelect(preset.key)}
+                    onToggleExpand={() => setExpandedPreset(expandedPreset === preset.key ? null : preset.key)}
+                    warnings={getPresetWarnings(preset, unavailableModels)}
+                  />
+                ))}
+              </div>
+            </div>
 
-        {/* Other presets — collapsed row */}
-        {otherPresets.length > 0 && !showCustom && (
-          <div className="flex gap-2 overflow-x-auto scrollbar-none pb-0.5">
-            {otherPresets.map((preset) => {
-              const badge = scoreBadge(preset.score, preset.tier);
-              const isSelected = waterfallPresetKey === preset.key;
-              const otherWarnings = getPresetWarnings(preset, unavailableModels);
-              const otherUpgrades = getPresetUpgrades(preset, upgradeSuggestions, dismissedKeys);
-              return (
-                <button
-                  key={preset.key}
-                  onClick={() => handleSelect(preset.key)}
-                  className={cn(
-                    'shrink-0 flex items-center gap-2.5 px-3.5 py-2 rounded-xl border transition-all text-[12px] font-bold',
-                    isSelected
-                      ? 'bg-jb-purple/[0.08] border-jb-purple/30 text-white'
-                      : 'bg-white/[0.02] border-white/[0.06] text-slate-500 hover:text-slate-300 hover:border-white/15',
-                  )}
-                >
-                  {otherWarnings.length > 0 && <AlertTriangle size={11} className="text-amber-400" />}
-                  {otherUpgrades.length > 0 && <ArrowUpCircle size={11} className="text-blue-400" />}
-                  {preset.name}
-                  <span className={cn('text-[12px] font-mono', badge.text)}>{badge.label}</span>
-                </button>
-              );
-            })}
-          </div>
+            {/* ── TOP TIER ── */}
+            <div className="space-y-2">
+              <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest">
+                TOP TIER
+              </span>
+              <div className="grid grid-cols-2 gap-1.5">
+                {topTier.map((preset) => (
+                  <TopTierCard
+                    key={preset.key}
+                    preset={preset}
+                    isSelected={waterfallPresetKey === preset.key}
+                    onSelect={() => {
+                      handleSelect(preset.key);
+                      setExpandedPreset(expandedPreset === preset.key ? null : preset.key);
+                    }}
+                  />
+                ))}
+              </div>
+              <AnimatePresence>
+                {topTier.some(p => p.key === expandedPreset) && (() => {
+                  const expanded = topTier.find(p => p.key === expandedPreset);
+                  return expanded ? <ProviderSwapPanel preset={expanded} /> : null;
+                })()}
+              </AnimatePresence>
+            </div>
+
+            {/* ── SOLO ── */}
+            <div className="space-y-2">
+              <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest">
+                SOLO · single model, all stages
+              </span>
+              <div className="grid grid-cols-3 gap-1.5">
+                {solo.map((preset) => (
+                  <SoloPill
+                    key={preset.key}
+                    preset={preset}
+                    isSelected={waterfallPresetKey === preset.key}
+                    onSelect={() => handleSelect(preset.key)}
+                  />
+                ))}
+              </div>
+            </div>
+          </>
         )}
 
         {/* Custom panel */}
