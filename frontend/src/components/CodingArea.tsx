@@ -198,6 +198,66 @@ export const CodingArea = () => {
     } catch { addLog(`[ERROR]: Save failed for ${activeFile}`); }
   }, [activeFile, currentFile, addLog]);
 
+  // Syncs all backend project files into the WebContainer so the user never has
+  // to manually re-import after a page refresh.
+  const syncProjectToWebContainer = useCallback(async (wc: WebContainer) => {
+    if (!currentProject) return;
+    addLog('[SYSTEM]: Syncing project files to sandbox...');
+
+    type FNode = { name: string; type: 'file' | 'directory'; path: string; children?: FNode[] };
+    const listUrl = currentProject.type === 'scratchpad'
+      ? `${BASE_URL}/api/files/list?project=${encodeURIComponent(currentProject.name)}`
+      : `${BASE_URL}/api/files/list?path=.`;
+
+    const nodes = await fetchWithRetry(listUrl) as FNode[];
+
+    const filePaths: string[] = [];
+    const flatten = (ns: FNode[]) => {
+      for (const n of ns) {
+        if (n.type === 'file') filePaths.push(n.path);
+        if (n.children) flatten(n.children);
+      }
+    };
+    flatten(nodes);
+    if (filePaths.length === 0) return;
+
+    const tree: Record<string, unknown> = {};
+    const buildTree = (wcPath: string, content: string) => {
+      const parts = wcPath.split('/').filter(Boolean);
+      let cur = tree;
+      for (let i = 0; i < parts.length - 1; i++) {
+        const part = parts[i]!;
+        if (!cur[part]) cur[part] = { directory: {} };
+        cur = (cur[part] as { directory: Record<string, unknown> }).directory;
+      }
+      const last = parts[parts.length - 1];
+      if (last) cur[last] = { file: { contents: content } };
+    };
+
+    // Read files in batches of 10 to avoid overwhelming the backend
+    const BATCH = 10;
+    let synced = 0;
+    for (let i = 0; i < filePaths.length; i += BATCH) {
+      await Promise.allSettled(
+        filePaths.slice(i, i + BATCH).map(async (filePath) => {
+          try {
+            const data = await fetchWithRetry(
+              `${BASE_URL}/api/files/read?path=${encodeURIComponent(filePath)}`
+            ) as { content: string };
+            // Strip project-name prefix — WebContainer root = project root
+            const wcPath = currentProject.type === 'scratchpad' && currentProject.name
+              ? filePath.slice(currentProject.name.length + 1)
+              : filePath;
+            if (wcPath) { buildTree(wcPath, data.content ?? ''); synced++; }
+          } catch { /* skip unreadable files (binaries, etc.) */ }
+        })
+      );
+    }
+
+    await wc.mount(tree as Parameters<typeof wc.mount>[0]);
+    addLog(`[SYSTEM]: Synced ${synced} project files to sandbox.`);
+  }, [currentProject, addLog]);
+
   const handleRun = useCallback(async () => {
     setTerminalVisible(true);
     if (bootStatus === 'idle') setBootRequested(true);
@@ -218,8 +278,26 @@ export const CodingArea = () => {
     setIsRunning(true);
     addLog('[SYSTEM]: Starting execution...');
     try {
-      const pkgFile = openFiles.find((f) => f.path.endsWith('package.json'));
-      if (pkgFile) {
+      // Sync all backend project files so the user never has to re-import after a refresh
+      await syncProjectToWebContainer(webContainer);
+
+      // Find package.json — check open tabs first, then fall back to reading from backend.
+      // After a refresh openFiles is empty so the backend fetch ensures we still detect it.
+      let pkgContent: string | null =
+        openFiles.find((f) => f.path.endsWith('package.json'))?.content ?? null;
+      if (!pkgContent && currentProject) {
+        const pkgPath = currentProject.type === 'scratchpad'
+          ? `${currentProject.name}/package.json`
+          : 'package.json';
+        try {
+          const d = await fetchWithRetry(
+            `${BASE_URL}/api/files/read?path=${encodeURIComponent(pkgPath)}`
+          ) as { content: string };
+          pkgContent = d.content;
+        } catch { /* no package.json in this project */ }
+      }
+
+      if (pkgContent) {
         const installProc = await webContainer.spawn('npm', ['install']);
         runningProcRef.current = installProc;
         installProc.output.pipeTo(new WritableStream({ write: (d) => addLog(d) }));
@@ -228,7 +306,7 @@ export const CodingArea = () => {
         // Pick the right npm script: prefer 'dev', fall back to 'start'
         let runScript = 'start';
         try {
-          const pkg = JSON.parse(pkgFile.content) as { scripts?: Record<string, string> };
+          const pkg = JSON.parse(pkgContent) as { scripts?: Record<string, string> };
           if (pkg.scripts?.dev) runScript = 'dev';
           else if (!pkg.scripts?.start) throw new Error('No dev or start script in package.json');
         } catch (e: unknown) {
