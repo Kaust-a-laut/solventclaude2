@@ -60,9 +60,8 @@ export const ConversationBubble: React.FC<ConversationBubbleProps> = ({
       transition={{ duration: 0.3, opacity: { duration: 0.2 } }}
       className={cn(
         'flex gap-3 max-w-[85%]',
-        isUser ? 'ml-auto flex-row-reverse' : '',
+        isUser ? 'ml-auto flex-row-reverse drop-shadow-[0_0_15px_rgba(60,113,247,0.08)]' : '',
       )}
-      style={isUser ? { filter: `drop-shadow(0 0 15px rgba(60,113,247,0.08))` } : undefined}
     >
       {/* Avatar */}
       {!isUser && agentConfig && (

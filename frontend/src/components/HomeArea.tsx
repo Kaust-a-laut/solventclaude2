@@ -38,8 +38,8 @@ export const HomeArea = () => {
               >
                 {/* Enhanced ambient glow layers */}
                 <div className="absolute inset-x-16 inset-y-8 bg-jb-purple/25 blur-[80px] rounded-full animate-pulse" />
-                <div className="absolute inset-x-24 inset-y-16 bg-jb-orange/15 blur-[60px] rounded-full animate-pulse" style={{ animationDelay: '1s' }} />
-                <div className="absolute inset-x-20 inset-y-12 bg-jb-accent/10 blur-[70px] rounded-full animate-pulse" style={{ animationDelay: '0.5s' }} />
+                <div className="absolute inset-x-24 inset-y-16 bg-jb-orange/15 blur-[60px] rounded-full animate-pulse [animation-delay:1s]" />
+                <div className="absolute inset-x-20 inset-y-12 bg-jb-accent/10 blur-[70px] rounded-full animate-pulse [animation-delay:0.5s]" />
 
                 <Logo size="xl" variant="hero" animated={true} />
               </motion.div>
@@ -138,18 +138,17 @@ export const HomeArea = () => {
                 {/* Visual panel */}
                 <div className="w-full lg:w-1/2 shrink-0">
                   <div
-                    className={`relative rounded-3xl border overflow-hidden ${item.bg} ${item.border}`}
-                    style={{ aspectRatio: '16/10' }}
+                    className={`relative rounded-3xl border overflow-hidden aspect-[16/10] ${item.bg} ${item.border}`}
                   >
                     {/* Dot grid */}
-                    <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+                    <div className="absolute inset-0 opacity-[0.035] [background-image:radial-gradient(circle,white_1px,transparent_1px)] [background-size:28px_28px]" />
                     {/* Glow orb */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <div className="w-64 h-64 rounded-full blur-[80px] opacity-20" style={{ background: item.accentColor }} />
                     </div>
                     {/* Large faint icon */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <Icon size={120} className={item.color} style={{ opacity: 0.07 }} strokeWidth={0.75} />
+                      <Icon size={120} className={`${item.color} opacity-[0.07]`} strokeWidth={0.75} />
                     </div>
                     {/* HUD corner lines */}
                     <div className="absolute top-0 left-0 w-12 h-px bg-white/[0.06]" />

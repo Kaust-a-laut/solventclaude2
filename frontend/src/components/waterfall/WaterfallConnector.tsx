@@ -48,9 +48,8 @@ export const WaterfallConnector = ({
           initial={{ scaleY: 0 }}
           animate={{ scaleY: isFromCompleted || isPaused ? 1 : 0 }}
           transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.1 }}
-          style={{ transformOrigin: 'top center' }}
           className={cn(
-            'absolute inset-0 rounded-full',
+            'absolute inset-0 rounded-full origin-top',
             `bg-gradient-to-b from-${fromColor} to-${toColor}`
           )}
         />

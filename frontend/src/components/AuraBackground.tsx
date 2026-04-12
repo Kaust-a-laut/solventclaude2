@@ -74,13 +74,11 @@ const AuraBackground: React.FC<{ children: React.ReactNode }> = ({ children }) =
             exit={{ opacity: 0 }}
             className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none"
           >
-            <div 
-              className="absolute top-[-10%] left-[-10%] w-[80%] h-[80%] rounded-full opacity-20 blur-[150px]"
-              style={{ background: 'radial-gradient(circle, #3C71F7 0%, transparent 70%)' }}
+            <div
+              className="absolute top-[-10%] left-[-10%] w-[80%] h-[80%] rounded-full opacity-20 blur-[150px] [background:radial-gradient(circle,#3C71F7_0%,transparent_70%)]"
             />
-            <div 
-              className="absolute bottom-[-10%] right-[-10%] w-[80%] h-[80%] rounded-full opacity-20 blur-[150px]"
-              style={{ background: 'radial-gradient(circle, #9D5BD2 0%, transparent 70%)' }}
+            <div
+              className="absolute bottom-[-10%] right-[-10%] w-[80%] h-[80%] rounded-full opacity-20 blur-[150px] [background:radial-gradient(circle,#9D5BD2_0%,transparent_70%)]"
             />
           </motion.div>
         )}

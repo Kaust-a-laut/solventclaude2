@@ -222,8 +222,7 @@ export const ManualEditTools: React.FC<ManualEditToolsProps> = ({
                   )}
                 >
                   <div
-                    className="w-8 h-8 rounded-lg overflow-hidden relative"
-                    style={{ background: 'linear-gradient(135deg, #6366f1 0%, #f59e0b 50%, #10b981 100%)' }}
+                    className="w-8 h-8 rounded-lg overflow-hidden relative [background:linear-gradient(135deg,#6366f1_0%,#f59e0b_50%,#10b981_100%)]"
                   >
                     <div className="absolute inset-0" style={{ filter: preset.filter, background: 'inherit' }} />
                   </div>

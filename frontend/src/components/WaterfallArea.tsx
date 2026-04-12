@@ -304,8 +304,8 @@ export const WaterfallArea = () => {
                       </span>
                       <div className="flex flex-col gap-3 w-64 mt-4">
                         <div className="fluid-shimmer rounded-full h-2 w-full" />
-                        <div className="fluid-shimmer rounded-full h-2 w-4/5" style={{ animationDelay: '0.4s' }} />
-                        <div className="fluid-shimmer rounded-full h-2 w-3/5" style={{ animationDelay: '0.8s' }} />
+                        <div className="fluid-shimmer rounded-full h-2 w-4/5 [animation-delay:0.4s]" />
+                        <div className="fluid-shimmer rounded-full h-2 w-3/5 [animation-delay:0.8s]" />
                       </div>
                     </motion.div>
                   )}

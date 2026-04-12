@@ -344,8 +344,7 @@ export const DebateArea = () => {
                         key={i}
                         animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }}
                         transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.2 }}
-                        className="w-1.5 h-1.5 rounded-full bg-jb-purple"
-                        style={{ boxShadow: '0 0 8px rgba(157,91,210,0.8)' }}
+                        className="w-1.5 h-1.5 rounded-full bg-jb-purple shadow-[0_0_8px_rgba(157,91,210,0.8)]"
                       />
                     ))}
                   </div>

@@ -103,7 +103,7 @@ export const FloatingNotepad = () => {
         cancel="button, input, textarea, select, a, [role='button']"
         bounds="parent"
         enableUserSelectHack={false}
-        style={{ pointerEvents: 'auto' }}
+        className="pointer-events-auto"
       >
         <NotepadPiP
           onClose={() => setIsOpen(false)}

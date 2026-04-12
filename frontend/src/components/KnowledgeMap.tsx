@@ -245,9 +245,8 @@ export const KnowledgeMap = () => {
   return (
     <div ref={containerRef} className="w-full h-full relative overflow-hidden pointer-events-auto" onClick={() => setSelectedEdge(null)}>
       <svg 
-        ref={svgRef} 
-        className="w-full h-full cursor-crosshair block" 
-        style={{ touchAction: 'none' }}
+        ref={svgRef}
+        className="w-full h-full cursor-crosshair block touch-none"
         onClick={(e) => e.stopPropagation()}
       />
       
@@ -268,9 +267,8 @@ export const KnowledgeMap = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            style={{ willChange: 'transform' }}
             className={cn(
-              "absolute bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 pointer-events-none",
+              "absolute bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 pointer-events-none will-change-transform",
               deviceInfo.isMobile ? "bottom-4 left-4 right-4 p-4" : "bottom-8 left-8 right-8 p-5"
             )}
           >
@@ -297,8 +295,7 @@ export const KnowledgeMap = () => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             onClick={(e) => e.stopPropagation()}
-            style={{ willChange: 'transform' }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl z-[60] overflow-hidden flex flex-col"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl z-[60] overflow-hidden flex flex-col will-change-transform"
           >
             <div className="h-12 bg-white/5 border-b border-white/5 flex items-center justify-between px-4">
                 <div className="flex items-center gap-2 text-slate-300">

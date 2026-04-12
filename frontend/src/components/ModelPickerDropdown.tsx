@@ -96,8 +96,8 @@ export const ModelPickerDropdown = ({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.97 }}
               transition={{ type: 'spring', damping: 28, stiffness: 400 }}
-              className={`absolute top-full mt-2 ${align}-0 z-[300] w-[640px] bg-[#0a0a0f] border border-white/10 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.7)] overflow-hidden`}
-              style={{ maxWidth: 'min(640px, 90vw)', willChange: 'transform' }}
+              className={`absolute top-full mt-2 ${align}-0 z-[300] w-[640px] bg-[#0a0a0f] border border-white/10 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.7)] overflow-hidden will-change-transform`}
+              style={{ maxWidth: 'min(640px, 90vw)' }}
             >
               {/* Group tabs */}
               <div className="p-2 border-b border-white/5">

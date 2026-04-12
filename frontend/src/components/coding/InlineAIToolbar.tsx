@@ -114,8 +114,7 @@ export const InlineAIToolbar: React.FC<Props> = ({ editorRef, containerRef, onCo
       {/* ⌘K inline prompt overlay — portaled to body so it covers both #root and #editor-portal */}
       {showInlinePrompt && ReactDOM.createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ pointerEvents: 'auto' }}
+          className="fixed inset-0 z-50 flex items-center justify-center pointer-events-auto"
           onClick={() => setShowInlinePrompt(false)}
         >
           <form

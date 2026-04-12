@@ -33,7 +33,7 @@ export const WaterfallScore = ({ score, size = 120 }: WaterfallScoreProps) => {
         <svg
           width={size}
           height={size}
-          style={{ transform: 'rotate(-90deg)' }}
+          className="-rotate-90"
         >
           {/* Track */}
           <circle

@@ -31,3 +31,61 @@
 {"id":"168f1139-24c6-49e7-8472-975c924209e7","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":732,"tokensOut":31,"status":"success","timestamp":"2026-03-02T22:15:50.986Z"}
 {"id":"7779b28d-f1e2-496a-98b0-d230b5fc9610","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":1678,"tokensOut":59,"status":"success","timestamp":"2026-03-03T01:45:48.700Z"}
 {"id":"18a1211c-5dec-4497-9796-1c3c1730bc20","type":"chat","model":"deepseek/deepseek-chat-v3-0324","provider":"openrouter","latencyMs":5685,"tokensOut":131,"status":"success","timestamp":"2026-03-03T03:42:40.613Z"}
+{"id":"e0c72a7e-dc2f-4956-bc01-519010d643b1","type":"image","model":"auto","provider":"auto","latencyMs":1419,"status":"success","timestamp":"2026-03-29T16:57:18.342Z"}
+{"id":"aa898004-2769-4c71-bfdf-0bd9ead8817e","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":77,"tokensOut":4,"status":"success","timestamp":"2026-03-29T16:57:18.611Z"}
+{"id":"d439c5c9-8965-43b6-a611-6dd4949ebf72","type":"image","model":"auto","provider":"auto","latencyMs":1975,"status":"success","timestamp":"2026-03-31T17:10:32.914Z"}
+{"id":"1d586b42-82de-4eba-916b-8e20ebf9bc90","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":118,"tokensOut":4,"status":"success","timestamp":"2026-03-31T17:10:33.072Z"}
+{"id":"9846e2e2-6769-41e7-84ff-52e05dc66149","type":"image","model":"auto","provider":"auto","latencyMs":981,"status":"success","timestamp":"2026-03-31T20:10:10.176Z"}
+{"id":"93488ed1-488b-45f6-9fcb-5118d0fd5be1","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":41,"status":"error","error":"[vitest] No \"getHarnessSnapshot\" export is defined on the \"./contextService\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n","timestamp":"2026-03-31T20:10:10.243Z"}
+{"id":"d99399a5-8537-423f-ab6f-6fa40e6706d8","type":"image","model":"auto","provider":"auto","latencyMs":1078,"status":"success","timestamp":"2026-03-31T20:11:31.488Z"}
+{"id":"49b6b8b4-d6db-46de-afbb-7068315ecff3","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":78,"tokensOut":4,"status":"success","timestamp":"2026-03-31T20:11:31.606Z"}
+{"id":"75ac03ed-5410-4bb3-9104-c1a64ac83532","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":365682,"tokensOut":9,"status":"success","timestamp":"2026-03-31T20:29:37.616Z"}
+{"id":"4d70bca0-cb84-4bde-ab8c-e9ed12365226","type":"image","model":"auto","provider":"auto","latencyMs":891,"status":"success","timestamp":"2026-03-31T21:14:02.815Z"}
+{"id":"91752280-7105-4643-bf89-22c975246ba0","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":43,"tokensOut":4,"status":"success","timestamp":"2026-03-31T21:14:02.889Z"}
+{"id":"b1ab7667-9972-478c-a49d-9f1e89d8974f","type":"image","model":"auto","provider":"auto","latencyMs":1019,"status":"success","timestamp":"2026-03-31T21:20:04.584Z"}
+{"id":"0d0372fe-05e7-48ac-9d85-39eaf1d07b8e","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":46,"tokensOut":4,"status":"success","timestamp":"2026-03-31T21:20:04.647Z"}
+{"id":"b0c5327b-c39b-42d2-8e37-3b7b977b35fe","type":"image","model":"auto","provider":"auto","latencyMs":3055,"status":"success","timestamp":"2026-03-31T22:32:51.618Z"}
+{"id":"486e0a11-1b5a-4770-b3a2-d063d0bd782a","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":132,"tokensOut":4,"status":"success","timestamp":"2026-03-31T22:32:51.805Z"}
+{"id":"84052523-5052-4b9b-aa4a-f33b1cfec545","type":"image","model":"auto","provider":"auto","latencyMs":2890,"status":"success","timestamp":"2026-03-31T22:33:14.372Z"}
+{"id":"f212eb01-3c3b-4933-bb0e-34988d38edcb","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":218,"tokensOut":4,"status":"success","timestamp":"2026-03-31T22:33:14.656Z"}
+{"id":"2af98580-b927-4750-b51b-03d9af027a2d","type":"image","model":"auto","provider":"auto","latencyMs":2903,"status":"success","timestamp":"2026-03-31T22:35:31.289Z"}
+{"id":"8e7fc267-f508-4d7b-b32a-1051887bc168","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":215,"tokensOut":4,"status":"success","timestamp":"2026-03-31T22:35:31.549Z"}
+{"id":"3f12714f-278f-4a52-b849-1a6d41911579","type":"image","model":"auto","provider":"auto","latencyMs":1690,"status":"success","timestamp":"2026-03-31T22:38:15.626Z"}
+{"id":"0e3df848-fd69-413a-8179-e65779b7a478","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":49,"tokensOut":4,"status":"success","timestamp":"2026-03-31T22:38:15.711Z"}
+{"id":"fd80e37b-62b6-4ca0-92c7-d86b601b8398","type":"image","model":"auto","provider":"auto","latencyMs":2187,"status":"success","timestamp":"2026-03-31T22:49:45.875Z"}
+{"id":"c9e2520d-1cf9-4f52-98cf-3e48283a10d4","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":101,"tokensOut":4,"status":"success","timestamp":"2026-03-31T22:49:46.041Z"}
+{"id":"e3d2acf9-49f8-4723-9e96-6d56a6117046","type":"image","model":"auto","provider":"auto","latencyMs":3422,"status":"success","timestamp":"2026-03-31T22:53:17.025Z"}
+{"id":"382a5030-c856-4906-9e79-478cdd758b1a","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":206,"tokensOut":4,"status":"success","timestamp":"2026-03-31T22:53:17.353Z"}
+{"id":"d8c8519d-f3c6-408d-af50-60f2b0e10637","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":642,"tokensOut":4,"status":"success","timestamp":"2026-03-31T22:56:43.449Z"}
+{"id":"9533c385-ecdb-4f61-be05-800079205754","type":"image","model":"auto","provider":"auto","latencyMs":6746,"status":"success","timestamp":"2026-03-31T22:56:43.729Z"}
+{"id":"32e0234a-9750-49bf-8c88-1360f86faac2","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":108,"tokensOut":4,"status":"success","timestamp":"2026-03-31T23:03:06.050Z"}
+{"id":"185e26e5-2343-47bf-976f-2559a6198f88","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":86,"tokensOut":4,"status":"success","timestamp":"2026-03-31T23:03:57.369Z"}
+{"id":"e7cacc3c-13ea-4855-9df0-abfe217a04ef","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":38,"tokensOut":4,"status":"success","timestamp":"2026-03-31T23:04:57.073Z"}
+{"id":"0368cbdb-dce9-43ee-a4d6-19656df41530","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":120,"tokensOut":4,"status":"success","timestamp":"2026-03-31T23:05:50.523Z"}
+{"id":"414515b8-1bcb-41d4-800e-c68733007fa6","type":"image","model":"pollinations","provider":"pollinations","latencyMs":401,"status":"success","timestamp":"2026-03-31T23:06:59.675Z"}
+{"id":"6aa37018-2644-4528-8fce-9abf76cd6218","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":36,"tokensOut":4,"status":"success","timestamp":"2026-03-31T23:06:59.726Z"}
+{"id":"a47e7d78-55a7-44f6-98f5-d9604b6c874d","type":"image","model":"pollinations","provider":"pollinations","latencyMs":1037,"status":"success","timestamp":"2026-03-31T23:07:23.550Z"}
+{"id":"63cd0cff-ca02-4c19-bf43-297e96ba2fdd","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":83,"tokensOut":4,"status":"success","timestamp":"2026-03-31T23:07:23.664Z"}
+{"id":"11f91d7a-1c28-4185-b2dd-0edbf676c4e4","type":"image","model":"pollinations","provider":"pollinations","latencyMs":910,"status":"success","timestamp":"2026-03-31T23:10:35.348Z"}
+{"id":"e5252c5a-526e-49c1-9e3d-9f3074e1d717","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":121,"tokensOut":4,"status":"success","timestamp":"2026-03-31T23:10:35.504Z"}
+{"id":"717c43cb-38fa-469a-b131-559648074e52","type":"image","model":"pollinations","provider":"pollinations","latencyMs":906,"status":"success","timestamp":"2026-03-31T23:18:25.351Z"}
+{"id":"e3dd5e86-6648-4771-9453-63e73da1dd3c","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":49,"tokensOut":4,"status":"success","timestamp":"2026-03-31T23:18:25.439Z"}
+{"id":"ac0c3634-e0d2-4f74-bc31-c6059ea6a3ee","type":"image","model":"pollinations","provider":"pollinations","latencyMs":750,"status":"success","timestamp":"2026-04-01T01:00:49.037Z"}
+{"id":"20f85a52-2438-4d57-9fb5-371ce68a2e61","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":75,"tokensOut":4,"status":"success","timestamp":"2026-04-01T01:00:49.148Z"}
+{"id":"4cc8f9b3-59a9-4627-9971-4cc08979cd93","type":"image","model":"pollinations","provider":"pollinations","latencyMs":558,"status":"success","timestamp":"2026-04-01T01:02:08.617Z"}
+{"id":"e0a841b3-0e19-4d88-ad06-9a9549a13432","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":49,"tokensOut":4,"status":"success","timestamp":"2026-04-01T01:02:08.683Z"}
+{"id":"e31168fd-1b83-4427-9376-b04f6a175bca","type":"image","model":"pollinations","provider":"pollinations","latencyMs":577,"status":"success","timestamp":"2026-04-01T01:56:36.340Z"}
+{"id":"fb9060da-bf4b-47a8-936a-ce8d48a24da4","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":41,"tokensOut":4,"status":"success","timestamp":"2026-04-01T01:56:36.395Z"}
+{"id":"d0c0cba1-ed91-4d81-903c-8733c1739029","type":"image","model":"pollinations","provider":"pollinations","latencyMs":1124,"status":"success","timestamp":"2026-04-01T02:26:34.087Z"}
+{"id":"421a47a2-dbfe-407e-a1e2-81c8f4518105","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":62,"tokensOut":4,"status":"success","timestamp":"2026-04-01T02:26:34.178Z"}
+{"id":"564bd22c-d7d3-40f4-be25-8fda264d44de","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":100878,"tokensOut":9,"status":"success","timestamp":"2026-04-03T21:32:57.925Z"}
+{"id":"062ac795-3e94-427d-9694-bec15603733b","type":"chat","model":"qwen3-32b","provider":"dashscope","latencyMs":3239,"status":"error","error":"All providers failed. Last: model 'qwen2.5-coder:7b' not found","timestamp":"2026-04-03T21:33:06.267Z"}
+{"id":"17ea440a-e4f1-4582-8214-a0fb4b51a640","type":"chat","model":"qwen3-32b","provider":"dashscope","latencyMs":2663,"status":"error","error":"All providers failed. Last: model 'qwen2.5-coder:7b' not found","timestamp":"2026-04-03T21:33:10.022Z"}
+{"id":"431a48f9-97ef-4b15-a876-04b7d314266e","type":"chat","model":"qwen3-32b","provider":"dashscope","latencyMs":1178,"status":"error","error":"All providers failed. Last: model 'qwen2.5-coder:7b' not found","timestamp":"2026-04-03T21:33:13.256Z"}
+{"id":"bf7d6c21-84b6-4546-902f-f03119a3961d","type":"chat","model":"qwen3-coder:480b-cloud","provider":"ollama","latencyMs":2578,"status":"error","error":"All providers failed. Last: model 'qwen2.5-coder:7b' not found","timestamp":"2026-04-03T21:33:30.756Z"}
+{"id":"0fc26cc3-622a-4ab1-9e1d-402edef7f5f3","type":"chat","model":"qwen3-coder:480b-cloud","provider":"ollama","latencyMs":687,"status":"error","error":"All providers failed. Last: model 'qwen2.5-coder:7b' not found","timestamp":"2026-04-03T21:33:32.522Z"}
+{"id":"bd6c784b-d422-4054-afd7-c46a5498ebfd","type":"chat","model":"qwen3-coder:480b-cloud","provider":"ollama","latencyMs":711,"status":"error","error":"All providers failed. Last: model 'qwen2.5-coder:7b' not found","timestamp":"2026-04-03T21:33:35.266Z"}
+{"id":"e2079f1e-26ab-4cd6-b5a4-32210ade61f1","type":"chat","model":"llama-3.3-70b-versatile","provider":"openrouter","latencyMs":28289,"tokensOut":9,"status":"success","timestamp":"2026-04-04T02:44:12.001Z"}
+{"id":"46b4f67f-0cf7-4b1a-b792-d90b6a59b207","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":5106,"tokensOut":49,"status":"success","timestamp":"2026-04-04T02:52:48.226Z"}
+{"id":"0778728e-77db-4308-a56a-baeaebd10270","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":13060,"tokensOut":87,"status":"success","timestamp":"2026-04-04T03:19:21.514Z"}
+{"id":"ee46374d-5eb5-4ec6-9cd1-b59b5c50ff0c","type":"chat","model":"llama-3.3-70b-versatile","provider":"groq","latencyMs":1649,"tokensOut":9,"status":"success","timestamp":"2026-04-04T22:58:55.068Z"}

@@ -165,10 +165,9 @@ export const CustomSelect = ({
             exit={{ opacity: 0, y: dropDirection === 'down' ? -8 : 8, scale: 0.97 }}
             transition={{ type: 'spring', damping: 28, stiffness: 400 }}
             className={cn(
-              "absolute left-0 right-0 z-[300] bg-[#0a0a0f] border border-white/10 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.7)] overflow-hidden",
+              "absolute left-0 right-0 z-[300] bg-[#0a0a0f] border border-white/10 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.7)] overflow-hidden will-change-transform",
               dropDirection === 'down' ? "top-full mt-2" : "bottom-full mb-2"
             )}
-            style={{ willChange: 'transform' }}
           >
             {/* Search */}
             {searchable && (

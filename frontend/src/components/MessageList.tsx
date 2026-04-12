@@ -105,8 +105,8 @@ export const MessageList = ({ compact }: MessageListProps) => {
          <div className="max-w-4xl mx-auto flex items-center gap-3 px-6">
             <div className="flex gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-jb-accent/70 animate-bounce" />
-              <span className="w-1.5 h-1.5 rounded-full bg-jb-accent/50 animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-jb-accent/30 animate-bounce" style={{ animationDelay: '300ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-jb-accent/50 animate-bounce [animation-delay:150ms]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-jb-accent/30 animate-bounce [animation-delay:300ms]" />
             </div>
             <span className="text-[11px] font-bold text-slate-400">
               {activeModel} is thinking

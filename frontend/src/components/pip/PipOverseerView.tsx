@@ -113,7 +113,7 @@ export const PipOverseerView: React.FC<PipOverseerViewProps> = ({
     </div>
 
     {/* Chat with Overseer */}
-    <div className="border-t border-white/5 flex-shrink-0" style={{ height: '260px' }}>
+    <div className="border-t border-white/5 flex-shrink-0 h-[260px]">
       <ChatView compact />
     </div>
   </motion.div>

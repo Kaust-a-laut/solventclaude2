@@ -233,11 +233,7 @@ export const CollaborateArea = () => {
     <div className="flex-1 flex flex-col overflow-hidden relative">
       {/* Dot-grid texture overlay */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-[0.035] z-0"
-        style={{
-          backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
-          backgroundSize: '28px 28px',
-        }}
+        className="absolute inset-0 pointer-events-none opacity-[0.035] z-0 [background-image:radial-gradient(circle,white_1px,transparent_1px)] [background-size:28px_28px]"
       />
 
       {isIdle ? (
@@ -256,8 +252,7 @@ export const CollaborateArea = () => {
                   <Users className="text-jb-purple" size={22} />
                 </div>
                 <span
-                  className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-jb-purple"
-                  style={{ boxShadow: '0 0 6px rgba(157,91,210,0.8)' }}
+                  className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-jb-purple shadow-[0_0_6px_rgba(157,91,210,0.8)]"
                 />
               </div>
             </div>

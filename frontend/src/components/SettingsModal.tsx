@@ -184,8 +184,7 @@ export const SettingsModal = () => {
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        style={{ willChange: 'transform' }}
-        className="w-full max-w-7xl h-[92vh] bg-[#050508] border border-white/5 rounded-[40px] shadow-2xl relative overflow-hidden flex"
+        className="w-full max-w-7xl h-[92vh] bg-[#050508] border border-white/5 rounded-[40px] shadow-2xl relative overflow-hidden flex will-change-transform"
       >
         {/* ── Left Sidebar ─────────────────────────────────────────────────── */}
         <div className="w-64 border-r border-white/5 bg-white/[0.01] p-8 flex flex-col gap-6">

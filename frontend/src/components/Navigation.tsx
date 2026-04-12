@@ -72,10 +72,7 @@ export const Navigation = () => {
         {isActive && !isCollapsed && (
           <motion.div
             layoutId="navGlow"
-            className="absolute left-0 top-[20%] bottom-[40%] w-[3px] rounded-full opacity-90"
-            style={{
-              background: 'linear-gradient(180deg, transparent, rgba(60,113,247,0.8), rgba(157,91,210,0.8), rgba(251,146,60,0.6), transparent)',
-            }}
+            className="absolute left-0 top-[20%] bottom-[40%] w-[3px] rounded-full opacity-90 [background:linear-gradient(180deg,transparent,rgba(60,113,247,0.8),rgba(157,91,210,0.8),rgba(251,146,60,0.6),transparent)]"
           />
         )}
         {isActive && !isCollapsed && (
@@ -215,8 +212,7 @@ export const Navigation = () => {
                 animate={{ x: 0 }}
                 exit={{ x: -300 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                style={{ willChange: 'transform' }}
-                className="fixed top-0 left-0 bottom-0 w-[85%] max-w-[320px] bg-slate-950 z-[60] border-r border-white/10 shadow-2xl"
+                className="fixed top-0 left-0 bottom-0 w-[85%] max-w-[320px] bg-slate-950 z-[60] border-r border-white/10 shadow-2xl will-change-transform"
               >
                 {navContent}
               </motion.div>
