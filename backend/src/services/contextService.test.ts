@@ -44,11 +44,11 @@ describe('ContextService', () => {
     };
 
     const { messages: enriched } = await contextService.enrichContext(data);
-    const systemMessage = enriched[0].content;
+    const systemMessage = enriched[0]!.content;
 
     expect(systemMessage).toContain('[LIVE MISSION DIRECTIVES]');
     expect(systemMessage).toContain('User likes pizza.');
-    expect(enriched[enriched.length - 1].content).toBe('Hello');
+    expect(enriched[enriched.length - 1]!.content).toBe('Hello');
   });
 
   it('should include environment info', async () => {
@@ -65,11 +65,11 @@ describe('ContextService', () => {
     };
 
     const { messages: enriched } = await contextService.enrichContext(data);
-    const systemMessage = enriched[0].content;
+    const systemMessage = enriched[0]!.content;
 
     // Note: We need to update contextService.ts to actually include this info if we want this test to pass
     // For now I will just check that it's a system message
-    expect(enriched[0].role).toBe('system');
+    expect(enriched[0]!.role).toBe('system');
   });
 
   describe('Deduplication', () => {
