@@ -4,6 +4,7 @@ import type { OnMount } from '@monaco-editor/react';
 import type { editor as MonacoEditor } from 'monaco-editor';
 import { AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
+import type { ConsoleEntry, ElementInfo } from '../store/codingSlice';
 import { useShallow } from 'zustand/react/shallow';
 import { fetchWithRetry, getSecret } from '../lib/api-client';
 import { BASE_URL } from '../lib/config';
@@ -23,6 +24,7 @@ import { isImageFile } from './coding/editorUtils';
 import { EditorToolbar } from './coding/EditorToolbar';
 import { EditorContent } from './coding/EditorContent';
 import { PreviewPanel } from './coding/PreviewPanel';
+import { BRIDGE_SCRIPT } from '../lib/preview-bridge-script';
 
 export const CodingArea = () => {
   const {
@@ -101,6 +103,42 @@ export const CodingArea = () => {
     );
     return () => { offServerReady(); offError(); };
   }, [webContainer, addLog, setPreviewUrl]);
+
+  // Listen for preview events from iframe (console, DOM, clicks)
+  const { appendConsoleEntry, updatePreviewDom, setSelectedElement } = useAppStore();
+
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      const data = e.data;
+      if (!data || typeof data !== 'object' || !String(data.type).startsWith('solvent:')) return;
+
+      switch (data.type) {
+        case 'solvent:console':
+        case 'solvent:error':
+          appendConsoleEntry({
+            level: data.level || 'error',
+            message: data.message,
+            timestamp: data.timestamp,
+          });
+          break;
+        case 'solvent:dom-changed':
+          updatePreviewDom({ hash: data.hash, bodyHTML: data.bodyHTML });
+          break;
+        case 'solvent:click':
+          setSelectedElement({
+            tag: data.tag,
+            id: data.id,
+            classes: data.classes || [],
+            text: data.text || '',
+            dataAttrs: data.dataAttrs || {},
+            rect: data.rect || { x: 0, y: 0, width: 0, height: 0 },
+          });
+          break;
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, [appendConsoleEntry, updatePreviewDom, setSelectedElement]);
 
   const bootWebContainer = useCallback(async () => {
     if (isBootingRef.current) return;
@@ -271,6 +309,29 @@ export const CodingArea = () => {
     }
 
     await wc.mount(tree as Parameters<typeof wc.mount>[0]);
+
+    // Inject bridge script into index.html
+    try {
+      const indexContent = await wc.fs.readFile('index.html', 'utf-8');
+      if (indexContent && indexContent.includes('</head>')) {
+        const injected = indexContent.replace(
+          '</head>',
+          `<script>${BRIDGE_SCRIPT}</script></head>`
+        );
+        if (injected !== indexContent) {
+          await wc.fs.writeFile('index.html', injected);
+        }
+      } else if (indexContent && indexContent.includes('</body>')) {
+        const injected = indexContent.replace(
+          '</body>',
+          `<script>${BRIDGE_SCRIPT}</script></body>`
+        );
+        await wc.fs.writeFile('index.html', injected);
+      }
+    } catch {
+      // No index.html — non-HTML project, skip injection
+    }
+
     addLog(`[SYSTEM]: Synced ${synced} project files to sandbox.`);
   }, [currentProject, addLog]);
 
