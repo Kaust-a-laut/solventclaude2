@@ -162,6 +162,30 @@ export class ToolService {
           result = deleted ? `Deleted core memory key: ${key}` : `Key not found: ${key}`;
           break;
         }
+        case 'fetch_preview_source': {
+          const url = args.url as string;
+          if (!url || !url.startsWith('http')) {
+            result = { error: 'Invalid URL. Provide an http/https URL from the system prompt.' };
+            break;
+          }
+          try {
+            const response = await axios.get<string>(url, {
+              timeout: 10_000,
+              headers: { Accept: 'text/html' },
+              responseType: 'text',
+            });
+            const html = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
+            result = {
+              url,
+              html: html.length > 20_000 ? html.slice(0, 20_000) + '\n... (truncated)' : html,
+              length: html.length,
+            };
+          } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            result = { error: `Failed to fetch preview: ${msg}` };
+          }
+          break;
+        }
         default:
           throw new Error(`Unknown tool: ${toolName}`);
       }

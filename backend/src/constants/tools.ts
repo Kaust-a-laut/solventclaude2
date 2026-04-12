@@ -184,6 +184,17 @@ export const TOOL_DEFINITIONS = [
       required: ["key"]
     }
   },
+  {
+    name: "fetch_preview_source",
+    description: "Fetch the current HTML source of the running app preview to inspect its rendered structure and content. Use the preview URL provided in the system prompt.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        url: { type: "STRING", description: "The full preview URL (e.g. http://localhost:3000) — use the URL from the system prompt" }
+      },
+      required: ["url"]
+    }
+  },
   // --- Frontend-deferred tools (executed in the browser, not on the server) ---
   {
     name: "ide_open_file",
