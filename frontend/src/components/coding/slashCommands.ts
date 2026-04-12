@@ -13,6 +13,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { id: 'optimize', label: '/optimize', description: 'Performance optimization', systemInstruction: 'Optimize the provided code for performance. Explain the improvements.' },
   { id: 'docs',     label: '/docs',     description: 'Add JSDoc comments',       systemInstruction: 'Add clear, accurate JSDoc/inline comments to the provided code.' },
   { id: 'commit',   label: '/commit',   description: 'Generate commit message',  systemInstruction: 'Generate a conventional git commit message for the provided changes.' },
+  { id: 'project',  label: '/project',  description: 'Ask about project structure & files', systemInstruction: 'You have been given the full list of open project files. Help the user understand, navigate, or modify their project. When proposing changes use ide_show_diff.' },
 ];
 
 export interface ParsedCommand {
@@ -29,17 +30,42 @@ export function parseSlashCommand(input: string): ParsedCommand | null {
 export function buildSystemPrompt(
   filePath: string | null,
   fileContent: string | null,
-  selection: string | null
+  selection: string | null,
+  openFiles?: Array<{ path: string; content: string }>,
+  projectName?: string | null,
+  previewUrl?: string | null,
 ): string {
   const parts: string[] = [
     'You are a senior software engineer acting as a coding assistant.',
     'Respond with clear explanations and, when writing code, use code blocks.',
   ];
-  if (filePath && fileContent) {
+
+  if (projectName) {
+    parts.push(`\nProject: ${projectName}`);
+  }
+
+  if (previewUrl) {
+    parts.push(
+      `\nApp preview URL: ${previewUrl}`,
+      'The app is currently running at this URL. Call the `fetch_preview_source` tool with this URL to inspect its current HTML structure.'
+    );
+  }
+
+  if (openFiles && openFiles.length > 1) {
+    parts.push('\nOpen files in editor:');
+    for (const f of openFiles) {
+      const snippet = f.content.length > 4000
+        ? f.content.slice(0, 4000) + '\n... (truncated)'
+        : f.content;
+      parts.push(`\n### ${f.path}\n\`\`\`\n${snippet}\n\`\`\``);
+    }
+  } else if (filePath && fileContent) {
     parts.push(`\nActive file: ${filePath}\n\`\`\`\n${fileContent}\n\`\`\``);
   }
+
   if (selection) {
     parts.push(`\nSelected code:\n\`\`\`\n${selection}\n\`\`\``);
   }
+
   return parts.join('\n');
 }

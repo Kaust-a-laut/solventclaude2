@@ -36,6 +36,51 @@ describe('buildSystemPrompt', () => {
     const prompt = buildSystemPrompt(null, null, null);
     expect(prompt).not.toContain('Active file:');
   });
+
+  it('includes base instructions always', () => {
+    const result = buildSystemPrompt(null, null, null);
+    expect(result).toContain('senior software engineer');
+  });
+
+  it('includes project name when provided', () => {
+    const result = buildSystemPrompt(null, null, null, undefined, 'my-app', null);
+    expect(result).toContain('Project: my-app');
+  });
+
+  it('includes preview URL and fetch hint when provided', () => {
+    const result = buildSystemPrompt(null, null, null, undefined, null, 'http://localhost:3000');
+    expect(result).toContain('http://localhost:3000');
+    expect(result).toContain('fetch_preview_source');
+  });
+
+  it('includes active file when no all-files list', () => {
+    const result = buildSystemPrompt('src/App.tsx', 'const App = () => null;', null);
+    expect(result).toContain('src/App.tsx');
+    expect(result).toContain('const App = () => null;');
+  });
+
+  it('includes all open files when list provided with 2+ entries', () => {
+    const files = [
+      { path: 'src/App.tsx', content: 'const App = 1;' },
+      { path: 'src/utils.ts', content: 'export const add = 2;' },
+    ];
+    const result = buildSystemPrompt(null, null, null, files);
+    expect(result).toContain('src/App.tsx');
+    expect(result).toContain('const App = 1;');
+    expect(result).toContain('src/utils.ts');
+    expect(result).toContain('export const add = 2;');
+  });
+
+  it('truncates file content beyond 4000 chars', () => {
+    const longContent = 'x'.repeat(5000);
+    const files = [
+      { path: 'big.ts', content: longContent },
+      { path: 'other.ts', content: 'short' },
+    ];
+    const result = buildSystemPrompt(null, null, null, files);
+    expect(result).toContain('truncated');
+    expect(result.length).toBeLessThan(files[0].content.length + 500);
+  });
 });
 
 describe('SLASH_COMMANDS', () => {
