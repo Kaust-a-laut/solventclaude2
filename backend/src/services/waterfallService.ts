@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { AIProviderFactory } from './aiProviderFactory';
 import { WATERFALL_CONFIG, WATERFALL_DEFAULT_SELECTION, capMaxTokens } from '../constants/models';
 import type { WaterfallModelSelection, WaterfallPhaseConfig, WaterfallPhaseSelection } from '../constants/models';
+import { APP_CONSTANTS } from '../config';
 import { AppError } from '../utils/AppError';
 import { ResourceEstimator, ResourceEstimate } from '../utils/resourceEstimator';
 import { SolventError, SolventErrorCode } from '../utils/errors';
@@ -82,7 +83,7 @@ export class WaterfallService {
     provider: unknown,
     prompt: string | Array<{ role: 'user' | 'assistant' | 'system'; content: string }>,
     options: Record<string, unknown>,
-    { maxRetries = 3, baseDelay = 1000, label = 'unknown', signal }: { maxRetries?: number; baseDelay?: number; label?: string; signal?: AbortSignal } = {},
+    { maxRetries = APP_CONSTANTS.WATERFALL.MAX_RETRIES, baseDelay = 1000, label = 'unknown', signal }: { maxRetries?: number; baseDelay?: number; label?: string; signal?: AbortSignal } = {},
   ): Promise<string> {
     type CompleteFn = (
       p: typeof prompt,
@@ -144,7 +145,7 @@ export class WaterfallService {
   async *runAgenticWaterfallGenerator(
     prompt: string,
     globalProvider: string = 'auto',
-    maxRetries: number = 2,
+    maxRetries: number = APP_CONSTANTS.WATERFALL.MAX_RETRIES,
     notepadContent?: string,
     openFiles?: OpenFileContext[],
     signal?: AbortSignal,
@@ -248,8 +249,8 @@ ${fullPrompt}`;
     const history = [{ executor, reviewer }];
     const decisionLog: string[] = [];
 
-    // Decay threshold: 80 → 72 → 65 so borderline scores don't loop forever
-    const passThreshold = () => Math.max(65, 80 - (attempts * 8));
+    // Decay threshold: SCORE_THRESHOLD → -8% per attempt, floor at 65
+    const passThreshold = () => Math.max(65, APP_CONSTANTS.WATERFALL.SCORE_THRESHOLD - (attempts * 8));
     const needsRetry = () => (reviewer.score ?? 0) < passThreshold() || reviewer._compilationPassed === false;
 
     while (needsRetry() && attempts < maxRetries) {
@@ -330,7 +331,7 @@ ${fullPrompt}`;
 
   // Wrapper for backward compatibility (AIController consumes this)
   // We will refactor AIController next to use the generator directly for streaming
-  async runAgenticWaterfall(prompt: string, globalProvider: string = 'auto', maxRetries: number = 2, onProgress?: (phase: string, data?: WaterfallProgressData) => void, notepadContent?: string, openFiles?: OpenFileContext[], signal?: AbortSignal, forceProceed: boolean = false, resumePlanner?: PlannerOutput | null, modelSelection?: WaterfallModelSelection, apiKeys?: Record<string, string>) {
+  async runAgenticWaterfall(prompt: string, globalProvider: string = 'auto', maxRetries: number = APP_CONSTANTS.WATERFALL.MAX_RETRIES, onProgress?: (phase: string, data?: WaterfallProgressData) => void, notepadContent?: string, openFiles?: OpenFileContext[], signal?: AbortSignal, forceProceed: boolean = false, resumePlanner?: PlannerOutput | null, modelSelection?: WaterfallModelSelection, apiKeys?: Record<string, string>) {
     const generator = this.runAgenticWaterfallGenerator(prompt, globalProvider, maxRetries, notepadContent, openFiles, signal, forceProceed, resumePlanner, modelSelection || WATERFALL_DEFAULT_SELECTION, apiKeys);
     
     while (true) {
