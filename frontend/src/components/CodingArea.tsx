@@ -379,10 +379,9 @@ export const CodingArea = () => {
         </div>
       )}
 
-      {/* ── Center: Editor + Terminal ───────────────────────────────── */}
-      {editorVisible && (
-      <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
-        {/* Toolbar */}
+      {/* ── Center: Toolbar always visible; editor content collapses ── */}
+      <div className={editorVisible ? 'flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden' : 'shrink-0 flex flex-col min-h-0 overflow-hidden'}>
+        {/* Toolbar — always rendered so the toggle is always reachable */}
         <EditorToolbar
           editorVisible={editorVisible}
           setEditorVisible={setEditorVisible}
@@ -410,65 +409,63 @@ export const CodingArea = () => {
           }}
         />
 
-        {/* Tab bar */}
-        <EditorTabBar
-          openFiles={openFiles}
-          activeFile={activeFile}
-          onTabClick={setActiveFile}
-          onTabClose={closeFile}
-        />
+        {/* Editor content — hidden when editorVisible is false */}
+        {editorVisible && (
+          <>
+            <EditorTabBar
+              openFiles={openFiles}
+              activeFile={activeFile}
+              onTabClick={setActiveFile}
+              onTabClose={closeFile}
+            />
 
-        {/* Diff banner */}
-        {pendingDiff && (
-          <DiffBanner
-            description={pendingDiff.description}
-            onApplyAll={handleApplyAll}
-            onReject={clearPendingDiff}
-          />
-        )}
-
-        {/* Editor content */}
-        <EditorContent
-          pendingDiff={pendingDiff}
-          currentFile={currentFile ?? null}
-          openFiles={openFiles}
-          activeFile={activeFile}
-          activeTier={activeTier}
-          editorContainerRef={editorContainerRef}
-          editorRef={editorRef}
-          onEditorMount={handleEditorMount}
-          onInlineCommand={handleInlineCommand}
-          onFilesChange={setOpenFiles}
-        />
-
-        {/* Terminal (collapsible) */}
-        {terminalVisible && (
-          <CodingTerminal
-            lines={terminalLines}
-            onClear={clearTerminalLines}
-          />
-        )}
-
-        {/* Terminal toggle pill — Fix 3: aria-label + sr-only error span */}
-        {!terminalVisible && (
-          <button
-            type="button"
-            onClick={() => setTerminalVisible(true)}
-            aria-label="Show terminal"
-            className="mx-4 mb-2 mt-1 flex items-center gap-2 px-3 py-1 rounded-lg border border-white/[0.04] text-white/20 hover:text-white/50 text-[11px] font-mono hover:bg-white/5 transition-colors shrink-0"
-          >
-            <span>▸ CONSOLE</span>
-            {terminalLines.some((l) => l.startsWith('[ERROR]')) && (
-              <>
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" aria-hidden="true" />
-                <span className="sr-only">Errors present</span>
-              </>
+            {pendingDiff && (
+              <DiffBanner
+                description={pendingDiff.description}
+                onApplyAll={handleApplyAll}
+                onReject={clearPendingDiff}
+              />
             )}
-          </button>
-        )}
 
+            <EditorContent
+              pendingDiff={pendingDiff}
+              currentFile={currentFile ?? null}
+              openFiles={openFiles}
+              activeFile={activeFile}
+              activeTier={activeTier}
+              editorContainerRef={editorContainerRef}
+              editorRef={editorRef}
+              onEditorMount={handleEditorMount}
+              onInlineCommand={handleInlineCommand}
+              onFilesChange={setOpenFiles}
+            />
+
+            {terminalVisible && (
+              <CodingTerminal
+                lines={terminalLines}
+                onClear={clearTerminalLines}
+              />
+            )}
+
+            {!terminalVisible && (
+              <button
+                type="button"
+                onClick={() => setTerminalVisible(true)}
+                aria-label="Show terminal"
+                className="mx-4 mb-2 mt-1 flex items-center gap-2 px-3 py-1 rounded-lg border border-white/[0.04] text-white/20 hover:text-white/50 text-[11px] font-mono hover:bg-white/5 transition-colors shrink-0"
+              >
+                <span>▸ CONSOLE</span>
+                {terminalLines.some((l) => l.startsWith('[ERROR]')) && (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500" aria-hidden="true" />
+                    <span className="sr-only">Errors present</span>
+                  </>
+                )}
+              </button>
+            )}
+          </>
+        )}
       </div>
-      )} {/* end editorVisible */}
 
       {/* ── Right: Preview ─────────────────────────────────────────── */}
       <AnimatePresence>
