@@ -69,6 +69,23 @@ export interface PendingDiff {
   description: string;
 }
 
+// --- Preview Runtime State Types (Phase 2) ---
+
+export interface ConsoleEntry {
+  level: 'log' | 'warn' | 'error';
+  message: string;
+  timestamp: number;
+}
+
+export interface ElementInfo {
+  tag: string;
+  id?: string;
+  classes: string[];
+  text: string;
+  dataAttrs: Record<string, string>;
+  rect: { x: number; y: number; width: number; height: number };
+}
+
 export interface CodingSlice {
   pendingDiff: PendingDiff | null;
   agentMessages: AgentMessage[];
@@ -95,6 +112,20 @@ export interface CodingSlice {
   previewSnapshot: string | null;
   setPreviewSnapshot: (snapshot: string | null) => void;
 
+  // Preview runtime state (Phase 2)
+  previewConsoleBuffer: ConsoleEntry[];      // ring buffer, max 200
+  previewBodyHash: string | null;
+  previewBodyHTML: string | null;
+  previewDomChanged: boolean;
+  previewSelectedElement: ElementInfo | null;
+  previewScreenshotUrl: string | null;
+
+  appendConsoleEntry: (entry: ConsoleEntry) => void;
+  updatePreviewDom: (data: { hash: string; bodyHTML: string }) => void;
+  setSelectedElement: (element: ElementInfo | null) => void;
+  setPreviewScreenshotUrl: (url: string | null) => void;
+  resetDomChanged: () => void;
+
   setPendingDiff: (diff: PendingDiff) => void;
   clearPendingDiff: () => void;
   addAgentMessage: (msg: AgentMessage) => void;
@@ -113,7 +144,10 @@ export interface CodingSlice {
 
 const MAX_TERMINAL_LINES = 1000;
 
-export const createCodingSlice: StateCreator<AppState, [], [], CodingSlice> = (set) => ({
+export const createCodingSlice: StateCreator<AppState, [], [], CodingSlice> = (set) => {
+  const MAX_CONSOLE_BUFFER = 200;
+
+  return ({
   pendingDiff: null,
   agentMessages: [],
   panelWidths: { fileTree: 240, chat: 360 },
@@ -141,6 +175,13 @@ export const createCodingSlice: StateCreator<AppState, [], [], CodingSlice> = (s
   previewSnapshot: null,
   setPreviewSnapshot: (previewSnapshot) => set({ previewSnapshot }),
 
+  previewConsoleBuffer: [],
+  previewBodyHash: null,
+  previewBodyHTML: null,
+  previewDomChanged: false,
+  previewSelectedElement: null,
+  previewScreenshotUrl: null,
+
   setPendingDiff: (diff) => set({ pendingDiff: diff }),
   clearPendingDiff: () => set({ pendingDiff: null }),
   addAgentMessage: (msg) => set((state) => ({ agentMessages: [...state.agentMessages, msg] })),
@@ -159,6 +200,19 @@ export const createCodingSlice: StateCreator<AppState, [], [], CodingSlice> = (s
   setFileTreeVisible: (fileTreeVisible) => set({ fileTreeVisible }),
   setChatPanelVisible: (chatPanelVisible) => set({ chatPanelVisible }),
   setTerminalVisible: (terminalVisible) => set({ terminalVisible }),
+
+  appendConsoleEntry: (entry) => set((state) => {
+    const buffer = [...state.previewConsoleBuffer, entry];
+    return { previewConsoleBuffer: buffer.slice(-MAX_CONSOLE_BUFFER) };
+  }),
+  updatePreviewDom: (data) => set({
+    previewBodyHash: data.hash,
+    previewBodyHTML: data.bodyHTML.slice(0, 50000),
+    previewDomChanged: true,
+  }),
+  setSelectedElement: (element) => set({ previewSelectedElement: element }),
+  setPreviewScreenshotUrl: (url) => set({ previewScreenshotUrl: url }),
+  resetDomChanged: () => set({ previewDomChanged: false }),
 
   createNewProject: (name) => {
     const now = Date.now();
@@ -225,4 +279,5 @@ export const createCodingSlice: StateCreator<AppState, [], [], CodingSlice> = (s
   closeProject: () => {
     set({ currentProject: null, openFiles: [], activeFile: null });
   },
-});
+  });
+};
