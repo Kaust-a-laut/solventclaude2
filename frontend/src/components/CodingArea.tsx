@@ -462,16 +462,17 @@ export const CodingArea = () => {
           </button>
         )}
 
-        {/* Preview panel */}
-        <AnimatePresence>
-          {showPreview && iframeUrl && (
-            <PreviewPanel
-              iframeUrl={iframeUrl}
-              onClose={() => setShowPreview(false)}
-            />
-          )}
-        </AnimatePresence>
       </div>
+
+      {/* ── Right: Preview ─────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showPreview && iframeUrl && (
+          <PreviewPanel
+            iframeUrl={iframeUrl}
+            onClose={() => setShowPreview(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ── Right: Agent Chat ───────────────────────────────────────── */}
       {chatPanelVisible && (

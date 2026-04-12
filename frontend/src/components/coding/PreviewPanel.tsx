@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Globe, X } from 'lucide-react';
+import { Globe, X, RefreshCw } from 'lucide-react';
 
 interface PreviewPanelProps {
   iframeUrl: string;
@@ -8,21 +8,46 @@ interface PreviewPanelProps {
 }
 
 export const PreviewPanel: React.FC<PreviewPanelProps> = ({ iframeUrl, onClose }) => {
+  const iframeRef = React.useRef<HTMLIFrameElement>(null);
+
   return (
     <motion.div
-      initial={{ height: 0, opacity: 0 }}
-      animate={{ height: '40%', opacity: 1 }}
-      exit={{ height: 0, opacity: 0 }}
-      className="border-t border-white/[0.04] flex flex-col bg-white overflow-clip shrink-0"
+      initial={{ opacity: 0, x: 24 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 24 }}
+      transition={{ duration: 0.15, ease: 'easeOut' }}
+      className="shrink-0 flex flex-col border-l border-white/[0.04] overflow-clip bg-white"
+      style={{ width: '45%', minWidth: 360 }}
     >
-      <div className="h-8 bg-slate-100 flex items-center px-3 gap-2 shrink-0">
-        <Globe size={12} className="text-slate-400" aria-hidden="true" />
-        <span className="text-[11px] font-mono text-slate-300 flex-1 truncate">{iframeUrl}</span>
-        <button type="button" onClick={onClose} aria-label="Close preview">
-          <X size={14} className="text-slate-400 cursor-pointer" aria-hidden="true" />
+      {/* Browser chrome */}
+      <div className="h-9 bg-[#0d0d18] flex items-center px-3 gap-2 shrink-0 border-b border-white/[0.04]">
+        <Globe size={12} className="text-white/30 shrink-0" aria-hidden="true" />
+        <span className="text-[11px] font-mono text-white/40 flex-1 truncate min-w-0">{iframeUrl}</span>
+        <button
+          type="button"
+          onClick={() => iframeRef.current?.contentWindow?.location.reload()}
+          className="p-1 hover:bg-white/10 rounded text-white/30 hover:text-white/60 transition-colors shrink-0"
+          aria-label="Reload preview"
+        >
+          <RefreshCw size={11} />
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-1 hover:bg-white/10 rounded text-white/30 hover:text-white/60 transition-colors shrink-0"
+          aria-label="Close preview"
+        >
+          <X size={11} />
         </button>
       </div>
-      <iframe src={iframeUrl} className="flex-1 border-none" title="Preview" />
+
+      {/* Preview iframe — fills remaining height */}
+      <iframe
+        ref={iframeRef}
+        src={iframeUrl}
+        className="flex-1 border-none w-full h-full"
+        title="App preview"
+      />
     </motion.div>
   );
 };
