@@ -112,11 +112,13 @@ export const ImportFileButton: React.FC<ImportFileButtonProps> = ({ onImported }
             : file.webkitRelativePath;
           if (!stripped) return; // skip if path is just the root folder itself
 
-          // For scratchpad projects the backend resolves paths against rootDir,
-          // so prefix with the project name to land inside the project folder.
-          const writePath = currentProject?.type === 'scratchpad'
-            ? `${currentProject.name}/${stripped}`
-            : stripped;
+          // For scratchpad projects the backend resolves paths relative to the
+          // projects directory, so prefix with the project name so files land at
+          // projects/{projectName}/{stripped} instead of projects/{stripped}.
+          const writePath =
+            currentProject !== null && currentProject.type === 'scratchpad'
+              ? `${currentProject.name}/${stripped}`
+              : stripped;
 
           const content = await readFileAsText(file);
           await fetchWithRetry(`${BASE_URL}/api/files/write`, {
