@@ -149,7 +149,11 @@ export const ImportFileButton: React.FC<ImportFileButtonProps> = ({ onImported }
     if (!pendingFile || isSubmittingRef.current) return;
     isSubmittingRef.current = true;
 
-    const filePath = folder === '.' ? pendingFile.name : `${folder}/${pendingFile.name}`;
+    const relativePath = folder === '.' ? pendingFile.name : `${folder}/${pendingFile.name}`;
+    const filePath =
+      currentProject !== null && currentProject.type === 'scratchpad'
+        ? `${currentProject.name}/${relativePath}`
+        : relativePath;
     const { name, content } = pendingFile;
     setPendingFile(null);
 
