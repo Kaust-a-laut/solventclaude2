@@ -35,6 +35,7 @@ export function buildSystemPrompt(
   projectName?: string | null,
   previewUrl?: string | null,
   previewSelectedElement?: { tag: string; classes: string[]; text: string } | null,
+  tier?: 'full-agentic' | 'code-only',
 ): string {
   const parts: string[] = [
     'You are a senior software engineer acting as a coding assistant.',
@@ -75,6 +76,20 @@ export function buildSystemPrompt(
       `\nSelected element: <${tag}${classStr ? ' class="' + classStr + '"' : ''}>${text}</${tag}>`,
       `The user has selected this element from the preview. Call get_selected_element() to see its full details.`
     );
+  }
+
+  if (tier === 'full-agentic') {
+    parts.push(`
+When a task is self-contained, file-scoped, and doesn't require reasoning about broader system state,
+use the <delegate-candidate> format to delegate to a code-tier model:
+
+<delegate-candidate>
+  <task>Brief description of the task</task>
+  <files>src/components/FileName.tsx</files>
+  <context>Relevant context for the code-tier model</context>
+</delegate-candidate>
+
+Use this for boilerplate, UI scaffolding, and isolated component changes.`);
   }
 
   return parts.join('\n');

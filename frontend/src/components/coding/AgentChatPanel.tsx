@@ -20,6 +20,7 @@ import {
 } from './slashCommands';
 import { buildPreviewRuntimeBlock } from './PreviewRuntimeSummary';
 import { ClickToEditPill } from './ClickToEditPill';
+import { parseDelegateCandidate, DelegateCandidateCard } from './DelegateCandidateCard';
 
 // Extracts fenced code blocks from AI response text
 function extractCodeBlocks(text: string): { cleanText: string; blocks: CodeSuggestion[] } {
@@ -210,6 +211,7 @@ export const AgentChatPanel: React.FC = () => {
         currentProject?.name ?? null,
         previewUrl,
         previewSelectedElement ? { tag: previewSelectedElement.tag, classes: previewSelectedElement.classes, text: previewSelectedElement.text } : null,
+        tier,
       );
 
       // Append preview HTML snapshot if user has captured one
@@ -462,6 +464,20 @@ export const AgentChatPanel: React.FC = () => {
               );
             }
           }
+
+          // Check for delegate candidate
+          const delegate = parseDelegateCandidate(part);
+          if (delegate) {
+            return (
+              <DelegateCandidateCard
+                key={`delegate-${i}`}
+                candidate={delegate}
+                onSend={() => {/* placeholder for now */}}
+                onDismiss={() => {/* placeholder for now */}}
+              />
+            );
+          }
+
           return part ? (
             <p key={i} className="text-[12px] leading-relaxed text-slate-300 whitespace-pre-wrap">{part}</p>
           ) : null;

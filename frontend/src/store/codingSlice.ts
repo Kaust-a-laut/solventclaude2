@@ -126,6 +126,10 @@ export interface CodingSlice {
   setPreviewScreenshotUrl: (url: string | null) => void;
   resetDomChanged: () => void;
 
+  // Preferred code-tier model for delegation
+  preferredCodeModel: string | null;
+  setPreferredCodeModel: (model: string) => void;
+
   setPendingDiff: (diff: PendingDiff) => void;
   clearPendingDiff: () => void;
   addAgentMessage: (msg: AgentMessage) => void;
@@ -213,6 +217,9 @@ export const createCodingSlice: StateCreator<AppState, [], [], CodingSlice> = (s
   setSelectedElement: (element) => set({ previewSelectedElement: element }),
   setPreviewScreenshotUrl: (url) => set({ previewScreenshotUrl: url }),
   resetDomChanged: () => set({ previewDomChanged: false }),
+
+  preferredCodeModel: null,
+  setPreferredCodeModel: (preferredCodeModel) => set({ preferredCodeModel }),
 
   createNewProject: (name) => {
     const now = Date.now();
