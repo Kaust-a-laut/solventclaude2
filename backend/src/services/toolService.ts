@@ -78,6 +78,11 @@ export class ToolService {
    *   must NOT set this flag to avoid consuming Overseer budget slots.
    */
   async executeTool(toolName: string, args: Record<string, unknown>, fromOverseer: boolean = false) {
+    // Browser tools are handled via SSE round-trip in baseOpenAIService
+    if (toolName === 'capture_screenshot') {
+      throw new Error('BROWSER_TOOL:capture_screenshot');
+    }
+
     const txId = await transactionService.logStart(toolName, args);
     logger.info(`[ToolService] Executing ${toolName}... (TX: ${txId})`, args);
     

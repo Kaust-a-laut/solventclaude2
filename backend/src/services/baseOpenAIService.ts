@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { randomUUID } from 'crypto';
 import { AIProvider, ChatMessage, CompletionOptions } from '../types/ai';
 import { toolService } from './toolService';
 import { getOpenAITools } from '../constants/tools';
@@ -226,6 +227,34 @@ export abstract class BaseOpenAIService implements AIProvider {
             });
           } catch (toolError: unknown) {
             const toolErr = toolError as Error;
+
+            // Check if this is a browser-tool round-trip
+            if (toolErr.message.startsWith('BROWSER_TOOL:')) {
+              const browserToolName = toolErr.message.split(':')[1]!;
+              const browserCallId = randomUUID();
+
+              // Emit browser-tool event
+              onEvent({
+                type: 'browser-tool',
+                tool: browserToolName,
+                callId: browserCallId,
+              } as AgentEvent);
+
+              // Wait for result from POST /api/preview/tool-result
+              const { createPendingCall } = await import('../routes/previewRoutes');
+              const result = await createPendingCall(browserCallId);
+
+              onEvent({ type: 'tool_result', tool: browserToolName, result, iteration, callId });
+              currentMessages.push({
+                role: "tool",
+                tool_call_id: callId,
+                name: browserToolName,
+                content: JSON.stringify(result)
+              });
+              iteration++;
+              continue; // Continue the loop with the result
+            }
+
             logger.error(`[${this.name}] Tool execution failed (${name}): ${toolErr.message}`);
             onEvent({ type: 'tool_error', tool: name, error: toolErr.message, iteration, callId });
             currentMessages.push({
