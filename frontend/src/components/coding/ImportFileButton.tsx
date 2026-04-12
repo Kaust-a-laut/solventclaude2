@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Upload, FolderInput, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Upload, FolderInput, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { fetchWithRetry } from '../../lib/api-client';
 import { BASE_URL } from '../../lib/config';
@@ -63,6 +63,7 @@ export const ImportFileButton: React.FC<ImportFileButtonProps> = ({ onImported }
   const [toast, setToast] = useState<ToastState | null>(null);
   const [folderToast, setFolderToast] = useState<FolderToastState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [folderUploading, setFolderUploading] = useState<{ name: string; total: number } | null>(null);
 
   // Abort any in-progress FileReader on unmount
   useEffect(() => () => { readerRef.current?.abort(); }, []);
@@ -82,11 +83,12 @@ export const ImportFileButton: React.FC<ImportFileButtonProps> = ({ onImported }
   };
 
   const handleFolderChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawFiles = e.target.files;
+    // Convert to plain Array BEFORE clearing — clearing the input mutates the
+    // live FileList in-place, so rawFiles.length would always be 0 otherwise.
+    const files = Array.from(e.target.files ?? []) as WebkitFile[];
     e.target.value = '';
-    if (!rawFiles || rawFiles.length === 0) return;
+    if (files.length === 0) return;
 
-    const files = Array.from(rawFiles) as WebkitFile[];
     // webkitRelativePath = "folderName/sub/file.ts" — strip the root folder prefix
     const rootPrefix = files[0]?.webkitRelativePath.split('/')[0] ?? '';
     const textFiles = files.filter(f => isTextFile(f.name));
@@ -98,6 +100,7 @@ export const ImportFileButton: React.FC<ImportFileButtonProps> = ({ onImported }
 
     isSubmittingRef.current = true;
     setError(null);
+    setFolderUploading({ name: rootPrefix || 'folder', total: textFiles.length });
     try {
       const results = await Promise.allSettled(
         textFiles.map(async (file) => {
@@ -128,6 +131,7 @@ export const ImportFileButton: React.FC<ImportFileButtonProps> = ({ onImported }
       setError(err instanceof Error ? err.message : 'Folder import failed');
     } finally {
       isSubmittingRef.current = false;
+      setFolderUploading(null);
     }
   };
 
@@ -187,11 +191,12 @@ export const ImportFileButton: React.FC<ImportFileButtonProps> = ({ onImported }
       <button
         type="button"
         onClick={() => { setError(null); folderInputRef.current?.click(); }}
-        className={cn('p-1 hover:bg-white/10 rounded text-white/30 hover:text-white/60 transition-colors')}
+        disabled={!!folderUploading}
+        className={cn('p-1 hover:bg-white/10 rounded text-white/30 hover:text-white/60 transition-colors', folderUploading && 'opacity-60 cursor-not-allowed')}
         title="Import folder to project"
         aria-label="Import folder to project"
       >
-        <FolderInput size={11} />
+        {folderUploading ? <Loader2 size={11} className="animate-spin text-indigo-400" /> : <FolderInput size={11} />}
       </button>
 
       {/* Folder picker modal */}
@@ -236,6 +241,27 @@ export const ImportFileButton: React.FC<ImportFileButtonProps> = ({ onImported }
             fileContent={toast.fileContent}
             onDismiss={() => setToast(null)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Folder uploading progress toast */}
+      <AnimatePresence>
+        {folderUploading && (
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.97 }}
+            transition={{ duration: 0.18 }}
+            className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl border border-indigo-500/20 bg-[#0d0d18] shadow-2xl max-w-sm"
+          >
+            <Loader2 size={14} className="text-indigo-400 shrink-0 animate-spin" />
+            <p className="flex-1 min-w-0 text-[11px] text-white/70">
+              Uploading{' '}
+              <span className="font-mono text-white">"{folderUploading.name}"</span>
+              {' '}—{' '}
+              <span className="text-indigo-400">{folderUploading.total} file{folderUploading.total !== 1 ? 's' : ''}…</span>
+            </p>
+          </motion.div>
         )}
       </AnimatePresence>
 
