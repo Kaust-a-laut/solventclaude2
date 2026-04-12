@@ -142,11 +142,16 @@ router.get('/list', async (req, res) => {
       return res.status(500).json({ error: 'No permitted roots configured' });
     }
     let targetDir = root;
+    let projectBase = '';
     if (req.query.project) {
-      targetDir = path.join(root, req.query.project as string);
+      const projectName = req.query.project as string;
+      targetDir = path.join(root, projectName);
+      projectBase = projectName;
       await fs.mkdir(targetDir, { recursive: true });
     }
-    const tree = await getFileTree(targetDir);
+    // Pass projectBase so returned paths include the project folder prefix
+    // (e.g. "myApp/src/index.ts" not just "src/index.ts"), keeping list/read/write consistent.
+    const tree = await getFileTree(targetDir, projectBase);
     res.json(tree);
   } catch (error) {
     res.status(500).json({ error: 'Failed to list files' });
@@ -258,15 +263,21 @@ router.get('/read', async (req, res) => {
 
 router.post('/write', async (req, res) => {
   const { path: filePath, content } = req.body;
+  console.log('[file/write] Received:', filePath);
   if (!filePath) return res.status(400).json({ error: 'Path required' });
   const root = permittedRoots[0];
+  console.log('[file/write] Root:', root);
   if (!root) return res.status(500).json({ error: 'No permitted roots configured' });
   try {
     const fullPath = await getSecurePath(filePath, root);
+    console.log('[file/write] Full path:', fullPath);
     await fs.mkdir(path.dirname(fullPath), { recursive: true });
+    console.log('[file/write] Dir created, writing file...');
     await fs.writeFile(fullPath, content);
+    console.log('[file/write] Success');
     res.json({ status: 'success' });
   } catch (error: unknown) {
+    console.error('[file/write] Error:', error);
     const err = error as { message?: string };
     if (err.message?.includes('Access denied')) {
       return res.status(403).json({ error: 'Access denied' });
