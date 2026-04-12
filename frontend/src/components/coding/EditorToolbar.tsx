@@ -1,11 +1,13 @@
 import React from 'react';
-import { Save, Play, Loader2, Box, Terminal, Plus, FolderOpen } from 'lucide-react';
+import { Save, Play, Loader2, Box, Terminal, Plus, FolderOpen, PanelLeftClose } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface EditorToolbarProps {
   fileTreeVisible: boolean;
   chatPanelVisible: boolean;
   terminalVisible: boolean;
+  editorVisible: boolean;
+  setEditorVisible: (v: boolean) => void;
   setFileTreeVisible: (v: boolean) => void;
   setTerminalVisible: (v: boolean) => void;
   setChatPanelVisible: (v: boolean) => void;
@@ -22,6 +24,8 @@ interface EditorToolbarProps {
 }
 
 export const EditorToolbar: React.FC<EditorToolbarProps> = ({
+  editorVisible,
+  setEditorVisible,
   fileTreeVisible,
   chatPanelVisible,
   terminalVisible,
@@ -151,6 +155,15 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
         aria-label="Toggle terminal"
       >
         <Terminal size={14} aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        onClick={() => setEditorVisible(!editorVisible)}
+        className="p-1.5 rounded-lg text-white/30 hover:text-white/60 transition-colors"
+        title="Hide editor (⌘E)"
+        aria-label="Hide editor"
+      >
+        <PanelLeftClose size={14} aria-hidden="true" />
       </button>
     </div>
   );

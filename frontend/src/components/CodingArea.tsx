@@ -58,6 +58,7 @@ export const CodingArea = () => {
       openFolder: state.openFolder,
     }))
   );
+  const [editorVisible, setEditorVisible] = useState(true);
   const [bootStatus, setBootStatus] = useState<'idle' | 'booting' | 'ready' | 'error'>('idle');
   const [bootRequested, setBootRequested] = useState(false);
   const [webContainer, setWebContainer] = useState<WebContainer | null>(null);
@@ -350,6 +351,7 @@ export const CodingArea = () => {
       if (mod && e.key === 'b') { e.preventDefault(); setFileTreeVisible(!fileTreeVisible); }
       if (mod && e.key === 'j') { e.preventDefault(); setTerminalVisible(!terminalVisible); }
       if (mod && e.shiftKey && e.key === 'I') { e.preventDefault(); setChatPanelVisible(!chatPanelVisible); }
+      if (mod && e.key === 'e') { e.preventDefault(); setEditorVisible((v) => !v); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -378,9 +380,12 @@ export const CodingArea = () => {
       )}
 
       {/* ── Center: Editor + Terminal ───────────────────────────────── */}
+      {editorVisible && (
       <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
         {/* Toolbar */}
         <EditorToolbar
+          editorVisible={editorVisible}
+          setEditorVisible={setEditorVisible}
           fileTreeVisible={fileTreeVisible}
           chatPanelVisible={chatPanelVisible}
           terminalVisible={terminalVisible}
@@ -463,6 +468,7 @@ export const CodingArea = () => {
         )}
 
       </div>
+      )} {/* end editorVisible */}
 
       {/* ── Right: Preview ─────────────────────────────────────────── */}
       <AnimatePresence>
@@ -470,6 +476,8 @@ export const CodingArea = () => {
           <PreviewPanel
             iframeUrl={iframeUrl}
             onClose={() => setShowPreview(false)}
+            editorVisible={editorVisible}
+            onToggleEditor={() => setEditorVisible((v) => !v)}
           />
         )}
       </AnimatePresence>
