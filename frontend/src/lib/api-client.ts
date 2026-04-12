@@ -1,3 +1,5 @@
+import { API_BASE_URL } from './config';
+
 export interface RequestOptions extends RequestInit {
   retries?: number;
   backoff?: number;
@@ -302,7 +304,6 @@ export async function listOptimizationRuns(): Promise<OptimizationRun[]> {
 }
 
 export function subscribeToOptimizationRun(runId: string, onUpdate: (run: OptimizationRun) => void): () => void {
-  const { API_BASE_URL } = require('./config');
   const url = `${API_BASE_URL}/harness/runs/${runId}/stream`;
   const evtSource = new EventSource(url);
   evtSource.onmessage = (event) => {
