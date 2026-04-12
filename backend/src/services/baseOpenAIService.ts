@@ -7,6 +7,27 @@ import { config } from '../config';
 import { normalizeMessages } from '../utils/messageUtils';
 import type { AgentEvent } from '../types/agentEvents';
 
+function filterToolsByTier(
+  tools: unknown[],
+  tier?: 'full-agentic' | 'code-only',
+  traits?: { toolUse: string; multimodal: boolean; contextWindow: number }
+): unknown[] {
+  if (tier !== 'full-agentic') {
+    const excludeNames = ['get_console_logs', 'get_dom_snapshot', 'get_selected_element', 'capture_screenshot'];
+    return (tools as Array<{ function: { name: string } }>).filter(
+      t => !excludeNames.includes(t.function.name)
+    );
+  }
+
+  if (!traits?.multimodal) {
+    return (tools as Array<{ function: { name: string } }>).filter(
+      t => t.function.name !== 'capture_screenshot'
+    );
+  }
+
+  return tools;
+}
+
 /**
  * Abstract base class for OpenAI-compatible providers (Groq, DeepSeek, OpenRouter, etc.)
  * Provides standardized message mapping and recursive tool-calling logic.
@@ -125,7 +146,9 @@ export abstract class BaseOpenAIService implements AIProvider {
   async generateChatCompletionWithEvents(
     messages: ChatMessage[],
     options: CompletionOptions,
-    onEvent: (event: AgentEvent) => void
+    onEvent: (event: AgentEvent) => void,
+    tier?: 'full-agentic' | 'code-only',
+    traits?: { toolUse: 'strong' | 'basic'; multimodal: boolean; contextWindow: number }
   ): Promise<string> {
     const apiKey = options.apiKey || this.apiKey;
     if (!apiKey) throw new Error(`${this.name} API Key missing`);
@@ -148,7 +171,9 @@ export abstract class BaseOpenAIService implements AIProvider {
         if (options.jsonMode) {
           payload.response_format = { type: "json_object" };
         } else if (options.shouldSearch !== false) {
-          payload.tools = this.getToolDefinitions();
+          const allTools = this.getToolDefinitions();
+          const filteredTools = filterToolsByTier(allTools, tier, traits);
+          payload.tools = filteredTools;
           payload.tool_choice = "auto";
         }
 

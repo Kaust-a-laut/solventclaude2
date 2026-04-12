@@ -41,10 +41,17 @@ export interface ErrorEvent {
   message: string;
 }
 
+export interface BrowserToolEvent {
+  type: 'browser-tool';
+  tool: string;
+  callId: string;
+}
+
 export type AgentEvent =
   | ToolStartEvent
   | ToolResultEvent
   | ToolErrorEvent
   | TextCompleteEvent
   | DoneEvent
-  | ErrorEvent;
+  | ErrorEvent
+  | BrowserToolEvent;

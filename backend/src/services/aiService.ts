@@ -244,7 +244,7 @@ export class AIService {
     data: ChatRequestData,
     onEvent: (event: AgentEvent) => void
   ): Promise<string> {
-    const { provider, model, temperature, maxTokens, apiKeys } = data;
+    const { provider, model, temperature, maxTokens, apiKeys, tier, traits } = data;
 
     logger.info(`[AIService] Processing agent chat with provider: ${provider}, model: ${model}`);
 
@@ -265,7 +265,9 @@ export class AIService {
           maxTokens,
           apiKey: apiKeys?.[provider],
         },
-        onEvent
+        onEvent,
+        tier,
+        traits
       );
     }
 

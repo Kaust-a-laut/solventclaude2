@@ -90,4 +90,6 @@ export interface ChatRequestData {
   };
   signal?: AbortSignal;
   sessionId?: string;
+  tier?: 'full-agentic' | 'code-only';
+  traits?: { toolUse: 'strong' | 'basic'; multimodal: boolean; contextWindow: number };
 }
