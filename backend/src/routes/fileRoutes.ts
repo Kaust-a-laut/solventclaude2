@@ -8,7 +8,7 @@ import { handleRouteError } from '../utils/routeErrors';
 
 const router = Router();
 // Allow dynamic project root, but default to a dedicated 'projects' or empty directory
-const rootDir = process.env.PROJECT_ROOT || path.resolve(__dirname, '../../../');
+const rootDir = process.env.PROJECT_ROOT || path.resolve(__dirname, '../../../projects');
 
 // Security: Define permitted root paths for file access
 // SOLVENT_INTERNAL_DEV bypass is removed for security - all access must go through secure path validation
@@ -16,6 +16,34 @@ const permittedRoots: string[] = [
   path.resolve(rootDir),
   path.resolve(__dirname, '../../uploads')
 ].map(p => path.resolve(p)); // Ensure all paths are resolved
+
+// Auto-create projects directory on server boot
+void fs.mkdir(path.resolve(__dirname, '../../../projects'), { recursive: true });
+
+router.get('/projects', async (_req, res) => {
+  try {
+    const projectsDir = path.resolve(__dirname, '../../../projects');
+    const entries = await fs.readdir(projectsDir, { withFileTypes: true });
+    const subdirs: Array<{ name: string; path: string; lastModified: number }> = [];
+
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        const fullPath = path.join(projectsDir, entry.name);
+        const stats = await fs.stat(fullPath);
+        subdirs.push({
+          name: entry.name,
+          path: entry.name,
+          lastModified: stats.mtimeMs
+        });
+      }
+    }
+
+    subdirs.sort((a, b) => b.lastModified - a.lastModified);
+    res.json(subdirs);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to list projects' });
+  }
+});
 
 // Multer configuration
 const uploadDir = path.resolve(__dirname, '../../uploads');
@@ -107,14 +135,18 @@ async function getFileTree(dir: string, base: string = ''): Promise<Array<{ name
   }
 }
 
-router.get('/list', async (_req, res) => {
+router.get('/list', async (req, res) => {
   try {
-    // Use the primary permitted root (project root)
     const root = permittedRoots[0];
     if (!root) {
       return res.status(500).json({ error: 'No permitted roots configured' });
     }
-    const tree = await getFileTree(root);
+    let targetDir = root;
+    if (req.query.project) {
+      targetDir = path.join(root, req.query.project as string);
+      await fs.mkdir(targetDir, { recursive: true });
+    }
+    const tree = await getFileTree(targetDir);
     res.json(tree);
   } catch (error) {
     res.status(500).json({ error: 'Failed to list files' });

@@ -33,6 +33,7 @@ export const CodingArea = () => {
     panelWidths,
     terminalLines, addTerminalLine, clearTerminalLines,
     activeTier,
+    currentProject, createNewProject, openFolder,
   } = useAppStore(
     useShallow((state) => ({
       openFiles: state.openFiles,
@@ -52,6 +53,9 @@ export const CodingArea = () => {
       addTerminalLine: state.addTerminalLine,
       clearTerminalLines: state.clearTerminalLines,
       activeTier: state.activeTier,
+      currentProject: state.currentProject,
+      createNewProject: state.createNewProject,
+      openFolder: state.openFolder,
     }))
   );
   const [bootStatus, setBootStatus] = useState<'idle' | 'booting' | 'ready' | 'error'>('idle');
@@ -288,10 +292,19 @@ export const CodingArea = () => {
           bootStatus={bootStatus}
           isRunning={isRunning}
           activeFile={activeFile}
+          currentProject={currentProject}
           onBootWebContainer={bootWebContainer}
           onRetryBoot={() => { isBootingRef.current = false; bootWebContainer(); }}
           onSave={handleSave}
           onRun={handleRun}
+          onNewProject={() => {
+            const name = prompt('Enter project name:');
+            if (name?.trim()) createNewProject(name.trim());
+          }}
+          onOpenFolder={() => {
+            const path = prompt('Enter absolute path to folder:');
+            if (path?.trim()) openFolder(path.trim());
+          }}
         />
 
         {/* Tab bar */}

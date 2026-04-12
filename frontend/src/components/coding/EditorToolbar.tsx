@@ -1,5 +1,5 @@
 import React from 'react';
-import { Save, Play, Loader2, Box, Terminal } from 'lucide-react';
+import { Save, Play, Loader2, Box, Terminal, Plus, FolderOpen } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface EditorToolbarProps {
@@ -12,10 +12,13 @@ interface EditorToolbarProps {
   bootStatus: 'idle' | 'booting' | 'ready' | 'error';
   isRunning: boolean;
   activeFile: string | null;
+  currentProject: { name: string } | null;
   onBootWebContainer: () => void;
   onRetryBoot: () => void;
   onSave: () => void;
   onRun: () => void;
+  onNewProject: () => void;
+  onOpenFolder: () => void;
 }
 
 export const EditorToolbar: React.FC<EditorToolbarProps> = ({
@@ -28,10 +31,13 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
   bootStatus,
   isRunning,
   activeFile,
+  currentProject,
   onBootWebContainer,
   onRetryBoot,
   onSave,
   onRun,
+  onNewProject,
+  onOpenFolder,
 }) => {
   return (
     <div className="h-11 flex items-center px-4 gap-3 border-b border-white/[0.04] shrink-0">
@@ -44,6 +50,33 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="3" y="3" width="7" height="18" /><rect x="14" y="3" width="7" height="18" /></svg>
       </button>
+
+      {currentProject ? (
+        <span className="text-[11px] font-bold text-white/40 truncate max-w-[120px]" title={currentProject.name}>
+          {currentProject.name}
+        </span>
+      ) : (
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onNewProject}
+            className="flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold text-jb-accent hover:bg-jb-accent/10 transition-colors"
+            title="New Project"
+          >
+            <Plus size={12} />
+            <span className="hidden sm:inline">New</span>
+          </button>
+          <button
+            type="button"
+            onClick={onOpenFolder}
+            className="flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold text-white/40 hover:bg-white/5 hover:text-white/60 transition-colors"
+            title="Open Folder"
+          >
+            <FolderOpen size={12} />
+            <span className="hidden sm:inline">Open</span>
+          </button>
+        </div>
+      )}
 
       <div className="flex-1" />
 

@@ -3,9 +3,11 @@ import { SettingsSlice } from './settingsSlice';
 import { GraphSlice } from './graphSlice';
 import { ActionSlice } from './actionSlice';
 import { WaterfallSlice } from './waterfallSlice';
-import { CodingSlice } from './codingSlice';
+import { CodingSlice, ProjectInfo } from './codingSlice';
 import { CollaborateSlice } from './collaborateSlice';
 import { PerformanceSlice } from './performanceSlice';
+
+export type { ProjectInfo };
 
 export interface ProvenanceItem {
   id: string;

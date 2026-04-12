@@ -1,6 +1,37 @@
 import { StateCreator } from 'zustand';
 import { AppState } from './types';
 
+// --- Project Management Types ---
+
+export interface ProjectInfo {
+  name: string;
+  path: string;
+  type: 'scratchpad' | 'folder';
+  createdAt: number;
+  lastOpenedAt: number;
+}
+
+const PROJECT_HISTORY_KEY = 'solvent-project-history';
+const MAX_HISTORY = 10;
+
+const savedHistory = typeof window !== 'undefined'
+  ? (() => {
+      try {
+        return JSON.parse(localStorage.getItem(PROJECT_HISTORY_KEY) || '[]');
+      } catch {
+        return [];
+      }
+    })()
+  : [];
+
+function persistHistory(history: ProjectInfo[]): void {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(PROJECT_HISTORY_KEY, JSON.stringify(history));
+    } catch {}
+  }
+}
+
 // --- Tool Event Types (mirror backend AgentEvent types) ---
 
 export interface ToolEvent {
@@ -45,6 +76,8 @@ export interface CodingSlice {
   fileTreeVisible: boolean;
   chatPanelVisible: boolean;
   terminalVisible: boolean;
+  currentProject: ProjectInfo | null;
+  projectHistory: ProjectInfo[];
 
   // Terminal lines (shared across CodingArea + agent)
   terminalLines: string[];
@@ -65,6 +98,10 @@ export interface CodingSlice {
   setFileTreeVisible: (v: boolean) => void;
   setChatPanelVisible: (v: boolean) => void;
   setTerminalVisible: (v: boolean) => void;
+  createNewProject: (name: string) => void;
+  openProject: (name: string) => void;
+  openFolder: (path: string) => void;
+  closeProject: () => void;
 }
 
 const MAX_TERMINAL_LINES = 1000;
@@ -76,6 +113,8 @@ export const createCodingSlice: StateCreator<AppState, [], [], CodingSlice> = (s
   fileTreeVisible: true,
   chatPanelVisible: true,
   terminalVisible: false,
+  currentProject: null,
+  projectHistory: savedHistory,
 
   terminalLines: ['[SYSTEM]: Agentic IDE Core Initialized.'],
   addTerminalLine: (line) => set((state) => {
@@ -108,4 +147,70 @@ export const createCodingSlice: StateCreator<AppState, [], [], CodingSlice> = (s
   setFileTreeVisible: (fileTreeVisible) => set({ fileTreeVisible }),
   setChatPanelVisible: (chatPanelVisible) => set({ chatPanelVisible }),
   setTerminalVisible: (terminalVisible) => set({ terminalVisible }),
+
+  createNewProject: (name) => {
+    const now = Date.now();
+    const newProject: ProjectInfo = {
+      name,
+      path: `projects/${name}`,
+      type: 'scratchpad',
+      createdAt: now,
+      lastOpenedAt: now,
+    };
+    set((state) => {
+      const filtered = state.projectHistory.filter((p) => p.name !== name);
+      const updated = [newProject, ...filtered].slice(0, MAX_HISTORY);
+      persistHistory(updated);
+      return { currentProject: newProject, projectHistory: updated };
+    });
+  },
+
+  openProject: (name) => {
+    set((state) => {
+      const now = Date.now();
+      const existing = state.projectHistory.find((p) => p.name === name);
+      let project: ProjectInfo;
+      if (existing) {
+        project = { ...existing, lastOpenedAt: now };
+        const filtered = state.projectHistory.filter((p) => p.name !== name);
+        const updated = [project, ...filtered].slice(0, MAX_HISTORY);
+        persistHistory(updated);
+        return { currentProject: project, projectHistory: updated };
+      } else {
+        project = {
+          name,
+          path: `projects/${name}`,
+          type: 'scratchpad',
+          createdAt: now,
+          lastOpenedAt: now,
+        };
+        const updated = [project, ...state.projectHistory].slice(0, MAX_HISTORY);
+        persistHistory(updated);
+        return { currentProject: project, projectHistory: updated };
+      }
+    });
+  },
+
+  openFolder: (path) => {
+    const now = Date.now();
+    const pathParts = path.split('/');
+    const name = pathParts[pathParts.length - 1] || path;
+    const newProject: ProjectInfo = {
+      name,
+      path,
+      type: 'folder',
+      createdAt: now,
+      lastOpenedAt: now,
+    };
+    set((state) => {
+      const filtered = state.projectHistory.filter((p) => p.path !== path);
+      const updated = [newProject, ...filtered].slice(0, MAX_HISTORY);
+      persistHistory(updated);
+      return { currentProject: newProject, projectHistory: updated };
+    });
+  },
+
+  closeProject: () => {
+    set({ currentProject: null, openFiles: [], activeFile: null });
+  },
 });
