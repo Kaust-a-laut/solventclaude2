@@ -1,17 +1,58 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Globe, X, RefreshCw, PanelRightClose, Camera } from 'lucide-react';
+import { API_BASE_URL } from '../../lib/config';
+import { useAppStore } from '../../store/useAppStore';
 
 interface PreviewPanelProps {
   iframeUrl: string;
   onClose: () => void;
   editorVisible: boolean;
   onToggleEditor: () => void;
-  onSnap: () => void;
+  onSnap?: () => void;
 }
 
-export const PreviewPanel: React.FC<PreviewPanelProps> = ({ iframeUrl, onClose, editorVisible, onToggleEditor, onSnap }) => {
+export const PreviewPanel: React.FC<PreviewPanelProps> = ({ iframeUrl, onClose, editorVisible, onToggleEditor, onSnap: _onSnap }) => {
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
+
+  const handleCaptureScreenshot = async () => {
+    if (!iframeRef.current?.contentWindow) return;
+
+    const screenshotPromise = new Promise<string>((resolve, reject) => {
+      const handler = (e: MessageEvent) => {
+        if (e.data?.type === 'solvent:screenshot-ready') {
+          window.removeEventListener('message', handler);
+          resolve(e.data.dataUrl);
+        } else if (e.data?.type === 'solvent:screenshot-error') {
+          window.removeEventListener('message', handler);
+          reject(new Error(e.data.error));
+        }
+      };
+      window.addEventListener('message', handler);
+      setTimeout(() => {
+        window.removeEventListener('message', handler);
+        reject(new Error('Screenshot timed out'));
+      }, 10000);
+    });
+
+    iframeRef.current.contentWindow.postMessage({ type: 'solvent:capture-screenshot' }, '*');
+
+    try {
+      const dataUrl = await screenshotPromise;
+      const blob = await (await fetch(dataUrl)).blob();
+      const formData = new FormData();
+      formData.append('file', blob, 'screenshot.png');
+
+      const res = await fetch(`${API_BASE_URL}/files/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      useAppStore.getState().setPreviewScreenshotUrl(data.url);
+    } catch {
+      // Silently fail — user can retry
+    }
+  };
 
   return (
     <motion.div
@@ -45,10 +86,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ iframeUrl, onClose, 
         </button>
         <button
           type="button"
-          onClick={onSnap}
+          onClick={handleCaptureScreenshot}
           className="p-1 hover:bg-white/10 rounded text-white/30 hover:text-white/60 transition-colors shrink-0"
-          aria-label="Share preview with agent"
-          title="Share preview with agent"
+          aria-label="Capture screenshot"
+          title="Capture screenshot"
         >
           <Camera size={11} />
         </button>

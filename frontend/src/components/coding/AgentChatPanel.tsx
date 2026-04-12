@@ -19,6 +19,7 @@ import {
   buildSystemPrompt,
 } from './slashCommands';
 import { buildPreviewRuntimeBlock } from './PreviewRuntimeSummary';
+import { ClickToEditPill } from './ClickToEditPill';
 
 // Extracts fenced code blocks from AI response text
 function extractCodeBlocks(text: string): { cleanText: string; blocks: CodeSuggestion[] } {
@@ -199,6 +200,8 @@ export const AgentChatPanel: React.FC = () => {
 
     setIsGenerating(true);
     try {
+      const previewSelectedElement = useAppStore.getState().previewSelectedElement;
+
       const systemPrompt = buildSystemPrompt(
         !allFilesContext && fileContextActive ? activeFile : null,
         !allFilesContext && fileContextActive ? activeFileContent : null,
@@ -206,6 +209,7 @@ export const AgentChatPanel: React.FC = () => {
         allFilesContext ? openFiles : undefined,
         currentProject?.name ?? null,
         previewUrl,
+        previewSelectedElement ? { tag: previewSelectedElement.tag, classes: previewSelectedElement.classes, text: previewSelectedElement.text } : null,
       );
 
       // Append preview HTML snapshot if user has captured one
@@ -594,6 +598,9 @@ export const AgentChatPanel: React.FC = () => {
           ))}
         </div>
       )}
+
+      {/* Click-to-edit pill */}
+      <ClickToEditPill />
 
       {/* Input area */}
       <div className="p-3 border-t border-white/[0.04] shrink-0">

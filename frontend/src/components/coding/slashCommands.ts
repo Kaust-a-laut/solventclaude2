@@ -34,6 +34,7 @@ export function buildSystemPrompt(
   openFiles?: Array<{ path: string; content: string }>,
   projectName?: string | null,
   previewUrl?: string | null,
+  previewSelectedElement?: { tag: string; classes: string[]; text: string } | null,
 ): string {
   const parts: string[] = [
     'You are a senior software engineer acting as a coding assistant.',
@@ -65,6 +66,15 @@ export function buildSystemPrompt(
 
   if (selection) {
     parts.push(`\nSelected code:\n\`\`\`\n${selection}\n\`\`\``);
+  }
+
+  if (previewSelectedElement) {
+    const { tag, classes, text } = previewSelectedElement;
+    const classStr = classes.join('.');
+    parts.push(
+      `\nSelected element: <${tag}${classStr ? ' class="' + classStr + '"' : ''}>${text}</${tag}>`,
+      `The user has selected this element from the preview. Call get_selected_element() to see its full details.`
+    );
   }
 
   return parts.join('\n');
