@@ -12,6 +12,7 @@ import { AGENT_MODEL_OPTIONS } from '../ModelSelector';
 import { toolResultToIDEActions } from '../../lib/toolToIDEAction';
 import { runInSandbox, getWebContainerInstance } from '../../lib/webContainerBridge';
 import { fetchWithRetry } from '../../lib/api-client';
+import { useModelCapabilities } from '../../hooks/useModelCapabilities';
 import {
   SLASH_COMMANDS,
   parseSlashCommand,
@@ -45,6 +46,8 @@ export const AgentChatPanel: React.FC = () => {
   const previewSnapshot = useAppStore((s) => s.previewSnapshot);
   const setPreviewSnapshot = useAppStore((s) => s.setPreviewSnapshot);
   const currentProject = useAppStore((s) => s.currentProject);
+
+  const { tier, traits } = useModelCapabilities();
 
   const [input, setInput] = useState('');
   const [showModelMenu, setShowModelMenu] = useState(false);
@@ -233,6 +236,8 @@ export const AgentChatPanel: React.FC = () => {
           model: selectedCloudModel,
           messages,
           apiKeys,
+          tier,
+          traits,
         }),
       });
 
@@ -338,7 +343,8 @@ export const AgentChatPanel: React.FC = () => {
   }, [input, isGenerating, activeFile, activeFileContent, fileContextActive, allFilesContext,
       openFiles, currentProject, previewUrl, previewSnapshot,
       addAgentMessage, updateAgentMessage, appendToolEvent, selectedCloudModel,
-      selectedCloudProvider, apiKeys, setPendingDiff, dispatchIDEActions, handleDeferredSandboxTool]);
+      selectedCloudProvider, apiKeys, setPendingDiff, dispatchIDEActions, handleDeferredSandboxTool,
+      tier, traits]);
 
   const handleApply = (msgId: string, blockId: string) => {
     const msg = agentMessages.find((m) => m.id === msgId);

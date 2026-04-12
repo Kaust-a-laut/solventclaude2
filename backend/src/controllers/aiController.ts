@@ -29,6 +29,12 @@ const chatRequestSchema = z.object({
   maxTokens: z.number().optional(),
   apiKeys: z.record(z.string()).optional(),
   thinkingModeEnabled: z.boolean().optional(),
+  tier: z.enum(['full-agentic', 'code-only']).optional(),
+  traits: z.object({
+    toolUse: z.enum(['strong', 'basic']),
+    multimodal: z.boolean(),
+    contextWindow: z.number(),
+  }).optional(),
   deviceInfo: z.object({
     isMobile: z.boolean(),
     isTablet: z.boolean(),
