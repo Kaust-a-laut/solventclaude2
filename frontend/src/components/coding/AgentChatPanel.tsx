@@ -41,10 +41,15 @@ export const AgentChatPanel: React.FC = () => {
 
   // Read agentMessages from store for rendering (not for closure capture)
   const agentMessages = useAppStore((s) => s.agentMessages);
+  const previewUrl = useAppStore((s) => s.previewUrl);
+  const previewSnapshot = useAppStore((s) => s.previewSnapshot);
+  const setPreviewSnapshot = useAppStore((s) => s.setPreviewSnapshot);
+  const currentProject = useAppStore((s) => s.currentProject);
 
   const [input, setInput] = useState('');
   const [showModelMenu, setShowModelMenu] = useState(false);
   const [fileContextActive, setFileContextActive] = useState(true);
+  const [allFilesContext, setAllFilesContext] = useState(false);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashMenuIndex, setSlashMenuIndex] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -191,15 +196,23 @@ export const AgentChatPanel: React.FC = () => {
     setIsGenerating(true);
     try {
       const systemPrompt = buildSystemPrompt(
-        fileContextActive ? activeFile : null,
-        fileContextActive ? activeFileContent : null,
-        null
+        !allFilesContext && fileContextActive ? activeFile : null,
+        !allFilesContext && fileContextActive ? activeFileContent : null,
+        null,
+        allFilesContext ? openFiles : undefined,
+        currentProject?.name ?? null,
+        previewUrl,
       );
+
+      // Append preview HTML snapshot if user has captured one
+      const effectiveSystemPrompt = previewSnapshot
+        ? systemPrompt + `\n\nLatest preview HTML snapshot (user-captured):\n\`\`\`html\n${previewSnapshot.slice(0, 8000)}\n\`\`\``
+        : systemPrompt;
 
       const currentMessages = useAppStore.getState().agentMessages;
 
       const messages = [
-        { role: 'system', content: slashCmd ? slashCmd.systemInstruction + '\n\n' + systemPrompt : systemPrompt },
+        { role: 'system', content: slashCmd ? slashCmd.systemInstruction + '\n\n' + effectiveSystemPrompt : effectiveSystemPrompt },
         ...currentMessages
           .filter((m) => m.id !== assistantId) // exclude the placeholder
           .map((m) => ({ role: m.role, content: m.content })),
@@ -322,7 +335,8 @@ export const AgentChatPanel: React.FC = () => {
     } finally {
       setIsGenerating(false);
     }
-  }, [input, isGenerating, activeFile, activeFileContent, fileContextActive,
+  }, [input, isGenerating, activeFile, activeFileContent, fileContextActive, allFilesContext,
+      openFiles, currentProject, previewUrl, previewSnapshot,
       addAgentMessage, updateAgentMessage, appendToolEvent, selectedCloudModel,
       selectedCloudProvider, apiKeys, setPendingDiff, dispatchIDEActions, handleDeferredSandboxTool]);
 
@@ -554,21 +568,50 @@ export const AgentChatPanel: React.FC = () => {
 
       {/* Input area */}
       <div className="p-3 border-t border-white/[0.04] shrink-0">
-        {/* Active file badge */}
-        {activeFile && (
-          <div className="flex items-center gap-1 mb-2">
-            <button
-              type="button"
-              onClick={() => setFileContextActive(!fileContextActive)}
-              className={cn(
-                'flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-mono transition-colors border',
-                fileContextActive
-                  ? 'bg-jb-accent/10 border-jb-accent/20 text-jb-accent/80'
-                  : 'bg-white/5 border-white/10 text-white/30 line-through'
-              )}
-            >
-              {activeFile.split('/').pop()}
-            </button>
+        {/* Context badges */}
+        {(activeFile || openFiles.length > 1 || previewSnapshot) && (
+          <div className="flex items-center gap-1 mb-2 flex-wrap">
+            {activeFile && !allFilesContext && (
+              <button
+                type="button"
+                onClick={() => setFileContextActive(!fileContextActive)}
+                className={cn(
+                  'flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-mono transition-colors border',
+                  fileContextActive
+                    ? 'bg-jb-accent/10 border-jb-accent/20 text-jb-accent/80'
+                    : 'bg-white/5 border-white/10 text-white/30 line-through'
+                )}
+              >
+                {activeFile.split('/').pop()}
+              </button>
+            )}
+            {openFiles.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setAllFilesContext((v) => !v)}
+                className={cn(
+                  'flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-mono transition-colors border',
+                  allFilesContext
+                    ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
+                    : 'bg-white/5 border-white/10 text-white/30'
+                )}
+              >
+                All files ({openFiles.length})
+              </button>
+            )}
+            {previewSnapshot && (
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-mono bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                Preview HTML
+                <button
+                  type="button"
+                  onClick={() => setPreviewSnapshot(null)}
+                  className="ml-0.5 hover:text-white/60"
+                  aria-label="Remove preview snapshot"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
           </div>
         )}
         {/* Text input */}
