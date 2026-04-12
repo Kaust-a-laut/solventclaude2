@@ -220,14 +220,34 @@ export const CodingArea = () => {
     try {
       const pkgFile = openFiles.find((f) => f.path.endsWith('package.json'));
       if (pkgFile) {
-        const proc = await webContainer.spawn('npm', ['install']);
+        const installProc = await webContainer.spawn('npm', ['install']);
+        runningProcRef.current = installProc;
+        installProc.output.pipeTo(new WritableStream({ write: (d) => addLog(d) }));
+        if (await installProc.exit !== 0) throw new Error('npm install failed');
+
+        // Pick the right npm script: prefer 'dev', fall back to 'start'
+        let runScript = 'start';
+        try {
+          const pkg = JSON.parse(pkgFile.content) as { scripts?: Record<string, string> };
+          if (pkg.scripts?.dev) runScript = 'dev';
+          else if (!pkg.scripts?.start) throw new Error('No dev or start script in package.json');
+        } catch (e: unknown) {
+          if (e instanceof Error && e.message.includes('No dev or start script')) throw e;
+          // malformed package.json — fall through with 'start'
+        }
+
+        addLog(`[SYSTEM]: Running npm run ${runScript}...`);
+        const devProc = await webContainer.spawn('npm', ['run', runScript]);
+        runningProcRef.current = devProc;
+        devProc.output.pipeTo(new WritableStream({ write: (d) => addLog(d) }));
+        // Don't await exit — server runs indefinitely; server-ready event sets the preview URL
+      } else {
+        // No package.json — run as a plain Node script
+        if (!activeFile) { addLog('[ERROR]: No file selected to run.'); return; }
+        const proc = await webContainer.spawn('node', [activeFile]);
         runningProcRef.current = proc;
         proc.output.pipeTo(new WritableStream({ write: (d) => addLog(d) }));
-        if (await proc.exit !== 0) throw new Error('npm install failed');
       }
-      const proc = await webContainer.spawn('node', [activeFile || 'index.js']);
-      runningProcRef.current = proc;
-      proc.output.pipeTo(new WritableStream({ write: (d) => addLog(d) }));
     } catch (err: unknown) {
       addLog(`[ERROR]: ${err instanceof Error ? err.message : 'Run failed'}`);
     } finally {
