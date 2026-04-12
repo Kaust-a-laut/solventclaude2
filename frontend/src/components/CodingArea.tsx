@@ -360,6 +360,21 @@ export const CodingArea = () => {
     setTimeout(() => setIsApplying(false), 600);
   }, [pendingDiff, openFiles, setOpenFiles, clearPendingDiff]);
 
+  const handleSnap = useCallback(async () => {
+    if (!iframeUrl) return;
+    try {
+      const res = await fetch(iframeUrl);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const html = await res.text();
+      setPreviewSnapshot(html);
+      setChatPanelVisible(true);
+      addLog('[SYSTEM]: Preview snapshot attached to agent chat.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      addLog(`[ERROR]: Could not capture preview snapshot — ${msg}`);
+    }
+  }, [iframeUrl, setPreviewSnapshot, setChatPanelVisible, addLog]);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
@@ -490,6 +505,7 @@ export const CodingArea = () => {
             onClose={() => setShowPreview(false)}
             editorVisible={editorVisible}
             onToggleEditor={() => setEditorVisible((v) => !v)}
+            onSnap={handleSnap}
           />
         )}
       </AnimatePresence>

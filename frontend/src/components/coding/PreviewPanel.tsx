@@ -1,15 +1,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Globe, X, RefreshCw, PanelRightClose } from 'lucide-react';
+import { Globe, X, RefreshCw, PanelRightClose, Camera } from 'lucide-react';
 
 interface PreviewPanelProps {
   iframeUrl: string;
   onClose: () => void;
   editorVisible: boolean;
   onToggleEditor: () => void;
+  onSnap: () => void;
 }
 
-export const PreviewPanel: React.FC<PreviewPanelProps> = ({ iframeUrl, onClose, editorVisible, onToggleEditor }) => {
+export const PreviewPanel: React.FC<PreviewPanelProps> = ({ iframeUrl, onClose, editorVisible, onToggleEditor, onSnap }) => {
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
   return (
@@ -18,8 +19,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ iframeUrl, onClose, 
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 24 }}
       transition={{ duration: 0.15, ease: 'easeOut' }}
-      className="shrink-0 flex flex-col border-l border-white/[0.04] overflow-clip bg-white"
-      style={{ width: '45%', minWidth: 360 }}
+      className="flex-1 flex flex-col border-l border-white/[0.04] overflow-clip bg-white"
+      style={{ minWidth: 360 }}
     >
       {/* Browser chrome */}
       <div className="h-9 bg-[#0d0d18] flex items-center px-3 gap-2 shrink-0 border-b border-white/[0.04]">
@@ -41,6 +42,15 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ iframeUrl, onClose, 
           aria-label="Reload preview"
         >
           <RefreshCw size={11} />
+        </button>
+        <button
+          type="button"
+          onClick={onSnap}
+          className="p-1 hover:bg-white/10 rounded text-white/30 hover:text-white/60 transition-colors shrink-0"
+          aria-label="Share preview with agent"
+          title="Share preview with agent"
+        >
+          <Camera size={11} />
         </button>
         <button
           type="button"
