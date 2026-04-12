@@ -18,6 +18,7 @@ import {
   parseSlashCommand,
   buildSystemPrompt,
 } from './slashCommands';
+import { buildPreviewRuntimeBlock } from './PreviewRuntimeSummary';
 
 // Extracts fenced code blocks from AI response text
 function extractCodeBlocks(text: string): { cleanText: string; blocks: CodeSuggestion[] } {
@@ -214,15 +215,37 @@ export const AgentChatPanel: React.FC = () => {
 
       const currentMessages = useAppStore.getState().agentMessages;
 
+      const userContent = parsed?.rest || text;
+      const runtimeBlock = buildPreviewRuntimeBlock();
+      const finalUserContent = runtimeBlock ? `${userContent}\n${runtimeBlock}` : userContent;
+
       const messages = [
         { role: 'system', content: slashCmd ? slashCmd.systemInstruction + '\n\n' + effectiveSystemPrompt : effectiveSystemPrompt },
         ...currentMessages
           .filter((m) => m.id !== assistantId) // exclude the placeholder
           .map((m) => ({ role: m.role, content: m.content })),
-        { role: 'user', content: parsed?.rest || text },
+        { role: 'user', content: finalUserContent },
       ];
 
       const secret = await getSecret();
+
+      // Flush preview data to backend (fire-and-forget)
+      const { previewConsoleBuffer, previewBodyHTML, previewBodyHash } = useAppStore.getState();
+      const sessionId = currentProject?.name ?? 'default';
+
+      fetch(`${API_BASE_URL}/preview/events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Solvent-Secret': secret },
+        body: JSON.stringify({
+          sessionId,
+          entries: previewConsoleBuffer,
+          bodyHTML: previewBodyHTML,
+          bodyHash: previewBodyHash,
+        }),
+      }).catch(() => {});
+
+      // Reset domChanged after sending
+      useAppStore.getState().resetDomChanged();
 
       const response = await fetch(`${API_BASE_URL}/agent/chat`, {
         method: 'POST',
