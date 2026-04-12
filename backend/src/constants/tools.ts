@@ -230,6 +230,46 @@ export const TOOL_DEFINITIONS = [
       },
       required: ["command"]
     }
+  },
+  // --- Preview tools ---
+  {
+    name: "get_console_logs",
+    description: "Get recent console logs from the preview. Call this to dig into specific errors beyond the push summary.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        filter: { type: "STRING", description: "Filter by level: 'error', 'warn', or 'log'", enum: ["error", "warn", "log"] },
+        limit: { type: "NUMBER", description: "Max entries to return (default 20)" }
+      },
+      required: []
+    }
+  },
+  {
+    name: "get_dom_snapshot",
+    description: "Get the current DOM body hash and truncated body HTML from the preview.",
+    parameters: {
+      type: "OBJECT",
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: "get_selected_element",
+    description: "Get the element the user clicked in the preview. Returns the element info and clears the selection.",
+    parameters: {
+      type: "OBJECT",
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: "capture_screenshot",
+    description: "Capture a screenshot of the current preview as a PNG image. Only available for multimodal models.",
+    parameters: {
+      type: "OBJECT",
+      properties: {},
+      required: []
+    }
   }
 ];
 
