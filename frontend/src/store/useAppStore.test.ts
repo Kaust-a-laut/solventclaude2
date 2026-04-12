@@ -63,3 +63,28 @@ describe('useAppStore', () => {
     expect(state.messages[1].content).toContain('Error: Service Unavailable');
   });
 });
+
+describe('previewUrl / previewSnapshot store fields', () => {
+  beforeEach(() => {
+    useAppStore.setState({ previewUrl: null, previewSnapshot: null });
+  });
+
+  it('starts as null', () => {
+    expect(useAppStore.getState().previewUrl).toBeNull();
+    expect(useAppStore.getState().previewSnapshot).toBeNull();
+  });
+
+  it('setPreviewUrl stores and clears the URL', () => {
+    useAppStore.getState().setPreviewUrl('http://localhost:3000');
+    expect(useAppStore.getState().previewUrl).toBe('http://localhost:3000');
+    useAppStore.getState().setPreviewUrl(null);
+    expect(useAppStore.getState().previewUrl).toBeNull();
+  });
+
+  it('setPreviewSnapshot stores and clears HTML', () => {
+    useAppStore.getState().setPreviewSnapshot('<html><body>hi</body></html>');
+    expect(useAppStore.getState().previewSnapshot).toContain('<body>hi</body>');
+    useAppStore.getState().setPreviewSnapshot(null);
+    expect(useAppStore.getState().previewSnapshot).toBeNull();
+  });
+});

@@ -88,6 +88,13 @@ export interface CodingSlice {
   fileTreeRefreshTrigger: number;
   triggerFileTreeRefresh: () => void;
 
+  // Preview URL (the WebContainer server-ready URL) — shared so AgentChatPanel can read it
+  previewUrl: string | null;
+  setPreviewUrl: (url: string | null) => void;
+  // Latest HTML snapshot of the preview, manually captured by user
+  previewSnapshot: string | null;
+  setPreviewSnapshot: (snapshot: string | null) => void;
+
   setPendingDiff: (diff: PendingDiff) => void;
   clearPendingDiff: () => void;
   addAgentMessage: (msg: AgentMessage) => void;
@@ -128,6 +135,11 @@ export const createCodingSlice: StateCreator<AppState, [], [], CodingSlice> = (s
 
   fileTreeRefreshTrigger: 0,
   triggerFileTreeRefresh: () => set((state) => ({ fileTreeRefreshTrigger: state.fileTreeRefreshTrigger + 1 })),
+
+  previewUrl: null,
+  setPreviewUrl: (previewUrl) => set({ previewUrl }),
+  previewSnapshot: null,
+  setPreviewSnapshot: (previewSnapshot) => set({ previewSnapshot }),
 
   setPendingDiff: (diff) => set({ pendingDiff: diff }),
   clearPendingDiff: () => set({ pendingDiff: null }),

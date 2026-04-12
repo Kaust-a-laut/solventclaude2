@@ -34,6 +34,7 @@ export const CodingArea = () => {
     terminalLines, addTerminalLine, clearTerminalLines,
     activeTier,
     currentProject, createNewProject, openFolder,
+    setPreviewUrl, setPreviewSnapshot,
   } = useAppStore(
     useShallow((state) => ({
       openFiles: state.openFiles,
@@ -56,6 +57,8 @@ export const CodingArea = () => {
       currentProject: state.currentProject,
       createNewProject: state.createNewProject,
       openFolder: state.openFolder,
+      setPreviewUrl: state.setPreviewUrl,
+      setPreviewSnapshot: state.setPreviewSnapshot,
     }))
   );
   const [editorVisible, setEditorVisible] = useState(true);
@@ -83,6 +86,22 @@ export const CodingArea = () => {
     if (existing && !webContainer) { setWebContainer(existing); setBootStatus('ready'); addLog('[SYSTEM]: Reconnected to existing WebContainer sandbox.'); }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Re-register server-ready + error listeners whenever webContainer changes.
+  // This handles both initial boot and hot-reload / singleton restore cases where
+  // the old listeners pointed to a now-unmounted component's state setters.
+  useEffect(() => {
+    if (!webContainer) return;
+    const offServerReady = webContainer.on('server-ready', (_port, url) => {
+      setIframeUrl(url);
+      setShowPreview(true);
+      setPreviewUrl(url);
+    });
+    const offError = webContainer.on('error', (err: { message: string }) =>
+      addLog(`[WC-ERROR]: ${err.message}`)
+    );
+    return () => { offServerReady(); offError(); };
+  }, [webContainer, addLog, setPreviewUrl]);
+
   const bootWebContainer = useCallback(async () => {
     if (isBootingRef.current) return;
     isBootingRef.current = true;
@@ -109,11 +128,7 @@ export const CodingArea = () => {
       setWebContainer(instance);
       setBootStatus('ready');
       addLog('[SYSTEM]: WebContainer sandbox is ready.');
-      instance.on('server-ready', (_port, url) => {
-        setIframeUrl(url);
-        setShowPreview(true);
-      });
-      instance.on('error', (err: { message: string }) => addLog(`[WC-ERROR]: ${err.message}`));
+      // Listeners are registered by the useEffect above keyed on webContainer
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Boot failed';
       addLog(`[ERROR]: ${msg}`);
