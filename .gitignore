@@ -1,49 +1,27 @@
-# Dependencies
-node_modules/
-.npm/
-
-# Environment
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Build
-dist/
-build/
-.next/
-out/
-
 # Logs
+logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
+node_modules
+dist
+dist-ssr
+*.local
 
-# OS
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
 .DS_Store
-Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# Project Specific
-GEMINI.md
-VIBE.md
-.aider*
-
-# Solvent runtime data (memory index, telemetry — not for version control)
-.solvent_memory.json
-.solvent_hnsw.bin
-.solvent_hnsw.bin.meta.json
-.solvent_telemetry.jsonl
-.solvent_notes.md
-backend/generated_images/
-
-# Solvent temp files
-.solvent_memory.json.tmp.*
-backend/03-31-backendlog
+# Git worktrees
+.worktrees/
