@@ -6,6 +6,7 @@ import { fetchWithRetry } from '../../lib/api-client';
 import { BASE_URL } from '../../lib/config';
 import { FolderPickerModal } from './FolderPickerModal';
 import { ImportToast } from './ImportToast';
+import { useAppStore } from '../../store/useAppStore';
 
 // webkitRelativePath is non-standard but supported in all modern browsers
 interface WebkitFile extends File {
@@ -64,6 +65,7 @@ export const ImportFileButton: React.FC<ImportFileButtonProps> = ({ onImported }
   const [folderToast, setFolderToast] = useState<FolderToastState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [folderUploading, setFolderUploading] = useState<{ name: string; total: number } | null>(null);
+  const currentProject = useAppStore((s) => s.currentProject);
 
   // Abort any in-progress FileReader on unmount
   useEffect(() => () => { readerRef.current?.abort(); }, []);
@@ -105,16 +107,22 @@ export const ImportFileButton: React.FC<ImportFileButtonProps> = ({ onImported }
       const results = await Promise.allSettled(
         textFiles.map(async (file) => {
           // Strip root folder name: "myProject/src/App.tsx" → "src/App.tsx"
-          const relativePath = rootPrefix
+          const stripped = rootPrefix
             ? file.webkitRelativePath.slice(rootPrefix.length + 1)
             : file.webkitRelativePath;
-          if (!relativePath) return; // skip if path is just the root folder itself
+          if (!stripped) return; // skip if path is just the root folder itself
+
+          // For scratchpad projects the backend resolves paths against rootDir,
+          // so prefix with the project name to land inside the project folder.
+          const writePath = currentProject?.type === 'scratchpad'
+            ? `${currentProject.name}/${stripped}`
+            : stripped;
 
           const content = await readFileAsText(file);
           await fetchWithRetry(`${BASE_URL}/api/files/write`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: relativePath, content }),
+            body: JSON.stringify({ path: writePath, content }),
           });
         })
       );
