@@ -111,9 +111,9 @@ export abstract class BaseOpenAIService implements AIProvider {
           max_tokens: options.maxTokens ?? 2048,
         };
 
-        // CRITICAL FIX: Most providers (Groq, OpenAI) do not allow 
+        // CRITICAL FIX: Most providers (Groq, OpenAI) do not allow
         // response_format: "json_object" and tools to be used simultaneously.
-        if (options.jsonMode) {
+        if (options.jsonMode && !this.shouldSkipJsonMode(model)) {
           payload.response_format = { type: "json_object" };
         } else if (options.shouldSearch !== false) {
           payload.tools = this.getToolDefinitions();
@@ -213,7 +213,7 @@ export abstract class BaseOpenAIService implements AIProvider {
           max_tokens: options.maxTokens ?? 2048,
         };
 
-        if (options.jsonMode) {
+        if (options.jsonMode && !this.shouldSkipJsonMode(model)) {
           payload.response_format = { type: "json_object" };
         } else if (options.shouldSearch !== false) {
           const allTools = this.getToolDefinitions();
@@ -408,4 +408,12 @@ export abstract class BaseOpenAIService implements AIProvider {
    * Optional method for subclasses to provide extra headers (e.g. OpenRouter)
    */
   protected getExtraHeaders?(): Record<string, string>;
+
+  /**
+   * Override in subclasses to suppress jsonMode for specific model families.
+   * Example: OpenRouter suppresses it for reasoning models that use <think> blocks.
+   */
+  protected shouldSkipJsonMode(_model: string): boolean {
+    return false;
+  }
 }
