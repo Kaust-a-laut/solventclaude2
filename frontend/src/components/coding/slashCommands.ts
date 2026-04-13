@@ -47,17 +47,29 @@ export function buildSystemPrompt(
   }
 
   if (previewUrl) {
-    parts.push(
-      `\nApp preview URL: ${previewUrl}`,
-      'The app is currently running at this URL.',
-      'IMPORTANT: When the user asks to change, add, or fix something in the app, they are referring to the running preview.',
-      'Your workflow should be:',
-      '1. Use `fetch_preview_source` to inspect the current HTML/structure of the running app',
-      '2. Identify which source file(s) control the relevant part of the UI',
-      '3. Read those files with `read_file` to understand the current code',
-      '4. Make the change using `ide_show_diff` or direct file writes',
-      '5. The preview will auto-refresh — verify the change took effect'
-    );
+    parts.push(`\nApp preview URL: ${previewUrl}`);
+    parts.push('The app is currently running at this URL.');
+    parts.push('IMPORTANT: When the user asks to change, add, or fix something in the app, they are referring to the running preview.');
+    parts.push('');
+    parts.push('IMPORTANT — Preview rendering:');
+    parts.push('This app uses a JavaScript framework (React/Vue/Svelte/etc). `fetch_preview_source` returns the raw HTML skeleton only — the JS has not run yet, so you will typically see an empty root div with no visible content.');
+
+    if (tier === 'full-agentic') {
+      parts.push('To inspect the actual rendered UI, use `get_dom_snapshot` — it captures the live DOM after JavaScript has executed.');
+      parts.push('');
+      parts.push('Workflow for UI changes:');
+      parts.push('1. `get_dom_snapshot` — understand the rendered state and component tree');
+      parts.push('2. Identify which source file(s) own the relevant component (check the open files list above)');
+      parts.push('3. `read_file` — confirm the current implementation');
+      parts.push('4. Make the change with `ide_show_diff` or `write_file`');
+      parts.push('5. The preview auto-refreshes — verify with `get_dom_snapshot` if needed');
+    } else {
+      parts.push('');
+      parts.push('Workflow for UI changes:');
+      parts.push('1. Identify which source file(s) own the relevant component (check the open files list above)');
+      parts.push('2. `read_file` — confirm the current implementation');
+      parts.push('3. Make the change with `ide_show_diff` or `write_file`');
+    }
   }
 
   if (openFiles && openFiles.length > 1) {
