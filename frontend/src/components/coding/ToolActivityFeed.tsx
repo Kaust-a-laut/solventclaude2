@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, Check, Loader2, AlertCircle, FileText, FolderOpen, Terminal, Globe, Search, Wrench } from 'lucide-react';
+import { ChevronDown, ChevronRight, Check, Loader2, AlertCircle, FileText, FolderOpen, Terminal, Globe, Search, Wrench, Copy } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { ToolEvent } from '../../store/codingSlice';
 
@@ -29,6 +29,23 @@ interface Props {
 
 export const ToolActivityFeed: React.FC<Props> = ({ events }) => {
   const [expanded, setExpanded] = useState(false);
+  const [copiedCallId, setCopiedCallId] = useState<string | null>(null);
+
+  const copyToolEvent = async (group: ToolEvent[]) => {
+    const start = group.find(e => e.type === 'tool_start');
+    const result = group.find(e => e.type === 'tool_result');
+    const error = group.find(e => e.type === 'tool_error');
+    if (!start) return;
+
+    const text = `Tool: ${start.tool}\nArgs: ${JSON.stringify(start.args, null, 2)}${result ? '\nResult: ' + JSON.stringify(result.result, null, 2).slice(0, 1000) : ''}${error ? '\nError: ' + error.error : ''}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedCallId(start.callId);
+      setTimeout(() => setCopiedCallId(null), 2000);
+    } catch {
+      // silent fail
+    }
+  };
 
   if (!events || events.length === 0) return null;
 
@@ -81,7 +98,7 @@ export const ToolActivityFeed: React.FC<Props> = ({ events }) => {
               <div
                 key={start.callId}
                 className={cn(
-                  'flex items-center gap-1.5 text-[11px] py-0.5',
+                  'flex items-center gap-1.5 text-[11px] py-0.5 group/tool',
                   isFailed ? 'text-rose-400/70' : isDone ? 'text-emerald-400/60' : 'text-white/40'
                 )}
               >
@@ -89,9 +106,18 @@ export const ToolActivityFeed: React.FC<Props> = ({ events }) => {
                 {isDone && <Check size={10} className="shrink-0" />}
                 {isFailed && <AlertCircle size={10} className="shrink-0" />}
                 <Icon size={10} className="shrink-0" />
-                <span className="truncate">
+                <span className="truncate flex-1">
                   {isFailed ? `${getToolLabel({ ...start, type: 'tool_result' })}: ${error!.error}` : getToolLabel(start)}
                 </span>
+                <button
+                  type="button"
+                  onClick={() => copyToolEvent(group)}
+                  className="opacity-0 group-hover/tool:opacity-100 transition-opacity p-0.5 hover:bg-white/10 rounded shrink-0"
+                  title="Copy tool info"
+                  aria-label="Copy tool info"
+                >
+                  {copiedCallId === start.callId ? <Check size={10} /> : <Copy size={10} />}
+                </button>
               </div>
             );
           })}

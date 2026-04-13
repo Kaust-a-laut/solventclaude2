@@ -12,6 +12,7 @@ export interface CompletionOptions {
   apiKey?: string;
   jsonMode?: boolean;
   signal?: AbortSignal;
+  sessionId?: string;
 }
 
 export interface ImageContent {

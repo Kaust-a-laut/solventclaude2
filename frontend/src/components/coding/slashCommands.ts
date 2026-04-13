@@ -49,12 +49,32 @@ export function buildSystemPrompt(
   if (previewUrl) {
     parts.push(
       `\nApp preview URL: ${previewUrl}`,
-      'The app is currently running at this URL. Call the `fetch_preview_source` tool with this URL to inspect its current HTML structure.'
+      'The app is currently running at this URL.',
+      'IMPORTANT: When the user asks to change, add, or fix something in the app, they are referring to the running preview.',
+      'Your workflow should be:',
+      '1. Use `fetch_preview_source` to inspect the current HTML/structure of the running app',
+      '2. Identify which source file(s) control the relevant part of the UI',
+      '3. Read those files with `read_file` to understand the current code',
+      '4. Make the change using `ide_show_diff` or direct file writes',
+      '5. The preview will auto-refresh — verify the change took effect'
     );
   }
 
   if (openFiles && openFiles.length > 1) {
-    parts.push('\nOpen files in editor:');
+    // Add project structure awareness
+    const filePaths = openFiles.map(f => f.path);
+    const dirs = [...new Set(filePaths.map(p => p.split('/').slice(0, -1).join('/')).filter(Boolean))];
+    parts.push('\nProject structure (from open files):');
+    parts.push('Available files and directories:');
+    for (const p of filePaths.sort()) {
+      parts.push(`  - ${p}`);
+    }
+    if (dirs.length > 0) {
+      parts.push(`\nTop-level directories: ${dirs.slice(0, 8).join(', ')}${dirs.length > 8 ? '...' : ''}`);
+      parts.push('Use `list_files` to explore directories before guessing file paths.');
+    }
+
+    parts.push('\nFile contents:');
     for (const f of openFiles) {
       const snippet = f.content.length > 4000
         ? f.content.slice(0, 4000) + '\n... (truncated)'

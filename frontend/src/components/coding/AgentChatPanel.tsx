@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Trash2, Sparkles, ChevronDown } from 'lucide-react';
+import { Send, Trash2, Sparkles, ChevronDown, Copy, Check } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAppStore } from '../../store/useAppStore';
 import type { AgentMessage, CodeSuggestion, ToolEvent } from '../../store/codingSlice';
@@ -59,6 +59,7 @@ export const AgentChatPanel: React.FC = () => {
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashMenuIndex, setSlashMenuIndex] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -72,6 +73,35 @@ export const AgentChatPanel: React.FC = () => {
   // Cleanup: abort any in-flight request on unmount
   useEffect(() => {
     return () => { abortRef.current?.abort(); };
+  }, []);
+
+  const copyMessage = useCallback(async (msg: AgentMessage) => {
+    let text = msg.content;
+    if (msg.toolEvents && msg.toolEvents.length > 0) {
+      const toolText = msg.toolEvents.map(e =>
+        `[${e.type}] ${e.tool}(${JSON.stringify(e.args)})${e.result ? ' → ' + JSON.stringify(e.result).slice(0, 500) : ''}${e.error ? ' → ERROR: ' + e.error : ''}`
+      ).join('\n');
+      text = text ? text + '\n\n--- Tool Calls ---\n' + toolText : toolText;
+    }
+    if (msg.codeBlocks && msg.codeBlocks.length > 0) {
+      const codeText = msg.codeBlocks.map(b => '```' + b.language + '\n' + b.code + '\n```').join('\n\n');
+      text = text ? text + '\n\n' + codeText : codeText;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedMsgId(msg.id);
+      setTimeout(() => setCopiedMsgId(null), 2000);
+    } catch {
+      // Fallback for older browsers
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopiedMsgId(msg.id);
+      setTimeout(() => setCopiedMsgId(null), 2000);
+    }
   }, []);
 
   const handleAttach = useCallback((fileName: string, content: string) => {
@@ -509,29 +539,54 @@ export const AgentChatPanel: React.FC = () => {
             {showModelMenu && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowModelMenu(false)} aria-hidden="true" />
-                <div className="absolute top-full left-0 mt-1 w-52 rounded-xl border border-white/[0.07] bg-[#0a0a14] overflow-hidden z-50 shadow-xl">
-                  {AGENT_MODEL_OPTIONS.map((m) => {
-                    const Icon = m.icon;
+                <div className="absolute top-full left-0 mt-1 w-72 rounded-xl border border-white/[0.07] bg-[#0a0a14] overflow-hidden z-50 shadow-xl max-h-[70vh] overflow-y-auto scrollbar-thin">
+                  {(['full-agentic', 'code-only'] as const).map((tier) => {
+                    const group = AGENT_MODEL_OPTIONS.filter(m => m.tier === tier);
+                    if (group.length === 0) return null;
                     return (
-                      <button
-                        key={m.model}
-                        type="button"
-                        onClick={() => {
-                          setSelectedCloudModel(m.model);
-                          setSelectedCloudProvider(m.provider as Parameters<typeof setSelectedCloudProvider>[0]);
-                          setShowModelMenu(false);
-                        }}
-                        className={cn(
-                          'w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-white/5 transition-colors',
-                          selectedCloudModel === m.model && 'bg-white/[0.04]'
-                        )}
-                      >
-                        <Icon size={12} className={m.color} aria-hidden="true" />
-                        <div className="flex flex-col min-w-0">
-                          <span className={cn('text-[11px] font-medium leading-tight', m.color)}>{m.displayName}</span>
-                          <span className="text-[11px] text-white/30 leading-tight">{m.sublabel}</span>
+                      <div key={tier}>
+                        <div className="px-3 pt-2.5 pb-1 flex items-center gap-2">
+                          <span className="text-[9px] font-black uppercase tracking-[0.15em] text-white/25">
+                            {tier === 'full-agentic' ? 'Full Agentic' : 'Efficient'}
+                          </span>
+                          <div className="flex-1 h-px bg-white/[0.06]" />
                         </div>
-                      </button>
+                        {group.map((m) => {
+                          const Icon = m.icon;
+                          const isActive = selectedCloudModel === m.model;
+                          const hasVision = m.sublabel.toLowerCase().includes('vision');
+                          return (
+                            <button
+                              key={m.model}
+                              type="button"
+                              onClick={() => {
+                                setSelectedCloudModel(m.model);
+                                setSelectedCloudProvider(m.provider as Parameters<typeof setSelectedCloudProvider>[0]);
+                                setShowModelMenu(false);
+                              }}
+                              className={cn(
+                                'w-full flex items-center gap-2.5 px-3 py-1.5 text-left hover:bg-white/5 transition-colors',
+                                isActive && 'bg-white/[0.04]'
+                              )}
+                            >
+                              <Icon size={11} className={m.color} aria-hidden="true" />
+                              <div className="flex-1 flex flex-col min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className={cn('text-[11px] font-semibold leading-tight truncate', m.color)}>{m.displayName}</span>
+                                  {hasVision && (
+                                    <span className="shrink-0 text-[8px] font-bold px-1 py-px rounded bg-blue-500/15 text-blue-400 leading-tight">VISION</span>
+                                  )}
+                                  {tier === 'full-agentic' && (
+                                    <span className="shrink-0 text-[8px] font-bold px-1 py-px rounded bg-emerald-500/15 text-emerald-400 leading-tight">TOOLS</span>
+                                  )}
+                                </div>
+                                <span className="text-[10px] text-white/25 leading-tight truncate">{m.sublabel}</span>
+                              </div>
+                              {isActive && <div className="shrink-0 w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]" />}
+                            </button>
+                          );
+                        })}
+                      </div>
                     );
                   })}
                 </div>
@@ -562,12 +617,27 @@ export const AgentChatPanel: React.FC = () => {
           <div
             key={msg.id}
             className={cn(
-              'rounded-xl px-3 py-2',
+              'rounded-xl px-3 py-2 group relative',
               msg.role === 'user'
                 ? 'bg-jb-accent/[0.08] border border-jb-accent/15 ml-4'
                 : 'bg-white/[0.03] border border-white/[0.05]'
             )}
           >
+            {/* Copy button for assistant messages */}
+            {msg.role === 'assistant' && (msg.content || msg.toolEvents?.length) && (
+              <button
+                type="button"
+                onClick={() => copyMessage(msg)}
+                className={cn(
+                  'absolute top-2 right-2 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity',
+                  'hover:bg-white/10 text-white/40 hover:text-white/70'
+                )}
+                title="Copy response"
+                aria-label="Copy response"
+              >
+                {copiedMsgId === msg.id ? <Check size={12} /> : <Copy size={12} />}
+              </button>
+            )}
             {msg.fileContext && (
               <div className="flex items-center gap-1 mb-1.5">
                 <span className="text-[11px] bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-white/40 font-mono">

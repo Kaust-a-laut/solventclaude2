@@ -8,6 +8,46 @@ import { config } from '../config';
 import { normalizeMessages } from '../utils/messageUtils';
 import type { AgentEvent } from '../types/agentEvents';
 
+/**
+ * Simple XML tool call parser using string operations to avoid regex issues.
+ * Parses formats like: <tool_name><param>value</param></tool_name>
+ */
+function parseXmlToolCalls(content: string, validNames: string[]): Array<{id: string; name: string; args: Record<string, unknown>}> {
+  const calls: Array<{id: string; name: string; args: Record<string, unknown>}> = [];
+  
+  for (const name of validNames) {
+    const openTag = '<' + name + '>';
+    const closeTag = '</' + name + '>';
+    let searchPos = 0;
+    
+    while (true) {
+      const openIdx = content.indexOf(openTag, searchPos);
+      if (openIdx === -1) break;
+      
+      const closeIdx = content.indexOf(closeTag, openIdx);
+      if (closeIdx === -1) break;
+      
+      const blockEnd = closeIdx + closeTag.length;
+      const inner = content.substring(openIdx + openTag.length, closeIdx);
+      
+      // Parse parameters from inner content
+      const args: Record<string, unknown> = {};
+      const paramRegex = /<(\w+)>([\s\S]*?)<\/>/g;
+      let match: RegExpExecArray | null;
+      while ((match = paramRegex.exec(inner)) !== null) {
+        if (match[1] && match[2]) {
+          args[match[1]] = match[2].trim();
+        }
+      }
+      
+      calls.push({ id: randomUUID(), name, args });
+      searchPos = blockEnd;
+    }
+  }
+  
+  return calls;
+}
+
 function filterToolsByTier(
   tools: unknown[],
   tier?: 'full-agentic' | 'code-only',
@@ -60,6 +100,8 @@ export abstract class BaseOpenAIService implements AIProvider {
     try {
       let iteration = 0;
       const maxIterations = 5;
+      let consecutiveFailures = 0;
+      const maxConsecutiveFailures = 3;
 
       while (iteration < maxIterations) {
         const payload: Record<string, unknown> = {
@@ -160,6 +202,8 @@ export abstract class BaseOpenAIService implements AIProvider {
     try {
       let iteration = 0;
       const maxIterations = 5;
+      let consecutiveFailures = 0;
+      const maxConsecutiveFailures = 3;
 
       while (iteration < maxIterations) {
         const payload: Record<string, unknown> = {
@@ -196,6 +240,65 @@ export abstract class BaseOpenAIService implements AIProvider {
         const content = message.content || "";
 
         if (!message.tool_calls) {
+          // Fallback: check if the model emitted tool calls as XML in content
+          const validNames = (this.getToolDefinitions() as Array<{ function: { name: string } }>)
+            .map(t => t.function.name);
+          const xmlCalls = parseXmlToolCalls(typeof content === 'string' ? content : JSON.stringify(content), validNames);
+
+          if (xmlCalls.length > 0) {
+            logger.info('[' + this.name + '] XML tool calls detected: ' + xmlCalls.map(c => c.name).join(', '));
+            
+            const cleanContent = '';
+            currentMessages.push({
+              role: 'assistant',
+              content: cleanContent,
+              tool_calls: xmlCalls.map(c => ({
+                id: c.id,
+                type: 'function',
+                function: { name: c.name, arguments: JSON.stringify(c.args) }
+              }))
+            });
+
+            for (const call of xmlCalls) {
+              onEvent({ type: 'tool_start', tool: call.name, args: call.args, iteration, callId: call.id });
+              try {
+                const result = await toolService.executeTool(call.name, call.args);
+                onEvent({ type: 'tool_result', tool: call.name, result, iteration, callId: call.id });
+                currentMessages.push({
+                  role: 'tool',
+                  tool_call_id: call.id,
+                  name: call.name,
+                  content: JSON.stringify(result)
+                });
+                consecutiveFailures = 0;
+              } catch (toolError: unknown) {
+                const toolErr = toolError as Error;
+                consecutiveFailures++;
+                logger.error('[' + this.name + '] XML tool failed (' + call.name + '): ' + toolErr.message);
+                onEvent({ type: 'tool_error', tool: call.name, error: toolErr.message, iteration, callId: call.id });
+
+                let errorContent = toolErr.message;
+                if (call.name === 'read_file' && toolErr.message.includes('ENOENT')) {
+                  errorContent += '\n\nRECOVERY: File not found. Use list_files to discover available paths.';
+                }
+                currentMessages.push({
+                  role: 'tool',
+                  tool_call_id: call.id,
+                  name: call.name,
+                  content: JSON.stringify({ error: errorContent })
+                });
+              }
+            }
+
+            if (consecutiveFailures === 0) {
+              iteration++;
+            } else if (consecutiveFailures >= maxConsecutiveFailures) {
+              iteration++;
+            }
+            continue;
+          }
+
+          // Truly done
           onEvent({ type: 'text_complete', content: typeof content === 'string' ? content : JSON.stringify(content) });
           return typeof content === 'string' ? content : JSON.stringify(content);
         }
@@ -225,6 +328,7 @@ export abstract class BaseOpenAIService implements AIProvider {
               name,
               content: JSON.stringify(result)
             });
+            consecutiveFailures = 0; // Reset on success
           } catch (toolError: unknown) {
             const toolErr = toolError as Error;
 
@@ -251,22 +355,44 @@ export abstract class BaseOpenAIService implements AIProvider {
                 name: browserToolName,
                 content: JSON.stringify(result)
               });
-              iteration++;
+              consecutiveFailures = 0;
               continue; // Continue the loop with the result
             }
 
+            consecutiveFailures++;
             logger.error(`[${this.name}] Tool execution failed (${name}): ${toolErr.message}`);
             onEvent({ type: 'tool_error', tool: name, error: toolErr.message, iteration, callId });
+
+            // Add recovery hint for file operations
+            let errorContent = toolErr.message;
+            if (name === 'read_file' && toolErr.message.includes('ENOENT')) {
+              errorContent += '\n\nRECOVERY: The file path does not exist. Use list_files to discover available files before retrying.';
+            } else if (name === 'list_files' && toolErr.message.includes('ENOENT')) {
+              errorContent += '\n\nRECOVERY: The directory does not exist. Try listing the parent directory or use list_files with "." to see the project root.';
+            } else if (name === 'run_shell' && consecutiveFailures >= maxConsecutiveFailures) {
+              errorContent += '\n\nRECOVERY: Multiple shell attempts failed. Try a different approach or ask the user for help.';
+            }
+
             currentMessages.push({
               role: "tool",
               tool_call_id: callId,
               name,
-              content: JSON.stringify({ error: toolErr.message })
+              content: JSON.stringify({ error: errorContent })
             });
+
+            // Don't increment iteration on failure — give the model a chance to recover
+            if (consecutiveFailures >= maxConsecutiveFailures) {
+              // Force a final API call with recovery hint, then stop
+              iteration++;
+            }
           }
         }
 
-        iteration++;
+        // Only increment iteration on successful tool execution
+        // (failed calls don't count toward the limit, giving the model room to recover)
+        if (consecutiveFailures === 0) {
+          iteration++;
+        }
       }
 
       throw new Error(`${this.name} agent exceeded maximum tool-calling iterations.`);
