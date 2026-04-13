@@ -30,4 +30,9 @@ describe('Provider Capabilities', () => {
     const plugin = new GroqProviderPlugin();
     expect(plugin).toBeInstanceOf(BaseOpenAIService);
   });
+
+  it('fireworks should extend BaseOpenAIService for tool-calling loop', () => {
+    const plugin = new FireworksProviderPlugin();
+    expect(plugin).toBeInstanceOf(BaseOpenAIService);
+  });
 });
