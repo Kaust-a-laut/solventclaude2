@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { ChevronRight, ChevronDown, RefreshCw, Search, Plus, FolderOpen, X } from 'lucide-react';
 import { ImportFileButton } from './ImportFileButton';
 import { cn } from '../../lib/utils';
@@ -6,44 +6,45 @@ import { fetchWithRetry } from '../../lib/api-client';
 import { BASE_URL } from '../../lib/config';
 import { getFileIcon } from './fileIcons';
 import { useAppStore } from '../../store/useAppStore';
-
-interface FileNode {
-  name: string;
-  type: 'file' | 'directory';
-  path: string;
-  children?: FileNode[];
-}
+import type { FileNode } from '../../store/codingSlice';
 
 interface Props {
   onFileSelect: (path: string) => void;
 }
 
 export const FileTreePanel: React.FC<Props> = ({ onFileSelect }) => {
-  const { openFiles, activeFile, fileTreeRefreshTrigger, currentProject, projectHistory, createNewProject, openProject, openFolder, closeProject } = useAppStore();
-  const [nodes, setNodes] = useState<FileNode[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [showNewProjectInput, setShowNewProjectInput] = useState(false);
-  const [newProjectName, setNewProjectName] = useState('');
-  const [showOpenFolderInput, setShowOpenFolderInput] = useState(false);
-  const [openFolderPath, setOpenFolderPath] = useState('');
+  const {
+    openFiles, activeFile, fileTreeRefreshTrigger, currentProject, projectHistory,
+    createNewProject, openProject, openFolder, closeProject,
+    fileTreeNodes, fileTreeExpanded, fileTreeLoading,
+    setFileTreeNodes, setFileTreeExpanded, setFileTreeLoading, toggleFileTreeFolder,
+  } = useAppStore();
+  const [showNewProjectInput, setShowNewProjectInput] = React.useState(false);
+  const [newProjectName, setNewProjectName] = React.useState('');
+  const [showOpenFolderInput, setShowOpenFolderInput] = React.useState(false);
+  const [openFolderPath, setOpenFolderPath] = React.useState('');
 
   const fetchFiles = useCallback(async () => {
     if (!currentProject) return;
-    setLoading(true);
+    setFileTreeLoading(true);
     try {
       const projectParam = currentProject.type === 'folder' ? '' : `?project=${currentProject.name}`;
       const url = currentProject.type === 'folder' 
         ? `${BASE_URL}/api/files/list?path=.` 
         : `${BASE_URL}/api/files/list${projectParam}`;
       const data = await fetchWithRetry(url);
-      setNodes(Array.isArray(data) ? data : []);
+      setFileTreeNodes(Array.isArray(data) ? data : []);
     } catch {
-      setNodes([]);
+      setFileTreeNodes([]);
     } finally {
-      setLoading(false);
+      setFileTreeLoading(false);
     }
-  }, [currentProject]);
+  }, [currentProject, setFileTreeNodes, setFileTreeLoading]);
+
+  useEffect(() => {
+    if (!currentProject) return;
+    fetchFiles();
+  }, [currentProject, fileTreeRefreshTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreateProject = () => {
     if (newProjectName.trim()) {
@@ -61,9 +62,6 @@ export const FileTreePanel: React.FC<Props> = ({ onFileSelect }) => {
     }
   };
 
-  const toggle = (path: string) =>
-    setExpanded((prev) => ({ ...prev, [path]: !prev[path] }));
-
   const isModified = (path: string) =>
     openFiles.some((f) => f.path === path);
 
@@ -75,7 +73,7 @@ export const FileTreePanel: React.FC<Props> = ({ onFileSelect }) => {
     return (
       <div key={node.path}>
         <div
-          onClick={() => node.type === 'directory' ? toggle(node.path) : onFileSelect(node.path)}
+          onClick={() => node.type === 'directory' ? toggleFileTreeFolder(node.path) : onFileSelect(node.path)}
           className={cn(
             'flex items-center gap-1.5 py-[3px] pr-2 cursor-pointer transition-colors text-[12px]',
             'hover:bg-white/5 rounded',
@@ -87,7 +85,7 @@ export const FileTreePanel: React.FC<Props> = ({ onFileSelect }) => {
         >
           {node.type === 'directory' && (
             <span className="text-slate-300 shrink-0">
-              {expanded[node.path] ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+              {fileTreeExpanded[node.path] ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
             </span>
           )}
           <span className={cn('shrink-0', node.type === 'file' ? icon.color : 'text-indigo-400')}>
@@ -98,7 +96,7 @@ export const FileTreePanel: React.FC<Props> = ({ onFileSelect }) => {
             <span className="w-1.5 h-1.5 rounded-full bg-jb-accent shrink-0" title="Modified" />
           )}
         </div>
-        {node.type === 'directory' && expanded[node.path] && node.children?.map((c) => renderNode(c, depth + 1))}
+        {node.type === 'directory' && fileTreeExpanded[node.path] && node.children?.map((c) => renderNode(c, depth + 1))}
       </div>
     );
   };
@@ -235,7 +233,7 @@ export const FileTreePanel: React.FC<Props> = ({ onFileSelect }) => {
         <div className="flex items-center gap-1">
           <button
             onClick={fetchFiles}
-            className={cn('p-1 hover:bg-white/10 rounded text-white/30 hover:text-white/60', loading && 'animate-spin')}
+            className={cn('p-1 hover:bg-white/10 rounded text-white/30 hover:text-white/60', fileTreeLoading && 'animate-spin')}
           >
             <RefreshCw size={11} />
           </button>
@@ -252,12 +250,12 @@ export const FileTreePanel: React.FC<Props> = ({ onFileSelect }) => {
 
       <div className="flex-1 min-h-0 relative">
         <div className="absolute inset-0 overflow-y-auto scrollbar-thin py-1">
-          {loading ? (
+          {fileTreeLoading ? (
             <div className="px-3 py-4 flex justify-center">
               <RefreshCw size={14} className="text-white/30 animate-spin" />
             </div>
-          ) : nodes.length > 0 ? (
-            nodes.map((n) => renderNode(n))
+          ) : fileTreeNodes.length > 0 ? (
+            fileTreeNodes.map((n) => renderNode(n))
           ) : (
             <div className="px-3 py-4 text-center text-[11px] text-white/30">
               No files yet. Import or create files to get started.

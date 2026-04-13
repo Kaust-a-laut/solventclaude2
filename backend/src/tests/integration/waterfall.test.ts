@@ -16,7 +16,10 @@ vi.mock('../../services/toolService', () => ({
 // Mock fs to avoid actual file operations
 vi.mock('fs/promises', () => ({
   default: {
-    unlink: vi.fn().mockResolvedValue(undefined)
+    unlink: vi.fn().mockResolvedValue(undefined),
+    mkdir: vi.fn().mockResolvedValue(undefined),
+    writeFile: vi.fn().mockResolvedValue(undefined),
+    rm: vi.fn().mockResolvedValue(undefined),
   }
 }));
 

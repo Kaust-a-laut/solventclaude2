@@ -5,6 +5,7 @@ import type { editor as MonacoEditor } from 'monaco-editor';
 import { AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
 import type { ConsoleEntry, ElementInfo } from '../store/codingSlice';
+import { persistProjectOpenState, restoreProjectOpenState } from '../store/codingSlice';
 import { useShallow } from 'zustand/react/shallow';
 import { fetchWithRetry, getSecret } from '../lib/api-client';
 import { BASE_URL } from '../lib/config';
@@ -87,6 +88,44 @@ export const CodingArea = () => {
     const existing = getWebContainerInstance();
     if (existing && !webContainer) { setWebContainer(existing); setBootStatus('ready'); addLog('[SYSTEM]: Reconnected to existing WebContainer sandbox.'); }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-restore open files when a project is loaded and the editor is empty
+  useEffect(() => {
+    if (!currentProject || openFiles.length > 0) return;
+    const key = `${currentProject.type}:${currentProject.path || currentProject.name}`;
+    const saved = restoreProjectOpenState(key);
+    if (!saved || saved.openFilePaths.length === 0) return;
+
+    (async () => {
+      addLog(`[SYSTEM]: Restoring ${saved.openFilePaths.length} file(s) from last session…`);
+      const loaded: { path: string; content: string }[] = [];
+      for (const path of saved.openFilePaths) {
+        try {
+          const data = await fetchWithRetry(
+            `${BASE_URL}/api/files/read?path=${encodeURIComponent(path)}`
+          ) as Record<string, string>;
+          loaded.push({ path, content: data.content ?? '' });
+        } catch { /* file may have been deleted — skip */ }
+      }
+      if (loaded.length > 0) {
+        setOpenFiles(loaded);
+        const preferred = saved.activeFile && loaded.find(f => f.path === saved.activeFile)
+          ? saved.activeFile
+          : (loaded[0]?.path ?? null);
+        setActiveFile(preferred);
+      }
+    })();
+  }, [currentProject]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-save open file paths per project (debounced 1.5s)
+  useEffect(() => {
+    if (!currentProject || openFiles.length === 0) return;
+    const key = `${currentProject.type}:${currentProject.path || currentProject.name}`;
+    const timer = setTimeout(() => {
+      persistProjectOpenState(key, openFiles.map(f => f.path), activeFile);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [openFiles, activeFile, currentProject]);
 
   // Re-register server-ready + error listeners whenever webContainer changes.
   // This handles both initial boot and hot-reload / singleton restore cases where
@@ -241,16 +280,23 @@ export const CodingArea = () => {
   }, [openFiles, activeFile, setOpenFiles, setActiveFile]);
 
   const handleSave = useCallback(async () => {
-    if (!activeFile || !currentFile) return;
+    if (openFiles.length === 0) return;
     try {
-      await fetchWithRetry(`${BASE_URL}/api/files/write`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: activeFile, content: currentFile.content }),
-      });
-      addLog(`[SYSTEM]: Saved ${activeFile}`);
-    } catch { addLog(`[ERROR]: Save failed for ${activeFile}`); }
-  }, [activeFile, currentFile, addLog]);
+      await Promise.all(openFiles.map(f =>
+        fetchWithRetry(`${BASE_URL}/api/files/write`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: f.path, content: f.content }),
+        })
+      ));
+      addLog(`[SYSTEM]: Saved ${openFiles.length} file(s)`);
+      // Persist session state immediately on manual save
+      if (currentProject) {
+        const key = `${currentProject.type}:${currentProject.path || currentProject.name}`;
+        persistProjectOpenState(key, openFiles.map(f => f.path), activeFile);
+      }
+    } catch { addLog(`[ERROR]: Save All failed`); }
+  }, [openFiles, activeFile, currentProject, addLog]);
 
   // Syncs all backend project files into the WebContainer so the user never has
   // to manually re-import after a page refresh.
@@ -428,6 +474,7 @@ export const CodingArea = () => {
       if (mod && e.key === 'j') { e.preventDefault(); setTerminalVisible(!terminalVisible); }
       if (mod && e.shiftKey && e.key === 'I') { e.preventDefault(); setChatPanelVisible(!chatPanelVisible); }
       if (mod && e.key === 'e') { e.preventDefault(); setEditorVisible((v) => !v); }
+      if (mod && e.key === 's') { e.preventDefault(); handleSave(); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);

@@ -121,12 +121,12 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
       <button
         type="button"
         onClick={onSave}
-        disabled={!activeFile}
-        className="p-1.5 rounded-lg text-white/30 hover:text-white/60 disabled:opacity-20"
-        aria-label="Save file"
+        title="Save all open files (⌘S)"
+        className="flex items-center gap-1 px-2 py-1 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors text-[10px] font-semibold tracking-wide"
+        aria-label="Save all files"
       >
-        {/* Fix 3: icon is decorative; button has aria-label */}
-        <Save size={15} aria-hidden="true" />
+        <Save size={13} aria-hidden="true" />
+        <span>Save All</span>
       </button>
       <button
         type="button"

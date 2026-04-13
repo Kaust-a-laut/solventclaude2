@@ -35,15 +35,16 @@ export function useModelCapabilities() {
   };
 }
 
-function getModelTier(model: ModelOption | undefined): ModelTier {
+export function getModelTier(model: ModelOption | undefined): ModelTier {
   if (!model) return 'code-only';
+  // GLM-4.7 and GLM-5 excluded — tool-use reliability is not production-grade for agentic work
   const fullAgentic = [
     'accounts/fireworks/models/kimi-k2p5',
+    'google/gemini-2.5-flash',
+    'google/gemini-2.5-pro-exp-03-25',
     'qwen3-coder-plus',
     'anthropic/claude-sonnet-4',
     'openai/gpt-4o',
-    'accounts/fireworks/models/glm-4p7',
-    'accounts/fireworks/models/glm-5',
     'qwen3.6-plus',
     'compound-beta',
     'moonshotai/kimi-k2-instruct-0905',
@@ -59,6 +60,10 @@ function getModelTraits(model: ModelOption | undefined): AgentModelTraits {
   const multimodalModels = [
     'anthropic/claude-sonnet-4',
     'openai/gpt-4o',
+    'accounts/fireworks/models/kimi-k2p5',
+    'qwen3.6-plus',
+    'google/gemini-2.5-flash',
+    'google/gemini-2.5-pro-exp-03-25',
   ];
 
   return {
@@ -73,6 +78,8 @@ function getContextWindow(modelId: string): number {
     'anthropic/claude-sonnet-4': 200000,
     'openai/gpt-4o': 128000,
     'accounts/fireworks/models/kimi-k2p5': 262144,
+    'google/gemini-2.5-flash': 1048576,
+    'google/gemini-2.5-pro-exp-03-25': 1048576,
     'qwen3-coder-plus': 131072,
     'accounts/fireworks/models/glm-4p7': 202800,
     'accounts/fireworks/models/glm-5': 202800,

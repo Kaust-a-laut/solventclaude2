@@ -12,7 +12,33 @@ export interface ProjectInfo {
 }
 
 const PROJECT_HISTORY_KEY = 'solvent-project-history';
+const PROJECT_STATE_KEY = 'solvent-project-open-state';
 const MAX_HISTORY = 10;
+
+/** Persists which files were open for a project (paths only — content lives on the backend). */
+export function persistProjectOpenState(
+  projectKey: string,
+  openFilePaths: string[],
+  activeFile: string | null
+): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const all = JSON.parse(localStorage.getItem(PROJECT_STATE_KEY) || '{}');
+    all[projectKey] = { openFilePaths, activeFile, savedAt: Date.now() };
+    localStorage.setItem(PROJECT_STATE_KEY, JSON.stringify(all));
+  } catch {}
+}
+
+/** Returns the last-saved open file list for a project, or null if none. */
+export function restoreProjectOpenState(
+  projectKey: string
+): { openFilePaths: string[]; activeFile: string | null } | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const all = JSON.parse(localStorage.getItem(PROJECT_STATE_KEY) || '{}');
+    return (all[projectKey] as { openFilePaths: string[]; activeFile: string | null }) ?? null;
+  } catch { return null; }
+}
 
 const savedHistory = typeof window !== 'undefined'
   ? (() => {
@@ -30,6 +56,15 @@ function persistHistory(history: ProjectInfo[]): void {
       localStorage.setItem(PROJECT_HISTORY_KEY, JSON.stringify(history));
     } catch {}
   }
+}
+
+// --- File Tree Node (shared between CodingSlice and FileTreePanel) ---
+
+export interface FileNode {
+  name: string;
+  type: 'file' | 'directory';
+  path: string;
+  children?: FileNode[];
 }
 
 // --- Tool Event Types (mirror backend AgentEvent types) ---
@@ -101,6 +136,15 @@ export interface CodingSlice {
   addTerminalLine: (line: string) => void;
   clearTerminalLines: () => void;
 
+  // File tree state (persisted across remounts)
+  fileTreeNodes: FileNode[];
+  fileTreeExpanded: Record<string, boolean>;
+  fileTreeLoading: boolean;
+  setFileTreeNodes: (nodes: FileNode[]) => void;
+  setFileTreeExpanded: (expanded: Record<string, boolean>) => void;
+  setFileTreeLoading: (loading: boolean) => void;
+  toggleFileTreeFolder: (path: string) => void;
+
   // File tree refresh trigger (incremented to signal a refresh)
   fileTreeRefreshTrigger: number;
   triggerFileTreeRefresh: () => void;
@@ -170,6 +214,16 @@ export const createCodingSlice: StateCreator<AppState, [], [], CodingSlice> = (s
     return { terminalLines: lines };
   }),
   clearTerminalLines: () => set({ terminalLines: [] }),
+
+  fileTreeNodes: [],
+  fileTreeExpanded: {},
+  fileTreeLoading: false,
+  setFileTreeNodes: (fileTreeNodes) => set({ fileTreeNodes }),
+  setFileTreeExpanded: (fileTreeExpanded) => set({ fileTreeExpanded }),
+  setFileTreeLoading: (fileTreeLoading) => set({ fileTreeLoading }),
+  toggleFileTreeFolder: (path) => set((state) => ({
+    fileTreeExpanded: { ...state.fileTreeExpanded, [path]: !state.fileTreeExpanded[path] },
+  })),
 
   fileTreeRefreshTrigger: 0,
   triggerFileTreeRefresh: () => set((state) => ({ fileTreeRefreshTrigger: state.fileTreeRefreshTrigger + 1 })),
@@ -284,7 +338,7 @@ export const createCodingSlice: StateCreator<AppState, [], [], CodingSlice> = (s
   },
 
   closeProject: () => {
-    set({ currentProject: null, openFiles: [], activeFile: null });
+    set({ currentProject: null, openFiles: [], activeFile: null, fileTreeNodes: [], fileTreeExpanded: {} });
   },
   });
 };

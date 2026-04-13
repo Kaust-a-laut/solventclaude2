@@ -134,6 +134,8 @@ export const BrowserArea = () => {
   const [pipelineStage, setPipelineStage] = useState<PipelineStage>('idle');
   const pipWindowRef = useRef<Window | null>(null);
   const pipCleanupRef = useRef<(() => void) | null>(null);
+  // Cache of URL → tab state so back-navigation restores results without re-fetching
+  const tabSnapshotCache = useRef<Map<string, { type: string; label: string; searchResults: import('../store/types').SearchResultSet | null; pageContent: import('../store/types').PageContent | null; searchPage?: number }>>(new Map());
 
   useEffect(() => {
     return () => { pipCleanupRef.current?.(); };
@@ -152,13 +154,19 @@ export const BrowserArea = () => {
       // Reader mode: fetch and extract page content
       try {
         const pageContent: PageContent = await ChatService.browse(newUrl);
+        const readerLabel = pageContent.title?.slice(0, 20) || safeHostname(newUrl);
         updateBrowserTab(tabId, {
           type: 'reader',
           url: newUrl,
-          label: pageContent.title?.slice(0, 20) || safeHostname(newUrl),
+          label: readerLabel,
           pageContent,
           searchResults: null,
           isLoading: false,
+        });
+        // Cache so back-navigation can restore without re-fetching
+        tabSnapshotCache.current.set(newUrl, {
+          type: 'reader', label: readerLabel,
+          searchResults: null, pageContent,
         });
         // Sync legacy store
         setLastSearchResults(null);
@@ -215,6 +223,11 @@ export const BrowserArea = () => {
           pageContent: null,
           searchPage: 1,
           isLoading: false,
+        });
+        // Cache results so back-navigation can restore without re-fetching
+        tabSnapshotCache.current.set(newUrl, {
+          type: 'search', label: newUrl.slice(0, 20),
+          searchResults: searchData, pageContent: null, searchPage: 1,
         });
         setLastSearchResults(searchData);
         setPipelineStage('complete');
@@ -403,8 +416,35 @@ export const BrowserArea = () => {
                 const prev = browserHistory.slice(0, -1);
                 const targetUrl = prev[prev.length - 1];
                 if (!targetUrl) return;
+
+                // Save current page to cache before leaving it
+                if (activeTab?.url) {
+                  tabSnapshotCache.current.set(activeTab.url, {
+                    type: activeTab.type,
+                    label: activeTab.label,
+                    searchResults: activeTab.searchResults ?? null,
+                    pageContent: activeTab.pageContent ?? null,
+                    searchPage: activeTab.searchPage,
+                  });
+                }
+
                 setBrowserHistory(prev);
-                handleNavigate(targetUrl);
+
+                // Restore from cache if available — avoids re-fetching
+                const cached = tabSnapshotCache.current.get(targetUrl);
+                if (cached && (cached.searchResults?.results?.length || cached.pageContent)) {
+                  setInputUrl(targetUrl);
+                  setSummary(null);
+                  updateBrowserTab(tabId, { url: targetUrl, isLoading: false, ...cached } as Parameters<typeof updateBrowserTab>[1]);
+                  if (cached.searchResults) {
+                    setLastSearchResults(cached.searchResults);
+                    setPipelineStage('complete');
+                  } else {
+                    setPipelineStage('idle');
+                  }
+                } else {
+                  handleNavigate(targetUrl);
+                }
               }}
               className="p-2 hover:bg-white/5 rounded-lg transition-all disabled:opacity-20 disabled:cursor-not-allowed"
               disabled={browserHistory.length <= 1}

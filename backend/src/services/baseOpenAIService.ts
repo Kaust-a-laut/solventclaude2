@@ -32,7 +32,7 @@ function parseXmlToolCalls(content: string, validNames: string[]): Array<{id: st
       
       // Parse parameters from inner content
       const args: Record<string, unknown> = {};
-      const paramRegex = /<(\w+)>([\s\S]*?)<\/>/g;
+      const paramRegex = /<(\w+)>([\s\S]*?)<\/\1>/g;
       let match: RegExpExecArray | null;
       while ((match = paramRegex.exec(inner)) !== null) {
         if (match[1] && match[2]) {

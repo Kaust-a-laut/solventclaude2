@@ -41,9 +41,35 @@ const BINARY_EXTS = new Set([
   '.db', '.sqlite',
 ]);
 
+// Directory segments that should never be uploaded (generated/dependency folders)
+const SKIP_DIRS = new Set([
+  'node_modules', '.git', '.svn', 'dist', 'build', '.next', '.nuxt',
+  'out', '.cache', '.turbo', '.vercel', '__pycache__', '.venv', 'venv',
+  'target', '.gradle', '.idea', '.vscode',
+]);
+
+function shouldSkipPath(relativePath: string): boolean {
+  return relativePath.split('/').some(segment => SKIP_DIRS.has(segment));
+}
+
 function isTextFile(name: string): boolean {
   const ext = name.slice(name.lastIndexOf('.')).toLowerCase();
   return !BINARY_EXTS.has(ext);
+}
+
+/** Upload files in bounded batches to avoid overwhelming the browser + backend. */
+async function uploadInBatches<T>(
+  items: T[],
+  batchSize: number,
+  fn: (item: T) => Promise<void>
+): Promise<PromiseSettledResult<void>[]> {
+  const results: PromiseSettledResult<void>[] = [];
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    const batchResults = await Promise.allSettled(batch.map(fn));
+    results.push(...batchResults);
+  }
+  return results;
 }
 
 function readFileAsText(file: File): Promise<string> {
@@ -93,41 +119,47 @@ export const ImportFileButton: React.FC<ImportFileButtonProps> = ({ onImported }
 
     // webkitRelativePath = "folderName/sub/file.ts" — strip the root folder prefix
     const rootPrefix = files[0]?.webkitRelativePath.split('/')[0] ?? '';
-    const textFiles = files.filter(f => isTextFile(f.name));
+
+    // Filter: skip binary files AND generated/dependency directories
+    const textFiles = files.filter(f => {
+      const relative = rootPrefix
+        ? f.webkitRelativePath.slice(rootPrefix.length + 1)
+        : f.webkitRelativePath;
+      return isTextFile(f.name) && !shouldSkipPath(relative);
+    });
 
     if (textFiles.length === 0) {
-      setError('No text files found in the selected folder.');
+      setError('No importable text files found (node_modules, dist, .git, etc. are skipped).');
       return;
     }
 
     isSubmittingRef.current = true;
     setError(null);
     setFolderUploading({ name: rootPrefix || 'folder', total: textFiles.length });
+
     try {
-      const results = await Promise.allSettled(
-        textFiles.map(async (file) => {
-          // Strip root folder name: "myProject/src/App.tsx" → "src/App.tsx"
-          const stripped = rootPrefix
-            ? file.webkitRelativePath.slice(rootPrefix.length + 1)
-            : file.webkitRelativePath;
-          if (!stripped) return; // skip if path is just the root folder itself
+      const results = await uploadInBatches(textFiles, 10, async (file) => {
+        // Strip root folder name: "myProject/src/App.tsx" → "src/App.tsx"
+        const stripped = rootPrefix
+          ? file.webkitRelativePath.slice(rootPrefix.length + 1)
+          : file.webkitRelativePath;
+        if (!stripped) return; // skip if path is just the root folder itself
 
-          // For scratchpad projects the backend resolves paths relative to the
-          // projects directory, so prefix with the project name so files land at
-          // projects/{projectName}/{stripped} instead of projects/{stripped}.
-          const writePath =
-            currentProject !== null && currentProject.type === 'scratchpad'
-              ? `${currentProject.name}/${stripped}`
-              : stripped;
+        // For scratchpad projects the backend resolves paths relative to the
+        // projects directory, so prefix with the project name so files land at
+        // projects/{projectName}/{stripped} instead of projects/{stripped}.
+        const writePath =
+          currentProject !== null && currentProject.type === 'scratchpad'
+            ? `${currentProject.name}/${stripped}`
+            : stripped;
 
-          const content = await readFileAsText(file);
-          await fetchWithRetry(`${BASE_URL}/api/files/write`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: writePath, content }),
-          });
-        })
-      );
+        const content = await readFileAsText(file);
+        await fetchWithRetry(`${BASE_URL}/api/files/write`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: writePath, content }),
+        });
+      });
 
       const succeeded = results.filter(r => r.status === 'fulfilled').length;
       const failed = results.filter(r => r.status === 'rejected').length;
