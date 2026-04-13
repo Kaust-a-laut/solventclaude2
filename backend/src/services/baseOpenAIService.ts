@@ -107,7 +107,7 @@ export abstract class BaseOpenAIService implements AIProvider {
 
     try {
       let iteration = 0;
-      const maxIterations = 5;
+      const maxIterations = 8;
       let consecutiveFailures = 0;
       const maxConsecutiveFailures = 3;
 
@@ -210,7 +210,7 @@ export abstract class BaseOpenAIService implements AIProvider {
 
     try {
       let iteration = 0;
-      const maxIterations = 5;
+      const maxIterations = tier === 'full-agentic' ? 12 : 6;
       let consecutiveFailures = 0;
       const maxConsecutiveFailures = 3;
 
