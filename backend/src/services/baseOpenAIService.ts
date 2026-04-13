@@ -48,6 +48,14 @@ function parseXmlToolCalls(content: string, validNames: string[]): Array<{id: st
   return calls;
 }
 
+/**
+ * Strip <think>...</think> blocks emitted by reasoning models (Qwen3, DeepSeek-R1, etc.)
+ * before processing content or returning it to the user.
+ */
+function stripThinkTags(text: string): string {
+  return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+}
+
 function filterToolsByTier(
   tools: unknown[],
   tier?: 'full-agentic' | 'code-only',
@@ -135,15 +143,16 @@ export abstract class BaseOpenAIService implements AIProvider {
         );
 
         const message = response.data.choices[0].message;
-        const content = message.content || "";
-        
+        const rawContent = message.content || "";
+        const content = stripThinkTags(typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent));
+
         if (!message.tool_calls) {
-          return typeof content === 'string' ? content : JSON.stringify(content);
+          return content;
         }
 
         // Handle Tool Calls
         logger.info(`[${this.name}] Tool calls detected: ${message.tool_calls.length}`);
-        currentMessages.push(message);
+        currentMessages.push({ ...message, content });
         
         for (const toolCall of message.tool_calls) {
           const name = toolCall.function.name;
@@ -237,7 +246,8 @@ export abstract class BaseOpenAIService implements AIProvider {
         );
 
         const message = response.data.choices[0].message;
-        const content = message.content || "";
+        const rawContent = message.content || "";
+        const content = stripThinkTags(typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent));
 
         if (!message.tool_calls) {
           // Fallback: check if the model emitted tool calls as XML in content
@@ -305,7 +315,7 @@ export abstract class BaseOpenAIService implements AIProvider {
 
         // Handle Tool Calls with events
         logger.info(`[${this.name}] Tool calls detected: ${message.tool_calls.length}`);
-        currentMessages.push(message);
+        currentMessages.push({ ...message, content });
 
         for (const toolCall of message.tool_calls) {
           const name = toolCall.function.name;
