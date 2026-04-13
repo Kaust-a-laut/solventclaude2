@@ -35,4 +35,9 @@ describe('Provider Capabilities', () => {
     const plugin = new FireworksProviderPlugin();
     expect(plugin).toBeInstanceOf(BaseOpenAIService);
   });
+
+  it('cerebras should extend BaseOpenAIService for tool-calling loop', () => {
+    const plugin = new CerebrasProviderPlugin();
+    expect(plugin).toBeInstanceOf(BaseOpenAIService);
+  });
 });
