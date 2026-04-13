@@ -3,6 +3,7 @@ import { Send, Trash2, Sparkles, ChevronDown, Copy, Check } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAppStore } from '../../store/useAppStore';
 import type { AgentMessage, CodeSuggestion, ToolEvent } from '../../store/codingSlice';
+import { persistAgentMessages, restoreAgentMessages } from '../../store/codingSlice';
 import { getSecret } from '../../lib/api-client';
 import { API_BASE_URL, BASE_URL } from '../../lib/config';
 import { AgentCodeBlock } from './AgentCodeBlock';
@@ -74,6 +75,32 @@ export const AgentChatPanel: React.FC = () => {
   useEffect(() => {
     return () => { abortRef.current?.abort(); };
   }, []);
+
+  // Restore persisted messages when switching to a project with no active chat
+  useEffect(() => {
+    if (!currentProject) return;
+    if (agentMessages.length > 0) return; // don't overwrite an active session
+
+    const projectKey = `${currentProject.type}:${currentProject.path}`;
+    const saved = restoreAgentMessages(projectKey);
+    if (saved && saved.length > 0) {
+      clearAgentMessages();
+      saved.forEach(m => addAgentMessage(m));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentProject?.path]);
+
+  // Debounced save — write to localStorage 2s after messages settle
+  useEffect(() => {
+    if (!currentProject) return;
+    if (agentMessages.length === 0) return;
+
+    const projectKey = `${currentProject.type}:${currentProject.path}`;
+    const timer = setTimeout(() => {
+      persistAgentMessages(projectKey, agentMessages);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [agentMessages, currentProject?.path]);
 
   const copyMessage = useCallback(async (msg: AgentMessage) => {
     let text = msg.content;
