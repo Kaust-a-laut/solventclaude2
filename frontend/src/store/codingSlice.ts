@@ -58,6 +58,45 @@ function persistHistory(history: ProjectInfo[]): void {
   }
 }
 
+// --- Agent Chat Persistence ---
+
+const AGENT_CHAT_KEY = 'solvent-agent-chat';
+const MAX_PERSISTED_MESSAGES = 50;
+
+/** Persists the last N agent messages for a project to localStorage. */
+export function persistAgentMessages(projectKey: string, messages: AgentMessage[]): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const toSave = messages
+      .filter(m => !m.isStreaming)
+      .slice(-MAX_PERSISTED_MESSAGES)
+      .map(m => ({
+        ...m,
+        toolEvents: m.toolEvents?.map(e => ({
+          ...e,
+          result:
+            typeof e.result === 'string' && e.result.length > 500
+              ? e.result.slice(0, 500) + '… [truncated]'
+              : e.result,
+        })),
+      }));
+    const all = JSON.parse(localStorage.getItem(AGENT_CHAT_KEY) || '{}');
+    all[projectKey] = { messages: toSave, savedAt: Date.now() };
+    localStorage.setItem(AGENT_CHAT_KEY, JSON.stringify(all));
+  } catch {}
+}
+
+/** Returns persisted agent messages for a project, or null if none. */
+export function restoreAgentMessages(projectKey: string): AgentMessage[] | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const all = JSON.parse(localStorage.getItem(AGENT_CHAT_KEY) || '{}');
+    return (all[projectKey]?.messages as AgentMessage[]) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // --- File Tree Node (shared between CodingSlice and FileTreePanel) ---
 
 export interface FileNode {

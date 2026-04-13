@@ -454,6 +454,15 @@ export class ToolService {
     const fullPath = validatePath(filePath);
     const content = await fs.readFile(fullPath, 'utf-8');
     vectorService.addEntry(content.slice(0, 5000), { path: filePath, type: 'file_read' }).catch(console.error);
+
+    const MAX_FILE_CHARS = 8_000;
+    if (content.length > MAX_FILE_CHARS) {
+      return (
+        content.slice(0, MAX_FILE_CHARS) +
+        `\n\n[FILE TRUNCATED — ${content.length - MAX_FILE_CHARS} additional characters not shown. ` +
+        `Use list_files to check the structure, or request a specific section of the file.]`
+      );
+    }
     return content;
   }
 
@@ -467,10 +476,20 @@ export class ToolService {
   private async listFiles(dirPath: string) {
     const fullPath = validatePath(dirPath);
     const files = await fs.readdir(fullPath, { withFileTypes: true });
-    return files.map(f => ({
+
+    const MAX_ENTRIES = 150;
+    const visible = files.slice(0, MAX_ENTRIES);
+    const result = visible.map(f => ({
       name: f.name,
-      type: f.isDirectory() ? 'directory' : 'file'
+      type: f.isDirectory() ? 'directory' : 'file',
     }));
+    if (files.length > MAX_ENTRIES) {
+      result.push({
+        name: `[${files.length - MAX_ENTRIES} more entries — use a subdirectory path to narrow results]`,
+        type: 'file',
+      });
+    }
+    return result;
   }
 
   /**

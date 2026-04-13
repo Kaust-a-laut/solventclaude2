@@ -48,6 +48,14 @@ function parseXmlToolCalls(content: string, validNames: string[]): Array<{id: st
   return calls;
 }
 
+/**
+ * Strip <think>...</think> blocks emitted by reasoning models (Qwen3, DeepSeek-R1, etc.)
+ * before processing content or returning it to the user.
+ */
+function stripThinkTags(text: string): string {
+  return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+}
+
 function filterToolsByTier(
   tools: unknown[],
   tier?: 'full-agentic' | 'code-only',
@@ -99,7 +107,7 @@ export abstract class BaseOpenAIService implements AIProvider {
 
     try {
       let iteration = 0;
-      const maxIterations = 5;
+      const maxIterations = 8;
       let consecutiveFailures = 0;
       const maxConsecutiveFailures = 3;
 
@@ -111,9 +119,9 @@ export abstract class BaseOpenAIService implements AIProvider {
           max_tokens: options.maxTokens ?? 2048,
         };
 
-        // CRITICAL FIX: Most providers (Groq, OpenAI) do not allow 
+        // CRITICAL FIX: Most providers (Groq, OpenAI) do not allow
         // response_format: "json_object" and tools to be used simultaneously.
-        if (options.jsonMode) {
+        if (options.jsonMode && !this.shouldSkipJsonMode(model)) {
           payload.response_format = { type: "json_object" };
         } else if (options.shouldSearch !== false) {
           payload.tools = this.getToolDefinitions();
@@ -135,15 +143,16 @@ export abstract class BaseOpenAIService implements AIProvider {
         );
 
         const message = response.data.choices[0].message;
-        const content = message.content || "";
-        
+        const rawContent = message.content || "";
+        const content = stripThinkTags(typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent));
+
         if (!message.tool_calls) {
-          return typeof content === 'string' ? content : JSON.stringify(content);
+          return content;
         }
 
         // Handle Tool Calls
         logger.info(`[${this.name}] Tool calls detected: ${message.tool_calls.length}`);
-        currentMessages.push(message);
+        currentMessages.push({ ...message, content });
         
         for (const toolCall of message.tool_calls) {
           const name = toolCall.function.name;
@@ -201,7 +210,7 @@ export abstract class BaseOpenAIService implements AIProvider {
 
     try {
       let iteration = 0;
-      const maxIterations = 5;
+      const maxIterations = tier === 'full-agentic' ? 12 : 6;
       let consecutiveFailures = 0;
       const maxConsecutiveFailures = 3;
 
@@ -213,7 +222,7 @@ export abstract class BaseOpenAIService implements AIProvider {
           max_tokens: options.maxTokens ?? 2048,
         };
 
-        if (options.jsonMode) {
+        if (options.jsonMode && !this.shouldSkipJsonMode(model)) {
           payload.response_format = { type: "json_object" };
         } else if (options.shouldSearch !== false) {
           const allTools = this.getToolDefinitions();
@@ -237,7 +246,8 @@ export abstract class BaseOpenAIService implements AIProvider {
         );
 
         const message = response.data.choices[0].message;
-        const content = message.content || "";
+        const rawContent = message.content || "";
+        const content = stripThinkTags(typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent));
 
         if (!message.tool_calls) {
           // Fallback: check if the model emitted tool calls as XML in content
@@ -305,7 +315,7 @@ export abstract class BaseOpenAIService implements AIProvider {
 
         // Handle Tool Calls with events
         logger.info(`[${this.name}] Tool calls detected: ${message.tool_calls.length}`);
-        currentMessages.push(message);
+        currentMessages.push({ ...message, content });
 
         for (const toolCall of message.tool_calls) {
           const name = toolCall.function.name;
@@ -408,4 +418,12 @@ export abstract class BaseOpenAIService implements AIProvider {
    * Optional method for subclasses to provide extra headers (e.g. OpenRouter)
    */
   protected getExtraHeaders?(): Record<string, string>;
+
+  /**
+   * Override in subclasses to suppress jsonMode for specific model families.
+   * Example: OpenRouter suppresses it for reasoning models that use <think> blocks.
+   */
+  protected shouldSkipJsonMode(_model: string): boolean {
+    return false;
+  }
 }
