@@ -40,4 +40,9 @@ describe('Provider Capabilities', () => {
     const plugin = new CerebrasProviderPlugin();
     expect(plugin).toBeInstanceOf(BaseOpenAIService);
   });
+
+  it('openrouter should extend BaseOpenAIService for tool-calling loop', () => {
+    const plugin = new OpenRouterProviderPlugin();
+    expect(plugin).toBeInstanceOf(BaseOpenAIService);
+  });
 });
