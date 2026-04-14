@@ -45,8 +45,37 @@ const ALLOWED_COMMAND_PREFIXES = [
   'bun ',
   'docker ',
   'curl ',
-  'wget '
+  'wget ',
+  // Pipeline-friendly utilities (read-only / deterministic)
+  'wc ',
+  'sort ',
+  'uniq ',
+  'tee ',
+  'awk ',
+  'sed ',
 ];
+
+// Operators that may separate pipeline stages. Command is validated per-stage.
+// Order matters: longer operators first so we match `&&` before `&`.
+const PIPELINE_SEPARATOR = /(?:\|\||&&|;|\|)/;
+
+// Redirect operators — kept attached to a stage, not used to split stages.
+// The shell still interprets them when we route through `sh -c`.
+
+function hasShellMetacharacters(command: string): boolean {
+  // Any of: pipeline-splitters OR redirects
+  return /(?:\|\||&&|;|\||(?:^|\s)\d?>>?|(?:^|\s)2>)/.test(command);
+}
+
+function hasCommandSubstitution(command: string): boolean {
+  // Reject backticks and $(...) — they hide commands from the allowlist.
+  return /`|\$\(/.test(command);
+}
+
+function splitPipelineStages(command: string): string[] {
+  // Split on pipeline/chain operators only. Redirects stay attached.
+  return command.split(PIPELINE_SEPARATOR).map(s => s.trim()).filter(Boolean);
+}
 
 // Commands that require explicit opt-in via SOLVENT_ALLOW_SHELL=true
 const DANGEROUS_COMMANDS = [
@@ -78,11 +107,6 @@ export class ToolService {
    *   must NOT set this flag to avoid consuming Overseer budget slots.
    */
   async executeTool(toolName: string, args: Record<string, unknown>, fromOverseer: boolean = false) {
-    // Browser tools are handled via SSE round-trip in baseOpenAIService
-    if (toolName === 'capture_screenshot') {
-      throw new Error('BROWSER_TOOL:capture_screenshot');
-    }
-
     const txId = await transactionService.logStart(toolName, args);
     logger.info(`[ToolService] Executing ${toolName}... (TX: ${txId})`, args);
     
@@ -516,8 +540,14 @@ export class ToolService {
     const allowArbitraryShell = process.env.SOLVENT_ALLOW_SHELL === 'true';
 
     if (!allowArbitraryShell) {
-      // Security: Check against allowlist
       const normalizedCommand = command.trim().toLowerCase();
+
+      // Reject command substitution — it hides commands from the allowlist.
+      if (hasCommandSubstitution(command)) {
+        throw new Error(
+          `Command rejected by security policy: command substitution ($() or backticks) is not permitted.`
+        );
+      }
 
       // First, check for dangerous commands (always blocked)
       for (const dangerous of DANGEROUS_COMMANDS) {
@@ -528,24 +558,36 @@ export class ToolService {
         }
       }
 
-      // Check if command starts with an allowed prefix
-      const isAllowed = ALLOWED_COMMAND_PREFIXES.some(prefix =>
-        normalizedCommand.startsWith(prefix.toLowerCase())
-      );
-
-      if (!isAllowed) {
-        throw new Error(
-          `Command rejected by security policy: '${command.substring(0, 50)}${command.length > 50 ? '...' : ''}'. Only allowed commands: ${ALLOWED_COMMAND_PREFIXES.join(', ')}. Set SOLVENT_ALLOW_SHELL=true to enable arbitrary command execution (not recommended).`
+      // Validate every pipeline stage's first token against the allowlist.
+      const stages = splitPipelineStages(command);
+      for (const stage of stages) {
+        const stageLower = stage.toLowerCase();
+        const allowed = ALLOWED_COMMAND_PREFIXES.some(prefix =>
+          stageLower.startsWith(prefix.toLowerCase()) || stageLower === prefix.trim().toLowerCase()
         );
+        if (!allowed) {
+          throw new Error(
+            `Command rejected by security policy: pipeline stage '${stage.substring(0, 50)}${stage.length > 50 ? '...' : ''}' is not in the allowlist. Allowed commands: ${ALLOWED_COMMAND_PREFIXES.join(', ')}.`
+          );
+        }
       }
     }
 
-    // Parse command into executable and arguments for spawn
-    // This avoids shell interpolation vulnerabilities
-    const parts = command.trim().split(/\s+/);
-    const executable = parts[0];
-    if (!executable) return Promise.reject(new Error('Empty command'));
-    const args = parts.slice(1);
+    // If the command uses pipes/redirects, spawn through `sh -c` so the shell
+    // parses them. Otherwise direct-spawn with arg splitting (faster, no shell).
+    const useShell = hasShellMetacharacters(command);
+    let executable: string;
+    let args: string[];
+    if (useShell) {
+      executable = '/bin/sh';
+      args = ['-c', command.trim()];
+    } else {
+      const parts = command.trim().split(/\s+/);
+      const first = parts[0];
+      if (!first) return Promise.reject(new Error('Empty command'));
+      executable = first;
+      args = parts.slice(1);
+    }
 
     return new Promise((resolve, reject) => {
       const proc = spawn(executable, args, {

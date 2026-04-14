@@ -56,21 +56,40 @@ function stripThinkTags(text: string): string {
   return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 }
 
+/**
+ * True when a tool result indicates the tool did not fully succeed — either an
+ * explicit error string, a `deferred_to_frontend` marker, or an object with an
+ * `error` field. Used by the truthfulness guard to decide whether to annotate
+ * the model's final text so it doesn't silently claim success.
+ */
+export function isProblematicToolResult(result: unknown): boolean {
+  if (result == null) return false;
+  if (typeof result === 'string') return /^error\b/i.test(result.trim());
+  if (typeof result === 'object') {
+    const obj = result as Record<string, unknown>;
+    if (obj.status === 'deferred_to_frontend') return true;
+    if (typeof obj.error === 'string' && obj.error.length > 0) return true;
+  }
+  return false;
+}
+
+const TRUTHFULNESS_NOTE =
+  '[System note: One or more tools in this turn did not fully complete — some results were deferred for user approval or returned errors. Reconcile your final response with the tool activity feed instead of claiming unconditional success.]\n\n';
+
+export function prependTruthfulnessNote(finalText: string, hadProblems: boolean): string {
+  if (!hadProblems) return finalText;
+  return TRUTHFULNESS_NOTE + finalText;
+}
+
 function filterToolsByTier(
   tools: unknown[],
   tier?: 'full-agentic' | 'code-only',
-  traits?: { toolUse: string; multimodal: boolean; contextWindow: number }
+  _traits?: { toolUse: string; multimodal: boolean; contextWindow: number }
 ): unknown[] {
   if (tier !== 'full-agentic') {
-    const excludeNames = ['get_console_logs', 'get_dom_snapshot', 'get_selected_element', 'capture_screenshot'];
+    const excludeNames = ['get_console_logs', 'get_selected_element'];
     return (tools as Array<{ function: { name: string } }>).filter(
       t => !excludeNames.includes(t.function.name)
-    );
-  }
-
-  if (!traits?.multimodal) {
-    return (tools as Array<{ function: { name: string } }>).filter(
-      t => t.function.name !== 'capture_screenshot'
     );
   }
 
@@ -110,6 +129,7 @@ export abstract class BaseOpenAIService implements AIProvider {
       const maxIterations = 8;
       let consecutiveFailures = 0;
       const maxConsecutiveFailures = 3;
+      let hadProblems = false;
 
       while (iteration < maxIterations) {
         const payload: Record<string, unknown> = {
@@ -147,19 +167,20 @@ export abstract class BaseOpenAIService implements AIProvider {
         const content = stripThinkTags(typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent));
 
         if (!message.tool_calls) {
-          return content;
+          return prependTruthfulnessNote(content, hadProblems);
         }
 
         // Handle Tool Calls
         logger.info(`[${this.name}] Tool calls detected: ${message.tool_calls.length}`);
         currentMessages.push({ ...message, content });
-        
+
         for (const toolCall of message.tool_calls) {
           const name = toolCall.function.name;
           const args = JSON.parse(toolCall.function.arguments);
-          
+
           try {
             const result = await toolService.executeTool(name, args);
+            if (isProblematicToolResult(result)) hadProblems = true;
             currentMessages.push({
               role: "tool",
               tool_call_id: toolCall.id,
@@ -168,6 +189,7 @@ export abstract class BaseOpenAIService implements AIProvider {
             });
           } catch (toolError: unknown) {
             const toolErr = toolError as Error;
+            hadProblems = true;
             logger.error(`[${this.name}] Tool execution failed (${name}): ${toolErr.message}`);
             currentMessages.push({
               role: "tool",
@@ -213,6 +235,7 @@ export abstract class BaseOpenAIService implements AIProvider {
       const maxIterations = tier === 'full-agentic' ? 12 : 6;
       let consecutiveFailures = 0;
       const maxConsecutiveFailures = 3;
+      let hadProblems = false;
 
       while (iteration < maxIterations) {
         const payload: Record<string, unknown> = {
@@ -273,6 +296,7 @@ export abstract class BaseOpenAIService implements AIProvider {
               onEvent({ type: 'tool_start', tool: call.name, args: call.args, iteration, callId: call.id });
               try {
                 const result = await toolService.executeTool(call.name, call.args);
+                if (isProblematicToolResult(result)) hadProblems = true;
                 onEvent({ type: 'tool_result', tool: call.name, result, iteration, callId: call.id });
                 currentMessages.push({
                   role: 'tool',
@@ -284,6 +308,7 @@ export abstract class BaseOpenAIService implements AIProvider {
               } catch (toolError: unknown) {
                 const toolErr = toolError as Error;
                 consecutiveFailures++;
+                hadProblems = true;
                 logger.error('[' + this.name + '] XML tool failed (' + call.name + '): ' + toolErr.message);
                 onEvent({ type: 'tool_error', tool: call.name, error: toolErr.message, iteration, callId: call.id });
 
@@ -309,8 +334,10 @@ export abstract class BaseOpenAIService implements AIProvider {
           }
 
           // Truly done
-          onEvent({ type: 'text_complete', content: typeof content === 'string' ? content : JSON.stringify(content) });
-          return typeof content === 'string' ? content : JSON.stringify(content);
+          const finalText = typeof content === 'string' ? content : JSON.stringify(content);
+          const annotated = prependTruthfulnessNote(finalText, hadProblems);
+          onEvent({ type: 'text_complete', content: annotated });
+          return annotated;
         }
 
         // Handle Tool Calls with events
@@ -331,6 +358,7 @@ export abstract class BaseOpenAIService implements AIProvider {
 
           try {
             const result = await toolService.executeTool(name, args);
+            if (isProblematicToolResult(result)) hadProblems = true;
             onEvent({ type: 'tool_result', tool: name, result, iteration, callId });
             currentMessages.push({
               role: "tool",
@@ -342,34 +370,8 @@ export abstract class BaseOpenAIService implements AIProvider {
           } catch (toolError: unknown) {
             const toolErr = toolError as Error;
 
-            // Check if this is a browser-tool round-trip
-            if (toolErr.message.startsWith('BROWSER_TOOL:')) {
-              const browserToolName = toolErr.message.split(':')[1]!;
-              const browserCallId = randomUUID();
-
-              // Emit browser-tool event
-              onEvent({
-                type: 'browser-tool',
-                tool: browserToolName,
-                callId: browserCallId,
-              } as AgentEvent);
-
-              // Wait for result from POST /api/preview/tool-result
-              const { createPendingCall } = await import('../routes/previewRoutes');
-              const result = await createPendingCall(browserCallId);
-
-              onEvent({ type: 'tool_result', tool: browserToolName, result, iteration, callId });
-              currentMessages.push({
-                role: "tool",
-                tool_call_id: callId,
-                name: browserToolName,
-                content: JSON.stringify(result)
-              });
-              consecutiveFailures = 0;
-              continue; // Continue the loop with the result
-            }
-
             consecutiveFailures++;
+            hadProblems = true;
             logger.error(`[${this.name}] Tool execution failed (${name}): ${toolErr.message}`);
             onEvent({ type: 'tool_error', tool: name, error: toolErr.message, iteration, callId });
 

@@ -11,7 +11,7 @@ import { ChatImportButton } from './ChatImportButton';
 import { ToolActivityFeed } from './ToolActivityFeed';
 import { AGENT_MODEL_OPTIONS } from '../ModelSelector';
 import { toolResultToIDEActions } from '../../lib/toolToIDEAction';
-import { runInSandbox, getWebContainerInstance } from '../../lib/webContainerBridge';
+import { runInSandbox, getWebContainerInstance, writeFileToWebContainer, toWcPath } from '../../lib/webContainerBridge';
 import { fetchWithRetry } from '../../lib/api-client';
 import { useModelCapabilities } from '../../hooks/useModelCapabilities';
 import {
@@ -180,6 +180,21 @@ export const AgentChatPanel: React.FC = () => {
           });
           break;
         }
+        case 'sync_webcontainer': {
+          const wcPath = toWcPath(action.path, currentProject?.name);
+          try {
+            await writeFileToWebContainer(wcPath, action.content);
+          } catch (err) {
+            addTerminalLine(`[WARN]: WC sync failed for ${wcPath}: ${err instanceof Error ? err.message : 'unknown'}`);
+          }
+          // Mirror into in-memory openFiles so the editor reflects the new content.
+          const current = useAppStore.getState().openFiles;
+          const existing = current.find((f) => f.path === action.path);
+          if (existing) {
+            setOpenFiles(current.map((f) => (f.path === action.path ? { ...f, content: action.content } : f)));
+          }
+          break;
+        }
         case 'terminal_output': {
           for (const line of action.lines) {
             addTerminalLine(line);
@@ -196,7 +211,7 @@ export const AgentChatPanel: React.FC = () => {
         }
       }
     }
-  }, [setOpenFiles, setActiveFile, setPendingDiff, addTerminalLine, setTerminalVisible, triggerFileTreeRefresh]);
+  }, [setOpenFiles, setActiveFile, setPendingDiff, addTerminalLine, setTerminalVisible, triggerFileTreeRefresh, currentProject?.name]);
 
   /**
    * Handle a deferred frontend tool (ide_run_in_sandbox).

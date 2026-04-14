@@ -245,26 +245,8 @@ export const TOOL_DEFINITIONS = [
     }
   },
   {
-    name: "get_dom_snapshot",
-    description: "Get the current DOM body hash and truncated body HTML from the preview.",
-    parameters: {
-      type: "OBJECT",
-      properties: {},
-      required: []
-    }
-  },
-  {
     name: "get_selected_element",
     description: "Get the element the user clicked in the preview. Returns the element info and clears the selection.",
-    parameters: {
-      type: "OBJECT",
-      properties: {},
-      required: []
-    }
-  },
-  {
-    name: "capture_screenshot",
-    description: "Capture a screenshot of the current preview as a PNG image. Only available for multimodal models.",
     parameters: {
       type: "OBJECT",
       properties: {},

@@ -52,24 +52,13 @@ export function buildSystemPrompt(
     parts.push('IMPORTANT: When the user asks to change, add, or fix something in the app, they are referring to the running preview.');
     parts.push('');
     parts.push('IMPORTANT — Preview rendering:');
-    parts.push('This app uses a JavaScript framework (React/Vue/Svelte/etc). `fetch_preview_source` returns the raw HTML skeleton only — the JS has not run yet, so you will typically see an empty root div with no visible content.');
-
-    if (tier === 'full-agentic') {
-      parts.push('To inspect the actual rendered UI, use `get_dom_snapshot` — it captures the live DOM after JavaScript has executed.');
-      parts.push('');
-      parts.push('Workflow for UI changes:');
-      parts.push('1. `get_dom_snapshot` — understand the rendered state and component tree');
-      parts.push('2. Identify which source file(s) own the relevant component (check the open files list above)');
-      parts.push('3. `read_file` — confirm the current implementation');
-      parts.push('4. Make the change with `ide_show_diff` or `write_file`');
-      parts.push('5. The preview auto-refreshes — verify with `get_dom_snapshot` if needed');
-    } else {
-      parts.push('');
-      parts.push('Workflow for UI changes:');
-      parts.push('1. Identify which source file(s) own the relevant component (check the open files list above)');
-      parts.push('2. `read_file` — confirm the current implementation');
-      parts.push('3. Make the change with `ide_show_diff` or `write_file`');
-    }
+    parts.push('This app uses a JavaScript framework (React/Vue/Svelte/etc). `fetch_preview_source` returns the raw HTML skeleton only — the JS has not run yet, so reading it is usually not useful.');
+    parts.push('');
+    parts.push('Workflow for UI changes:');
+    parts.push('1. Identify which source file(s) own the relevant component (check the open files list above)');
+    parts.push('2. `read_file` — confirm the current implementation');
+    parts.push('3. Make the change with `ide_show_diff` (user approval required) or `write_file` (direct write)');
+    parts.push('4. The preview auto-refreshes after a successful write.');
   }
 
   if (openFiles && openFiles.length > 1) {

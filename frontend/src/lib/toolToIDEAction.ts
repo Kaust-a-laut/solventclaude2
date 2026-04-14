@@ -8,6 +8,7 @@ import type { ToolEvent } from '../store/codingSlice';
 export type IDEAction =
   | { type: 'open_file'; path: string; content: string }
   | { type: 'show_diff'; filePath: string; original: string; modified: string; description: string }
+  | { type: 'sync_webcontainer'; path: string; content: string }
   | { type: 'terminal_output'; lines: string[] }
   | { type: 'show_terminal' }
   | { type: 'refresh_file_tree' };
@@ -32,15 +33,9 @@ export function toolResultToIDEActions(event: ToolEvent): IDEAction[] {
       const newContent = (event.args?.content as string) ?? '';
       if (path) {
         actions.push({ type: 'refresh_file_tree' });
-        // Show diff with the written content
-        if (newContent) {
-          actions.push({
-            type: 'show_diff',
-            filePath: path,
-            original: '', // original not available from this tool
-            modified: newContent,
-            description: `Agent wrote ${path}`,
-          });
+        // Mirror the already-written file into the WebContainer so the preview hot-reloads.
+        if (newContent !== '') {
+          actions.push({ type: 'sync_webcontainer', path, content: newContent });
         }
       }
       break;

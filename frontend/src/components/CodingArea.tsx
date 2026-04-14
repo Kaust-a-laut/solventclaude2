@@ -20,6 +20,8 @@ import {
   getWebContainerInstance,
   setWebContainerInstance,
   clearBootPromise,
+  writeFileToWebContainer,
+  toWcPath,
 } from '../lib/webContainerBridge';
 import { isImageFile } from './coding/editorUtils';
 import { EditorToolbar } from './coding/EditorToolbar';
@@ -289,6 +291,10 @@ export const CodingArea = () => {
           body: JSON.stringify({ path: f.path, content: f.content }),
         })
       ));
+      // Mirror each saved file into the WebContainer so the preview sees the change.
+      await Promise.all(openFiles.map(f =>
+        writeFileToWebContainer(toWcPath(f.path, currentProject?.name), f.content).catch(() => {})
+      ));
       addLog(`[SYSTEM]: Saved ${openFiles.length} file(s)`);
       // Persist session state immediately on manual save
       if (currentProject) {
@@ -456,16 +462,30 @@ export const CodingArea = () => {
     }
   }, [webContainer, activeFile, openFiles, addLog, setTerminalVisible, bootStatus]);
 
-  const handleApplyAll = useCallback(() => {
+  const handleApplyAll = useCallback(async () => {
     if (!pendingDiff) return;
+    const { filePath, modified } = pendingDiff;
     setIsApplying(true);
-    const updated = openFiles.map((f) =>
-      f.path === pendingDiff.filePath ? { ...f, content: pendingDiff.modified } : f
-    );
+    const existing = openFiles.find((f) => f.path === filePath);
+    const updated = existing
+      ? openFiles.map((f) => (f.path === filePath ? { ...f, content: modified } : f))
+      : [...openFiles, { path: filePath, content: modified }];
     setOpenFiles(updated);
     clearPendingDiff();
-    setTimeout(() => setIsApplying(false), 600);
-  }, [pendingDiff, openFiles, setOpenFiles, clearPendingDiff]);
+    try {
+      await fetchWithRetry(`${BASE_URL}/api/files/write`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: filePath, content: modified }),
+      });
+      await writeFileToWebContainer(toWcPath(filePath, currentProject?.name), modified).catch(() => {});
+      addLog(`[SYSTEM]: Applied diff to ${filePath}`);
+    } catch {
+      addLog(`[ERROR]: Failed to persist ${filePath}`);
+    } finally {
+      setIsApplying(false);
+    }
+  }, [pendingDiff, openFiles, setOpenFiles, clearPendingDiff, currentProject, addLog]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
