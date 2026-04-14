@@ -14,6 +14,7 @@ export interface ToolStartEvent {
 export interface ToolResultEvent {
   type: 'tool_result';
   tool: string;
+  args?: Record<string, unknown>;
   result: unknown;
   iteration: number;
   callId: string;

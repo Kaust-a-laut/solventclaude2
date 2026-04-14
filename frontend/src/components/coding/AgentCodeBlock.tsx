@@ -35,8 +35,8 @@ export const AgentCodeBlock: React.FC<Props> = ({ suggestion, onApply, onReject 
       <pre className="p-3 text-[11px] font-mono text-slate-300 overflow-x-auto scrollbar-thin leading-relaxed whitespace-pre-wrap break-words">
         <code>{suggestion.code}</code>
       </pre>
-      {/* Apply / Reject footer */}
-      {!suggestion.applied && !suggestion.rejected && (
+      {/* Apply / Reject footer — only for actionable code, not text listings */}
+      {!suggestion.applied && !suggestion.rejected && suggestion.language !== 'text' && (
         <div className="flex items-center gap-2 px-3 py-2 border-t border-white/[0.05] bg-black/20">
           <button
             type="button"

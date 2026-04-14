@@ -81,6 +81,12 @@ export function prependTruthfulnessNote(finalText: string, hadProblems: boolean)
   return TRUTHFULNESS_NOTE + finalText;
 }
 
+function summarizeRequest(messages: Array<{ role: string; content: string }>): { msgs: number; kb: number } {
+  let bytes = 0;
+  for (const m of messages) bytes += (m.content?.length ?? 0) + (m.role?.length ?? 0);
+  return { msgs: messages.length, kb: Math.round(bytes / 1024) };
+}
+
 function filterToolsByTier(
   tools: unknown[],
   tier?: 'full-agentic' | 'code-only',
@@ -123,10 +129,10 @@ export abstract class BaseOpenAIService implements AIProvider {
 
     const currentMessages: Array<{ role: string; content: string; name?: string; tool_call_id?: string; tool_calls?: unknown }> = normalizeMessages(messages).map(m => ({ role: m.role, content: m.content }));
     const model = options.model || this.defaultModel;
+    let iteration = 0;
+    const maxIterations = 8;
 
     try {
-      let iteration = 0;
-      const maxIterations = 8;
       let consecutiveFailures = 0;
       const maxConsecutiveFailures = 3;
       let hadProblems = false;
@@ -136,7 +142,7 @@ export abstract class BaseOpenAIService implements AIProvider {
           model,
           messages: currentMessages,
           temperature: options.temperature ?? 0.7,
-          max_tokens: options.maxTokens ?? 2048,
+          max_tokens: options.maxTokens ?? 8192,
         };
 
         // CRITICAL FIX: Most providers (Groq, OpenAI) do not allow
@@ -147,6 +153,10 @@ export abstract class BaseOpenAIService implements AIProvider {
           payload.tools = this.getToolDefinitions();
           payload.tool_choice = "auto";
         }
+
+        const reqSummary = summarizeRequest(currentMessages);
+        const reqStart = Date.now();
+        logger.info(`[${this.name}] iter=${iteration}/${maxIterations} msgs=${reqSummary.msgs} payload=${reqSummary.kb}KB model=${model}`);
 
         const response = await axios.post(
           `${this.baseUrl}/chat/completions`,
@@ -162,6 +172,8 @@ export abstract class BaseOpenAIService implements AIProvider {
           }
         );
 
+        logger.info(`[${this.name}] iter=${iteration} responded in ${Date.now() - reqStart}ms`);
+
         const message = response.data.choices[0].message;
         const rawContent = message.content || "";
         const content = stripThinkTags(typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent));
@@ -172,11 +184,36 @@ export abstract class BaseOpenAIService implements AIProvider {
 
         // Handle Tool Calls
         logger.info(`[${this.name}] Tool calls detected: ${message.tool_calls.length}`);
+
+        const parsed: Array<{ toolCall: { id: string; function: { name: string; arguments: string } }; args: Record<string, unknown>; parseError: string | null }> = [];
+        for (const toolCall of message.tool_calls) {
+          let args: Record<string, unknown> = {};
+          let parseError: string | null = null;
+          try {
+            args = JSON.parse(toolCall.function.arguments);
+          } catch (e) {
+            parseError = (e as Error).message;
+            toolCall.function.arguments = '{}';
+          }
+          parsed.push({ toolCall, args, parseError });
+        }
+
         currentMessages.push({ ...message, content });
 
-        for (const toolCall of message.tool_calls) {
+        for (const { toolCall, args, parseError } of parsed) {
           const name = toolCall.function.name;
-          const args = JSON.parse(toolCall.function.arguments);
+          if (parseError) {
+            hadProblems = true;
+            const msg = `Tool arguments could not be parsed as JSON (${parseError}). Likely truncated by max_tokens; retry with smaller content or use ide_show_diff for file edits.`;
+            logger.error(`[${this.name}] Tool args parse error (${name}): ${parseError}`);
+            currentMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              name,
+              content: JSON.stringify({ error: msg })
+            });
+            continue;
+          }
 
           try {
             const result = await toolService.executeTool(name, args);
@@ -207,8 +244,9 @@ export abstract class BaseOpenAIService implements AIProvider {
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
       const errorMsg = err.response?.data?.error?.message || err.message;
-      logger.error(`[${this.name}] Request Failed: ${errorMsg}`);
-      throw new Error(`${this.name} API failed: ${errorMsg}`);
+      const ctx = summarizeRequest(currentMessages);
+      logger.error(`[${this.name}] Request Failed at iter=${iteration}/${maxIterations} msgs=${ctx.msgs} payload=${ctx.kb}KB: ${errorMsg}`);
+      throw new Error(`${this.name} API failed at iter=${iteration} (${ctx.kb}KB, ${ctx.msgs} msgs): ${errorMsg}`);
     }
   }
 
@@ -230,9 +268,10 @@ export abstract class BaseOpenAIService implements AIProvider {
     const currentMessages: Array<{ role: string; content: string; name?: string; tool_call_id?: string; tool_calls?: unknown }> = normalizeMessages(messages).map(m => ({ role: m.role, content: m.content }));
     const model = options.model || this.defaultModel;
 
+    let iteration = 0;
+    const maxIterations = tier === 'full-agentic' ? 12 : 6;
+
     try {
-      let iteration = 0;
-      const maxIterations = tier === 'full-agentic' ? 12 : 6;
       let consecutiveFailures = 0;
       const maxConsecutiveFailures = 3;
       let hadProblems = false;
@@ -242,7 +281,7 @@ export abstract class BaseOpenAIService implements AIProvider {
           model,
           messages: currentMessages,
           temperature: options.temperature ?? 0.7,
-          max_tokens: options.maxTokens ?? 2048,
+          max_tokens: options.maxTokens ?? 8192,
         };
 
         if (options.jsonMode && !this.shouldSkipJsonMode(model)) {
@@ -253,6 +292,10 @@ export abstract class BaseOpenAIService implements AIProvider {
           payload.tools = filteredTools;
           payload.tool_choice = "auto";
         }
+
+        const reqSummary = summarizeRequest(currentMessages);
+        const reqStart = Date.now();
+        logger.info(`[${this.name}] iter=${iteration}/${maxIterations} msgs=${reqSummary.msgs} payload=${reqSummary.kb}KB model=${model} tier=${tier ?? 'default'}`);
 
         const response = await axios.post(
           `${this.baseUrl}/chat/completions`,
@@ -267,6 +310,8 @@ export abstract class BaseOpenAIService implements AIProvider {
             signal: options.signal
           }
         );
+
+        logger.info(`[${this.name}] iter=${iteration} responded in ${Date.now() - reqStart}ms`);
 
         const message = response.data.choices[0].message;
         const rawContent = message.content || "";
@@ -297,7 +342,7 @@ export abstract class BaseOpenAIService implements AIProvider {
               try {
                 const result = await toolService.executeTool(call.name, call.args);
                 if (isProblematicToolResult(result)) hadProblems = true;
-                onEvent({ type: 'tool_result', tool: call.name, result, iteration, callId: call.id });
+                onEvent({ type: 'tool_result', tool: call.name, args: call.args, result, iteration, callId: call.id });
                 currentMessages.push({
                   role: 'tool',
                   tool_call_id: call.id,
@@ -342,24 +387,50 @@ export abstract class BaseOpenAIService implements AIProvider {
 
         // Handle Tool Calls with events
         logger.info(`[${this.name}] Tool calls detected: ${message.tool_calls.length}`);
-        currentMessages.push({ ...message, content });
 
+        // Parse arguments up front, and sanitize any malformed JSON in the
+        // assistant message before pushing it to history — providers like
+        // DashScope reject follow-up requests whose history contains a
+        // tool_call with non-JSON `arguments`.
+        const parsedCalls: Array<{ toolCall: { id: string; function: { name: string; arguments: string } }; name: string; callId: string; args: Record<string, unknown>; parseError: string | null }> = [];
         for (const toolCall of message.tool_calls) {
           const name = toolCall.function.name;
-          let args: Record<string, unknown>;
+          const callId = toolCall.id;
+          let args: Record<string, unknown> = {};
+          let parseError: string | null = null;
           try {
             args = JSON.parse(toolCall.function.arguments);
-          } catch {
-            args = { _raw: toolCall.function.arguments };
+          } catch (e) {
+            parseError = (e as Error).message;
+            toolCall.function.arguments = '{}';
           }
-          const callId = toolCall.id;
+          parsedCalls.push({ toolCall, name, callId, args, parseError });
+        }
+
+        currentMessages.push({ ...message, content });
+
+        for (const { name, callId, args, parseError } of parsedCalls) {
+          if (parseError) {
+            hadProblems = true;
+            consecutiveFailures++;
+            const msg = `Tool arguments could not be parsed as JSON (${parseError}). This usually means the model's response was truncated because max_tokens was exceeded. Retry with smaller content — e.g. use ide_show_diff for file edits so the change is reviewed, or break the write into multiple smaller write_file calls.`;
+            logger.error(`[${this.name}] Tool args parse error (${name}): ${parseError}`);
+            onEvent({ type: 'tool_error', tool: name, error: msg, iteration, callId });
+            currentMessages.push({
+              role: 'tool',
+              tool_call_id: callId,
+              name,
+              content: JSON.stringify({ error: msg })
+            });
+            continue;
+          }
 
           onEvent({ type: 'tool_start', tool: name, args, iteration, callId });
 
           try {
             const result = await toolService.executeTool(name, args);
             if (isProblematicToolResult(result)) hadProblems = true;
-            onEvent({ type: 'tool_result', tool: name, result, iteration, callId });
+            onEvent({ type: 'tool_result', tool: name, args, result, iteration, callId });
             currentMessages.push({
               role: "tool",
               tool_call_id: callId,
@@ -411,8 +482,9 @@ export abstract class BaseOpenAIService implements AIProvider {
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
       const errorMsg = err.response?.data?.error?.message || err.message;
-      logger.error(`[${this.name}] Request Failed: ${errorMsg}`);
-      throw new Error(`${this.name} API failed: ${errorMsg}`);
+      const ctx = summarizeRequest(currentMessages);
+      logger.error(`[${this.name}] Request Failed at iter=${iteration}/${maxIterations} msgs=${ctx.msgs} payload=${ctx.kb}KB: ${errorMsg}`);
+      throw new Error(`${this.name} API failed at iter=${iteration} (${ctx.kb}KB, ${ctx.msgs} msgs): ${errorMsg}`);
     }
   }
 

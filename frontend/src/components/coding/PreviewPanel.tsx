@@ -78,7 +78,14 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ iframeUrl, onClose, 
         <span className="text-[11px] font-mono text-white/40 flex-1 truncate min-w-0">{iframeUrl}</span>
         <button
           type="button"
-          onClick={() => iframeRef.current?.contentWindow?.location.reload()}
+          onClick={() => {
+            if (iframeRef.current) {
+              // Re-set src to reload — cross-origin iframe prevents contentWindow.location.reload()
+              const currentSrc = iframeRef.current.src;
+              iframeRef.current.src = '';
+              iframeRef.current.src = currentSrc;
+            }
+          }}
           className="p-1 hover:bg-white/10 rounded text-white/30 hover:text-white/60 transition-colors shrink-0"
           aria-label="Reload preview"
         >

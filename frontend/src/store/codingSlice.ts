@@ -230,6 +230,13 @@ export interface CodingSlice {
 }
 
 const MAX_TERMINAL_LINES = 1000;
+const MAX_AGENT_MESSAGES = 100;
+const MAX_TOOL_EVENT_RESULT_CHARS = 500;
+
+/** Strip ANSI escape codes (color/bold/cursor) from terminal output. */
+export function stripAnsi(input: string): string {
+  return input.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
+}
 
 export const createCodingSlice: StateCreator<AppState, [], [], CodingSlice> = (set) => {
   const MAX_CONSOLE_BUFFER = 200;
@@ -246,7 +253,8 @@ export const createCodingSlice: StateCreator<AppState, [], [], CodingSlice> = (s
 
   terminalLines: ['[SYSTEM]: Agentic IDE Core Initialized.'],
   addTerminalLine: (line) => set((state) => {
-    const lines = [...state.terminalLines, line];
+    const cleaned = stripAnsi(line);
+    const lines = [...state.terminalLines, cleaned];
     if (lines.length > MAX_TERMINAL_LINES) {
       return { terminalLines: lines.slice(-MAX_TERMINAL_LINES) };
     }
@@ -281,7 +289,14 @@ export const createCodingSlice: StateCreator<AppState, [], [], CodingSlice> = (s
 
   setPendingDiff: (diff) => set({ pendingDiff: diff }),
   clearPendingDiff: () => set({ pendingDiff: null }),
-  addAgentMessage: (msg) => set((state) => ({ agentMessages: [...state.agentMessages, msg] })),
+  addAgentMessage: (msg) => set((state) => {
+    const messages = [...state.agentMessages, msg];
+    // Cap in-memory messages — oldest are dropped (persistence already caps at 50).
+    if (messages.length > MAX_AGENT_MESSAGES) {
+      return { agentMessages: messages.slice(-MAX_AGENT_MESSAGES) };
+    }
+    return { agentMessages: messages };
+  }),
   updateAgentMessage: (id, updates) =>
     set((state) => ({
       agentMessages: state.agentMessages.map((m) => (m.id === id ? { ...m, ...updates } : m)),
@@ -289,7 +304,18 @@ export const createCodingSlice: StateCreator<AppState, [], [], CodingSlice> = (s
   appendToolEvent: (msgId, event) =>
     set((state) => ({
       agentMessages: state.agentMessages.map((m) =>
-        m.id === msgId ? { ...m, toolEvents: [...(m.toolEvents ?? []), event] } : m
+        m.id === msgId
+          ? {
+              ...m,
+              toolEvents: [
+                ...(m.toolEvents ?? []),
+                // Truncate large results in-memory to match what persistence does.
+                typeof event.result === 'string' && event.result.length > MAX_TOOL_EVENT_RESULT_CHARS
+                  ? { ...event, result: event.result.slice(0, MAX_TOOL_EVENT_RESULT_CHARS) + '…' }
+                  : event,
+              ],
+            }
+          : m,
       ),
     })),
   clearAgentMessages: () => set({ agentMessages: [] }),

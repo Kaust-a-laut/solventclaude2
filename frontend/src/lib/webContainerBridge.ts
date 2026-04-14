@@ -54,10 +54,13 @@ export function toWcPath(p: string, projectName?: string | null): string {
  */
 export async function writeFileToWebContainer(wcRelPath: string, content: string): Promise<void> {
   const wc = wcInstance;
-  if (!wc || !wcRelPath) return;
+  if (!wc || !wcRelPath) {
+    console.warn('[WC] writeFileToWebContainer skipped', { wcBooted: !!wc, wcRelPath });
+    return;
+  }
   const parts = wcRelPath.split('/').filter(Boolean);
+  const dir = parts.length > 1 ? parts.slice(0, -1).join('/') : '.';
   if (parts.length > 1) {
-    const dir = parts.slice(0, -1).join('/');
     try {
       await wc.fs.mkdir(dir, { recursive: true });
     } catch {
@@ -65,6 +68,16 @@ export async function writeFileToWebContainer(wcRelPath: string, content: string
     }
   }
   await wc.fs.writeFile(wcRelPath, content);
+
+  // Diagnostic probe — confirm the write landed where Vite is watching.
+  // Lists the parent directory after the write so we can see the canonical
+  // WC layout (useful when debugging why HMR didn't pick up a change).
+  try {
+    const entries = await wc.fs.readdir(dir);
+    console.info('[WC] wrote', { wcRelPath, bytes: content.length, dir, entries: entries.slice(0, 30) });
+  } catch (err) {
+    console.warn('[WC] readdir failed after write', { wcRelPath, dir, err: err instanceof Error ? err.message : String(err) });
+  }
 }
 
 /**

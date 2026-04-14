@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { WebContainer, WebContainerProcess } from '@webcontainer/api';
 import type { OnMount } from '@monaco-editor/react';
 import type { editor as MonacoEditor } from 'monaco-editor';
+import * as monaco from 'monaco-editor';
 import { AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
 import type { ConsoleEntry, ElementInfo } from '../store/codingSlice';
@@ -229,7 +230,9 @@ export const CodingArea = () => {
     if (!webContainer || openFiles.length === 0) return;
     const tree: Record<string, unknown> = {};
     for (const file of openFiles) {
-      const parts = file.path.split('/');
+      const wcPath = toWcPath(file.path, currentProject?.name);
+      if (!wcPath) continue;
+      const parts = wcPath.split('/').filter(Boolean);
       let cur = tree;
       for (let i = 0; i < parts.length - 1; i++) {
         const part = parts[i];
@@ -241,7 +244,7 @@ export const CodingArea = () => {
       if (lastPart !== undefined) cur[lastPart] = { file: { contents: file.content } };
     }
     webContainer.mount(tree as Parameters<typeof webContainer.mount>[0]);
-  }, [webContainer, openFiles]);
+  }, [webContainer, openFiles, currentProject?.name]);
 
   useEffect(() => { return () => { runningProcRef.current?.kill(); }; }, []);
 
@@ -276,6 +279,9 @@ export const CodingArea = () => {
     if (closing && isImageFile(path) && closing.content.startsWith('blob:')) {
       URL.revokeObjectURL(closing.content);
     }
+    // Dispose Monaco text model to prevent memory leaks.
+    const modelUri = monaco.editor.getModels().find((m) => m.uri.path.includes(path));
+    modelUri?.dispose();
     const next = openFiles.filter((f) => f.path !== path);
     setOpenFiles(next);
     if (activeFile === path) setActiveFile(next.length > 0 ? (next[next.length - 1]?.path ?? null) : null);
@@ -350,10 +356,9 @@ export const CodingArea = () => {
             const data = await fetchWithRetry(
               `${BASE_URL}/api/files/read?path=${encodeURIComponent(filePath)}`
             ) as { content: string };
-            // Strip project-name prefix — WebContainer root = project root
-            const wcPath = currentProject.type === 'scratchpad' && currentProject.name
-              ? filePath.slice(currentProject.name.length + 1)
-              : filePath;
+            // Canonical path stripping — WebContainer root = project root.
+            // Must match what `sync_webcontainer` writes through `toWcPath`.
+            const wcPath = toWcPath(filePath, currentProject.name);
             if (wcPath) { buildTree(wcPath, data.content ?? ''); synced++; }
           } catch { /* skip unreadable files (binaries, etc.) */ }
         })
